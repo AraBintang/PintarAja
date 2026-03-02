@@ -6,11 +6,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
+
+    protected $table = 'm_user';
+    protected $primaryKey = 'M_UserID';
 
     /**
      * The attributes that are mass assignable.
@@ -18,9 +22,16 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'M_UserEmail',
+        'M_UserToken',
+        'M_UserFullName',
+        'M_UserImage',
+        'M_UserIsActive',
+        'M_UserRole',
+        'M_UserPlan',
+        'M_UserSubsExp',
+        'M_UserCreated',
+        'M_UserLastUpdated',
     ];
 
     /**
@@ -29,9 +40,23 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'password',
-        'remember_token',
+        'M_UserPassword',
     ];
+
+    public function getAuthPassword()
+    {
+        return $this->M_UserPassword;
+    }
+
+    public function getAuthIdentifierName()
+    {
+        return 'M_UserID';
+    }
+
+    public function isAdmin()
+    {
+        return $this->M_UserRole === 'A';
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -41,8 +66,12 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'M_UserPassword' => 'hashed',
+            'M_UserSubsExp' => 'datetime',
+            'M_UserCreated' => 'datetime',
+            'M_UserLastUpdated' => 'datetime',
         ];
     }
+
+    public $timestamps = false;
 }
