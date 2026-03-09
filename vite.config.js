@@ -19,4 +19,16 @@ export default defineConfig({
       '@components': fileURLToPath(new URL('./resources/js/src/components', import.meta.url)),
     },
   },
+  server: {
+    port: 5174,
+    strictPort: true,
+    hmr: {
+      host: 'localhost',
+    },
+  },
+  css: {
+    postcss: {
+      config: false,
+    },
+  },
 })
