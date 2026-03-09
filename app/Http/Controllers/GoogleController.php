@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -58,7 +57,6 @@ class GoogleController extends Controller
         if ($user) {
             $user->update([
                 'M_UserImage' => $userDataGoogle['picture'],
-                'M_UserLastLogin' => now(),
                 'M_UserToken' => Str::random(64),
             ]);
         } else {
@@ -66,10 +64,8 @@ class GoogleController extends Controller
                 'M_UserEmail' => $userDataGoogle['email'],
                 'M_UserFullName' => $userDataGoogle['name'],
                 'M_UserImage' => $userDataGoogle['picture'],
-                'M_UserLastLogin' => now(),
-                'M_UserQuota' => -1, 
                 'M_UserToken' => Str::random(64),
-                'M_UserSubsExp' => Carbon::now()->addDays(7),
+                'M_UserEmailVerifiedAt' => now(),
             ]);
         }
 

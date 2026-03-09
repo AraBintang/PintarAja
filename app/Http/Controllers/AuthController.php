@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-// use App\Mail\SendEmail;
+use App\Mail\OtpMail;
+use App\Models\Otp;
 use App\Models\User;
 use Illuminate\Http\Request;
-// use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-// use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -26,6 +26,10 @@ class AuthController extends Controller
 
         if (!$user) {
             return response()->json(['error' => 'User not found'], 400);
+        }
+
+        if (!$user->M_UserEmailVerifiedAt) {
+            return response()->json(['error' => 'Email not yet verified'], 400);
         }
 
         if ($user->M_UserIsActive !== 'Y') {
@@ -44,7 +48,79 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user' => $user
+            'user' => [
+                'email' => $user->M_UserEmail,
+                'full_name' => $user->M_UserFullName,
+                'image' => $user->M_UserImage,
+                'phone' => $user->M_UserPhone,
+            ],
+        ]);
+    }
+
+    public function register(Request $request)
+    {
+        $credentials = $request->validate([
+            'userName' => 'required|string',
+            'email' => 'required|email',
+            'password' => 'required|min:8',
+            'phone' => 'required',
+        ]);
+
+        $user = User::where('M_UserEmail', $credentials['email'])->first();
+
+        if ($user) {
+            return response()->json([
+                'message' => 'User already registered'
+            ], 400);
+        }
+
+        User::create([
+            'M_UserEmail' => $credentials['email'],
+            'M_UserPassword' => Hash::make($credentials['password']),
+            'M_UserFullName' => $credentials['userName'],
+            'M_UserPhone' => $credentials['phone'],
+        ]);
+
+        $otp = random_int(100000, 999999);
+
+        Otp::updateOrCreate(
+            ['T_OtpM_UserEmail' => $credentials['email']],
+            [
+                'T_OtpValue' => $otp,
+                'T_OtpExpired' => Carbon::now()->addMinutes(5)
+            ]
+        );
+
+        Mail::to($credentials['email'])->send(new OtpMail($otp));
+
+        return response()->json([
+            'status' => 'OTP Send to email',
+        ]);
+    }
+
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required'
+        ]);
+
+        $otpData = Otp::where('T_OtpM_UserEmail', $request->email)
+            ->where('T_OtpValue', $request->otp)
+            ->where('T_OtpExpired', '>', now())
+            ->first();
+
+        if (!$otpData) {
+            return response()->json(['message' => 'OTP invalid or expired'], 400);
+        }
+
+        User::where('M_UserEmail', $request->email)
+            ->update(['M_UserEmailVerifiedAt' => now()]);
+
+        $otpData->delete();
+
+        return response()->json([
+            'status' => 'Email Verified'
         ]);
     }
 
@@ -56,83 +132,5 @@ class AuthController extends Controller
             'message' => 'Logout successfully'
         ]);
     }
-
-    public function me(Request $request)
-    {
-        return response()->json($request->user());
-    }
-
-    // public function sendEmail(Request $request)
-    // {
-    //     $request->validate([
-    //         'email' => 'required|email',
-    //     ]);
-    
-    //     $user = DB::table('m_user')->where('M_UserEmail', $request->email)->first();
-    
-    //     if (!$user) {
-    //         return response()->json([
-    //             'error' => 'Email unregistered.'
-    //         ], 404);
-    //     }
-    
-    //     $token = Str::random(64);
-    
-    //     DB::table('m_user')->updateOrInsert(
-    //         ['M_UserEmail' => $request->email],
-    //         ['M_UserToken' => $token]
-    //     );
-    
-    //     $resetLink = url("/new-password?email={$request->email}&token={$token}");
-    
-    //     Mail::to($request->email)->send(new SendEmail($resetLink, $user->M_UserFullName));
-    
-    //     return response()->json([
-    //         'message' => 'A password reset link has been sent to your email.'
-    //     ], 200);
-    // }
-
-    // public function newPassword(Request $request)
-    // {
-    //     $request->validate([
-    //         'email' => 'required|email',
-    //         'token' => 'required',
-    //         'password' => 'required|min:6',
-    //     ]);
-    
-    //     $user = User::where('M_UserEmail', $request->email)
-    //         ->where('M_UserToken', $request->token)
-    //         ->first();
-    
-    //     if (!$user) { 
-    //         return response()->json(['message' => 'Token is invalid or has expired, please request a password reset again.'], 400);
-    //     }
-    
-    //     $user->update([
-    //         'M_UserPassword' => Hash::make($request->password),
-    //         'M_UserToken' => null,
-    //     ]);
-    
-    //     $sessionToken = Str::random(64);
-        
-    //     $userAbilityRules = json_encode([
-    //         ['action' => 'manage', 'subject' => 'all']
-    //     ]);
-    
-    //     $userData = [
-    //         'username' => $user->M_UserFullName,
-    //         'email' => $user->M_UserEmail,
-    //         'avatar' => $user->M_UserImage ?? null,
-    //     ];
-    
-    //     $user->update(['M_UserToken' => $sessionToken]);
-    
-    //     return response()->json([
-    //         'accessToken' => $sessionToken,
-    //         'userAbilityRules' => $userAbilityRules,
-    //         'userData' => $userData,
-    //         'token_type' => 'Bearer',
-    //     ], 200);
-    // }
 }
 

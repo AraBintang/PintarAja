@@ -26,6 +26,7 @@ class User extends Authenticatable
         'M_UserToken',
         'M_UserFullName',
         'M_UserImage',
+        'M_UserPhone',
         'M_UserIsActive',
         'M_UserRole',
         'M_UserPlan',
@@ -41,6 +42,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'M_UserPassword',
+        'M_UserToken',
     ];
 
     public function getAuthPassword()
