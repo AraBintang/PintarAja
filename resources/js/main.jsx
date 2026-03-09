@@ -1,11 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-
-import App from '@/App'
-import './css/app.css'
+import App from '@/app'
+import { PlanProvider } from '@/context/PlanContext';
 
 createRoot(document.getElementById('app')).render(
   <StrictMode>
-    <App />
+    <PlanProvider>
+      <App />
+    </PlanProvider>
   </StrictMode>,
 )
