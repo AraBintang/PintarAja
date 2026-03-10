@@ -18,6 +18,7 @@ import AdminAttributePage from '@/pages/App/AdminAttributePage'
 import AdminPlanPage from '@/pages/App/AdminPlanPage'
 import CouponPage from '@/pages/App/CouponPage'
 import PromptAIPage from '@/pages/App/PromptAIPage'
+import NotFoundPage from '@/pages/NotFoundPage'
 
 export const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
@@ -44,4 +45,6 @@ export const router = createBrowserRouter([
       { path: 'admin/prompt', element: <PromptAIPage /> },
     ],
   },
+  { path: '*', element: <NotFoundPage /> },
 ])
+
