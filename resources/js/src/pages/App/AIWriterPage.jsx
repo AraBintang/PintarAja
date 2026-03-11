@@ -8,7 +8,7 @@ import {
     SelectValue,
     SelectLabel
 } from '@/components/ui/select';
-import { Zap, FileText, Ruler, BookOpen, Sparkles, Copy, Check, Download, RotateCcw, ChevronUp, ChevronDown, FileDown } from 'lucide-react';
+import { Zap, FileText, Ruler, BookOpen, Sparkles, Copy, Check, Download, RotateCcw, ChevronUp, ChevronDown, FileDown, FolderPlus, Loader2 } from 'lucide-react';
 import { LANGUAGES } from '../../data/languages';
 import TiptapEditor from '../../components/TiptapEditor';
 
@@ -43,6 +43,14 @@ const modelOptions = [
 ];
 const jumlahHasil = ['1 Paragraf', '2 Paragraf', '3 Paragraf', '4 Paragraf', '5 Paragraf'];
 const panjangMaks = ['500 kata', '1.000 kata', '1.500 kata', '2.000 kata', '3.000 kata'];
+
+// Dummy Workbooks
+const dummyWorkbooks = [
+    { id: '1', name: 'Tesis Akhir' },
+    { id: '2', name: 'Proposal Penelitian' },
+    { id: '3', name: 'Artikel Publikasi' },
+    { id: '4', name: 'Draft Skripsi' }
+];
 
 const promptLibrary = [
     'Tulis abstrak penelitian tentang dampak AI terhadap pendidikan tinggi di Indonesia.',
@@ -79,44 +87,38 @@ const exampleCards = [
 
 /* ─── Toolbar Select (for bottom toolbar) ─── */
 function ToolbarSelect({ label, icon, options, value, onChange }) {
-    const [open, setOpen] = useState(false);
     return (
-        <div className="relative">
-            <button
-                type="button"
-                onClick={() => setOpen(!open)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl text-[13px] text-gray-600 dark:text-gray-300 transition-all whitespace-nowrap"
-            >
-                {icon && <span className="flex items-center">{icon}</span>}
-                <span className="text-gray-400 dark:text-gray-500 font-medium">{label}:</span>
-                <span className="text-gray-800 dark:text-gray-200 font-semibold">{value}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-400 ml-1">
-                    <polyline points="6 9 12 15 18 9" />
-                </svg>
-            </button>
-            {open && (
-                <>
-                    <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-                    <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-40 min-w-[200px] py-1.5 max-h-60 overflow-y-auto">
-                        {options.map((opt) => {
-                            const optLabel = typeof opt === 'string' ? opt : opt.label;
-                            const optIcon = typeof opt === 'object' ? opt.icon : null;
-                            return (
-                                <button
-                                    key={optLabel}
-                                    type="button"
-                                    onClick={() => { onChange(optLabel); setOpen(false); }}
-                                    className={`w-full text-left px-4 py-2.5 text-[13px] hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 ${value === optLabel ? 'text-[#4A90D9] font-semibold' : 'text-gray-600 dark:text-gray-300'}`}
-                                >
-                                    {optIcon && <span>{optIcon}</span>}
-                                    {optLabel}
-                                </button>
-                            );
-                        })}
+        <Select value={value} onValueChange={onChange}>
+            <SelectTrigger className="flex h-auto outline-none focus:ring-0 items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl transition-all whitespace-nowrap [&>svg]:opacity-50 min-w-max">
+                <SelectValue>
+                    <div className="flex items-center gap-2 mr-1">
+                        {icon && <span className="flex items-center">{icon}</span>}
+                        <span className="text-[13px] text-gray-400 dark:text-gray-500 font-medium">{label}:</span>
+                        <span className="text-[13px] text-gray-800 dark:text-gray-200 font-semibold">{value}</span>
                     </div>
-                </>
-            )}
-        </div>
+                </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="z-50 rounded-xl min-w-[200px] border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl" position="popper" side="top" sideOffset={8}>
+                <SelectGroup>
+                    {options.map((opt) => {
+                        const optLabel = typeof opt === 'string' ? opt : opt.label;
+                        const optIcon = typeof opt === 'object' ? opt.icon : null;
+                        return (
+                            <SelectItem
+                                key={optLabel}
+                                value={optLabel}
+                                className="cursor-pointer py-2.5 pl-8 pr-3 hover:bg-gray-50 focus:bg-gray-50 dark:hover:bg-gray-700 dark:focus:bg-gray-700 transition-colors rounded-lg mx-1 my-0.5"
+                            >
+                                <div className="flex items-center gap-2 text-[13px]">
+                                    {optIcon && <span>{optIcon}</span>}
+                                    <span className={value === optLabel ? 'text-[#4A90D9] font-semibold' : 'text-gray-600 dark:text-gray-300'}>{optLabel}</span>
+                                </div>
+                            </SelectItem>
+                        );
+                    })}
+                </SelectGroup>
+            </SelectContent>
+        </Select>
     );
 }
 
@@ -135,7 +137,7 @@ function PromptLibraryModal({ open, onClose, onSelect }) {
                         <button
                             key={i}
                             onClick={() => { onSelect(prompt); onClose(); }}
-                            className="w-full text-left p-4 rounded-xl text-[14px] text-gray-600 dark:text-gray-300 hover:bg-[#4A90D9]/5 hover:text-gray-800 dark:hover:text-white transition-all border border-transparent hover:border-[#4A90D9]/10"
+                            className="w-full text-left p-4 rounded-xl text-[14px] text-gray-600 dark:text-gray-300 hover:bg-blue-50/80 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300 transition-all border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
                         >
                             {prompt}
                         </button>
@@ -144,6 +146,93 @@ function PromptLibraryModal({ open, onClose, onSelect }) {
                 <div className="p-4 border-t border-gray-100 dark:border-gray-700">
                     <button onClick={onClose} className="w-full py-2.5 text-[13px] font-semibold text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">
                         Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ─── Save Workbook Modal ─── */
+function SaveWorkbookModal({ open, onClose, defaultName, onSave }) {
+    const [fileName, setFileName] = useState(defaultName || '');
+    const [workbookId, setWorkbookId] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Reset state when modal opens
+    React.useEffect(() => {
+        if (open) {
+            setFileName(defaultName || '');
+            setWorkbookId('');
+            setIsSaving(false);
+        }
+    }, [open, defaultName]);
+
+    if (!open) return null;
+
+    const handleSave = () => {
+        if (!fileName.trim() || !workbookId) return;
+        setIsSaving(true);
+        setTimeout(() => {
+            onSave(fileName, workbookId);
+            setIsSaving(false);
+            onClose();
+        }, 1500); // Simulate network delay
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md" onClick={onClose}>
+            <div className="bg-white dark:bg-gray-800 border border-white/20 dark:border-gray-700 rounded-[28px] shadow-2xl w-full max-w-sm mx-4 overflow-hidden transform transition-all" onClick={(e) => e.stopPropagation()}>
+                <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-gray-50/50 to-white dark:from-gray-800 dark:to-gray-800">
+                    <h3 className="text-gray-800 dark:text-gray-100 font-bold text-lg flex items-center gap-2"><FolderPlus className="w-5 h-5 text-[#4A90D9]" /> Simpan ke Workbook</h3>
+                </div>
+
+                <div className="p-6 space-y-5">
+                    {/* File Name Field */}
+                    <div>
+                        <label className="text-[12px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block">Nama File</label>
+                        <input
+                            type="text"
+                            value={fileName}
+                            onChange={(e) => setFileName(e.target.value)}
+                            placeholder="Contoh: Draft Pendahuluan Skripsi"
+                            className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-[14px] rounded-xl px-4 py-2.5 outline-none focus:border-[#4A90D9] focus:ring-1 focus:ring-[#4A90D9] transition-all"
+                        />
+                    </div>
+
+                    {/* Workbook Selection */}
+                    <div>
+                        <label className="text-[12px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block">Pilih Workbook</label>
+                        <Select value={workbookId} onValueChange={setWorkbookId}>
+                            <SelectTrigger className="w-full bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl">
+                                <SelectValue placeholder="Pilih workbook tujuan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    {dummyWorkbooks.map((wb) => (
+                                        <SelectItem key={wb.id} value={wb.id}>{wb.name}</SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                <div className="p-5 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50/50 dark:bg-gray-800/80">
+                    <button
+                        onClick={onClose}
+                        disabled={isSaving}
+                        className="py-2.5 px-5 text-[14px] font-semibold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={!fileName.trim() || !workbookId || isSaving}
+                        className="py-2.5 px-6 text-[14px] font-bold text-white bg-gradient-to-r from-[#4A90D9] to-blue-500 hover:from-blue-500 hover:to-blue-600 shadow-md hover:shadow-lg transition-all rounded-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderPlus className="w-4 h-4" />}
+                        {isSaving ? 'Menyimpan...' : 'Simpan'}
                     </button>
                 </div>
             </div>
@@ -191,6 +280,8 @@ export default function AIWriterPage() {
     const [copied, setCopied] = useState(false);
     const [inputCollapsed, setInputCollapsed] = useState(false);
     const [downloadOpen, setDownloadOpen] = useState(false);
+    const [saveModalOpen, setSaveModalOpen] = useState(false);
+    const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
     const editorRef = useRef(null);
 
     const handleGenerate = () => {
@@ -261,21 +352,38 @@ export default function AIWriterPage() {
         setDownloadOpen(false);
     };
 
+    const handleSaveToWorkbook = (fileName, targetWorkbookId) => {
+        const wbName = dummyWorkbooks.find(wb => wb.id === targetWorkbookId)?.name;
+        // Logic to save goes here
+        setSaveSuccessMsg(`Berhasil disimpan sebagai "${fileName}" ke ${wbName}`);
+        setTimeout(() => setSaveSuccessMsg(''), 4000);
+    };
+
     return (
-        <div className="min-h-screen bg-[#f7f7f5] dark:bg-gray-900 flex flex-col items-center px-4 py-12 overflow-y-auto transition-colors duration-300">
+        <div className="min-h-screen relative flex flex-col items-center px-4 py-8 md:py-16 overflow-y-auto transition-colors duration-300 overflow-x-hidden">
+            {/* Background Decoration */}
+            <div className="absolute inset-0 z-0 bg-gradient-to-b from-blue-50/40 via-[#f7f7f5] to-[#f7f7f5] dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 pointer-events-none" />
+
+            {/* Soft Glow Orbs - Hidden on mobile, visible on md and up */}
+            <div className="hidden md:block absolute top-20 left-1/4 w-96 h-96 bg-blue-400/10 dark:bg-blue-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+            <div className="hidden md:block absolute top-40 right-1/4 w-80 h-80 bg-purple-400/5 dark:bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"></div>
 
             {/* Header */}
-            <div className="text-center mb-10 max-w-2xl">
-                <h1 className="text-3xl md:text-[42px] font-extrabold text-gray-800 dark:text-gray-100 tracking-tight leading-[1.2] mb-4">
+            <div className="text-center mb-8 md:mb-12 max-w-2xl relative z-10 mt-6 md:mt-0">
+                <div className="inline-flex items-center justify-center p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4 md:mb-6">
+                    <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-[#4A90D9]" />
+                </div>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight leading-[1.2] mb-3 md:mb-4 px-2">
                     AI Writer
                 </h1>
-                <p className="text-gray-500 dark:text-gray-400 text-[16px] leading-relaxed">
-                    Buat karya tulis ilmiah berkualitas tinggi dengan bantuan AI. Pilih jenis karya, bahasa, dan model AI favorit Anda.
+                <p className="text-gray-500 dark:text-gray-400 text-[14px] sm:text-[16px] md:text-[18px] leading-relaxed max-w-xl mx-auto px-4">
+                    Buat karya tulis ilmiah berkualitas tinggi dengan bantuan AI.
+                    <span className="hidden sm:inline"> Pilih jenis karya, bahasa, dan model AI favorit Anda.</span>
                 </p>
             </div>
 
             {/* Main Form Card */}
-            <div className="w-full max-w-3xl">
+            <div className="w-full max-w-3xl relative z-10">
 
                 {/* Collapsible Input Section */}
                 {isGenerated && (
@@ -292,47 +400,48 @@ export default function AIWriterPage() {
                     </button>
                 )}
 
-                <div className={`transition-all duration-300 ease-in-out overflow-hidden ${inputCollapsed ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100'}`}>
+                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${inputCollapsed ? 'max-h-0 opacity-0 transform -translate-y-4' : 'max-h-[2000px] opacity-100 transform translate-y-0'}`}>
                     {/* Topic Textarea */}
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden mb-4">
-                        <div className="p-5">
-                            <div className="flex items-center justify-between mb-3">
-                                <label className="text-[13px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Topik Penelitian</label>
+                    <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[20px] md:rounded-[24px] shadow-sm hover:shadow-md transition-shadow overflow-hidden mb-4 md:mb-6">
+                        <div className="p-4 md:p-6">
+                            <div className="flex items-center justify-between mb-3 md:mb-4">
+                                <label className="text-[12px] md:text-[13px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Topik Penelitian</label>
                                 <button
                                     type="button"
                                     onClick={() => setPromptOpen(true)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-[#4A90D9] bg-[#4A90D9]/10 border border-[#4A90D9]/20 rounded-lg hover:bg-[#4A90D9]/20 transition-colors"
+                                    className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 md:py-1.5 text-[11px] md:text-[12px] font-semibold text-[#4A90D9] bg-[#4A90D9]/10 border border-[#4A90D9]/20 rounded-lg md:rounded-xl hover:bg-[#4A90D9]/20 transition-colors"
                                 >
                                     <BookOpen className="w-3.5 h-3.5" />
-                                    Prompt Library
+                                    <span className="hidden xs:inline">Prompt Library</span>
+                                    <span className="xs:hidden">Prompt</span>
                                 </button>
                             </div>
                             <textarea
                                 value={topik}
                                 onChange={(e) => setTopik(e.target.value)}
-                                placeholder={'Masukkan topik penelitian dan kebutuhan Anda. Tambahkan konteks untuk hasil yang lebih berkualitas.\n\nContoh:\nTulis esai akademik tentang "Dampak Jangka Panjang Perubahan Iklim terhadap Ekosistem Laut."\nEsai harus menjelaskan bagaimana perubahan iklim mempengaruhi suhu laut, kenaikan permukaan air laut, dan keanekaragaman hayati laut dari waktu ke waktu.'}
-                                rows={6}
-                                className="w-full bg-transparent text-[15px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed"
+                                placeholder={'Masukkan topik penelitian dan kebutuhan Anda.\n\nContoh:\nTulis esai akademik tentang "Dampak Jangka Panjang Perubahan Iklim terhadap Ekosistem Laut."'}
+                                rows={5}
+                                className="w-full bg-transparent text-[14px] md:text-[15px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed"
                             />
                             <div className="flex items-center justify-end mt-2">
-                                <span className="text-[12px] text-gray-400">{topik.length}/12,000</span>
+                                <span className="text-[11px] md:text-[12px] text-gray-400">{topik.length}/12,000</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Dropdowns Row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
                         {/* Jenis Karya Tulis */}
-                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4">
-                            <label className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 block">Jenis Karya Tulis</label>
+                        <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[20px] p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow">
+                            <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">Jenis Karya</label>
                             <Select value={jenis} onValueChange={setJenis}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger className="w-full h-10 md:h-11 border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50">
                                     <SelectValue placeholder="Pilih jenis" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[300px]">
                                     <SelectGroup>
                                         {jenisKarya.map((j) => (
-                                            <SelectItem key={j} value={j}>{j}</SelectItem>
+                                            <SelectItem key={j} value={j} className="py-2.5 pl-8 pr-3">{j}</SelectItem>
                                         ))}
                                     </SelectGroup>
                                 </SelectContent>
@@ -340,16 +449,16 @@ export default function AIWriterPage() {
                         </div>
 
                         {/* Bagian Karya */}
-                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4">
-                            <label className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 block">Bagian Karya</label>
+                        <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[20px] p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow">
+                            <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">Bagian Karya</label>
                             <Select value={bagian} onValueChange={setBagian}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger className="w-full h-10 md:h-11 border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50">
                                     <SelectValue placeholder="Pilih bagian" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[300px]">
                                     <SelectGroup>
                                         {bagianKarya.map((b) => (
-                                            <SelectItem key={b} value={b}>{b}</SelectItem>
+                                            <SelectItem key={b} value={b} className="py-2.5 pl-8 pr-3">{b}</SelectItem>
                                         ))}
                                     </SelectGroup>
                                 </SelectContent>
@@ -357,10 +466,10 @@ export default function AIWriterPage() {
                         </div>
 
                         {/* Bahasa */}
-                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4">
-                            <label className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 block">Bahasa</label>
+                        <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[20px] p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow">
+                            <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">Bahasa</label>
                             <Select value={bahasa} onValueChange={setBahasa}>
-                                <SelectTrigger className="w-full focus:ring-1 focus:ring-blue-500">
+                                <SelectTrigger className="w-full h-10 md:h-11 border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 focus:ring-1 focus:ring-blue-500">
                                     <SelectValue placeholder="Pilih bahasa">
                                         <div className="flex items-center gap-2">
                                             <span className={`${LANGUAGES.find(l => l.text === bahasa)?.img || 'fi fi-id'} rounded-[2px] w-[22px] h-[16px] shadow-[0_0_2px_rgba(0,0,0,0.4)] block bg-cover bg-center`}></span>
@@ -372,7 +481,7 @@ export default function AIWriterPage() {
                                     <SelectGroup>
                                         <SelectLabel>Bahasa</SelectLabel>
                                         {LANGUAGES.map(lang => (
-                                            <SelectItem key={lang.text} value={lang.text} className="cursor-pointer py-2.5 px-3 hover:bg-blue-50 focus:bg-blue-50 dark:hover:bg-gray-700 dark:focus:bg-gray-700 transition-colors rounded-lg mx-1 my-0.5">
+                                            <SelectItem key={lang.text} value={lang.text} className="cursor-pointer py-2.5 pl-8 pr-3 hover:bg-blue-50 focus:bg-blue-50 dark:hover:bg-gray-700 dark:focus:bg-gray-700 transition-colors rounded-lg mx-1 my-0.5">
                                                 <div className="flex items-center gap-3">
                                                     <span className={`${lang.img} rounded-[2px] w-[22px] h-[16px] shadow-[0_0_2px_rgba(0,0,0,0.4)] block bg-cover bg-center`}></span>
                                                     <span className="font-medium text-gray-700 dark:text-gray-200">{lang.text.split(' (')[0]}</span>
@@ -389,22 +498,22 @@ export default function AIWriterPage() {
                     </div>
 
                     {/* Additional Instructions */}
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 mb-4">
-                        <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 block">
-                            Instruksi Tambahan <span className="text-gray-300 normal-case font-normal">(opsional)</span>
+                    <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[24px] p-4 md:p-6 mb-4 md:mb-6 shadow-sm hover:shadow-md transition-shadow">
+                        <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">
+                            Instruksi Tambahan <span className="text-gray-400 dark:text-gray-500 normal-case font-normal">(opsional)</span>
                         </label>
                         <textarea
                             value={instruksi}
                             onChange={(e) => setInstruksi(e.target.value)}
-                            placeholder="Tambahkan instruksi khusus, misalnya gaya penulisan, referensi yang harus digunakan, dll."
-                            rows={3}
-                            className="w-full bg-transparent text-[14px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed"
+                            placeholder="Tambahkan instruksi khusus..."
+                            rows={2}
+                            className="w-full bg-transparent text-[13px] md:text-[14px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed"
                         />
                     </div>
 
                     {/* Bottom Toolbar */}
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 mb-6">
-                        <div className="flex flex-wrap items-center gap-3">
+                    <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[20px] p-3 md:p-5 mb-6 md:mb-8 shadow-sm overflow-x-auto custom-scrollbar">
+                        <div className="flex items-center gap-2 md:gap-4 w-max min-w-full pb-1 md:pb-0">
                             <ToolbarSelect label="Model" icon={<Sparkles className="w-3.5 h-3.5 text-amber-500" />} options={modelOptions} value={model} onChange={setModel} />
                             <ToolbarSelect label="Jumlah" icon={<FileText className="w-3.5 h-3.5 text-blue-500" />} options={jumlahHasil} value={jumlah} onChange={setJumlah} />
                             <ToolbarSelect label="Maks" icon={<Ruler className="w-3.5 h-3.5 text-gray-500" />} options={panjangMaks} value={panjang} onChange={setPanjang} />
@@ -412,20 +521,17 @@ export default function AIWriterPage() {
                     </div>
 
                     {/* CTA Buttons */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-4 md:mb-6 px-1">
                         <button
                             onClick={handleGenerate}
                             disabled={isGenerating || !topik.trim()}
-                            className="relative group px-8 py-4 bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] text-white text-[15px] font-bold rounded-2xl shadow-[0_4px_20px_rgba(74,144,217,0.25)] hover:shadow-[0_4px_28px_rgba(74,144,217,0.4)] transition-all hover:scale-[1.02] overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            className="relative group w-full py-3.5 md:py-4 bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] text-white text-[14px] md:text-[15px] font-bold rounded-xl md:rounded-2xl shadow-md hover:shadow-lg transition-all hover:scale-[1.02] overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
                             <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
                             <span className="relative z-10 flex items-center justify-center gap-2">
                                 {isGenerating ? (
                                     <>
-                                        <svg className="animate-spin w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
                                         Menghasilkan...
                                     </>
                                 ) : (
@@ -438,13 +544,11 @@ export default function AIWriterPage() {
                                 )}
                             </span>
                         </button>
-                        <button className="px-8 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-[15px] font-bold rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 transition-all hover:scale-[1.02] shadow-sm">
-                            <span className="flex items-center justify-center gap-2">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 20V10" /><path d="M18 20V4" /><path d="M6 20v-4" />
-                                </svg>
-                                Generate Bertahap
-                            </span>
+                        <button className="w-full py-3.5 md:py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 text-[14px] md:text-[15px] font-bold rounded-xl md:rounded-2xl hover:bg-white dark:hover:bg-gray-700 hover:border-gray-300 transition-all shadow-sm flex items-center justify-center gap-2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 20V10" /><path d="M18 20V4" /><path d="M6 20v-4" />
+                            </svg>
+                            Generate Bertahap
                         </button>
                     </div>
                 </div>
@@ -480,27 +584,37 @@ export default function AIWriterPage() {
                 {isGenerated && (
                     <div className="mb-8">
                         {/* Editor Action Bar */}
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hasil</span>
-                                <span className="text-[11px] font-medium text-[#4A90D9] bg-[#4A90D9]/10 px-2 py-0.5 rounded-md">{bagian}</span>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 px-1 md:px-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[12px] md:text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hasil</span>
+                                <span className="text-[10px] md:text-[11px] font-medium text-[#4A90D9] bg-[#4A90D9]/10 px-2 py-0.5 rounded-md">{bagian}</span>
+                                {saveSuccessMsg && (
+                                    <span className="text-[11px] md:text-[12px] font-medium text-green-600 dark:text-green-400 animate-pulse bg-green-50 dark:bg-green-900/20 px-2 py-0.5 md:px-2.5 md:py-1 rounded-full whitespace-nowrap">
+                                        ✓ {saveSuccessMsg}
+                                    </span>
+                                )}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 custom-scrollbar">
+                                <button
+                                    onClick={() => setSaveModalOpen(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-[12px] md:text-[13px] font-bold text-white bg-gradient-to-r from-[#4A90D9] to-blue-500 shadow-md hover:shadow-lg rounded-[10px] md:rounded-xl transition-all active:scale-95 whitespace-nowrap"
+                                >
+                                    <FolderPlus className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Simpan ke Workbook</span>
+                                    <span className="sm:hidden">Simpan</span>
+                                </button>
                                 <button
                                     onClick={handleCopy}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-3 md:py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-[12px] font-medium text-gray-600 dark:text-gray-300 rounded-[10px] md:rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
                                 >
                                     {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                                    {copied ? 'Tersalin!' : 'Salin'}
                                 </button>
                                 <div className="relative">
                                     <button
                                         onClick={() => setDownloadOpen(!downloadOpen)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        className="flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-3 md:py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-[12px] font-medium text-gray-600 dark:text-gray-300 rounded-[10px] md:rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
                                     >
                                         <Download className="w-3.5 h-3.5" />
-                                        Unduh
-                                        <ChevronDown className="w-3 h-3" />
                                     </button>
                                     {downloadOpen && (
                                         <>
@@ -533,10 +647,10 @@ export default function AIWriterPage() {
                                 <button
                                     onClick={handleRegenerate}
                                     disabled={isGenerating}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-[#4A90D9] bg-[#4A90D9]/10 border border-[#4A90D9]/20 rounded-lg hover:bg-[#4A90D9]/20 transition-colors disabled:opacity-50"
+                                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-3 md:py-2 border border-orange-200 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[12px] font-medium rounded-[10px] md:rounded-xl hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-colors shadow-sm disabled:opacity-50"
                                 >
                                     <RotateCcw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
-                                    Regenerate
+                                    <span className="hidden sm:inline">Regenerate</span>
                                 </button>
                             </div>
                         </div>
@@ -569,27 +683,27 @@ export default function AIWriterPage() {
                     </div>
                 )}
 
-                {/* Example Cards (only when no result) */}
+                {/* Example Cards */}
                 {!isGenerated && !isGenerating && (
-                    <div>
-                        <h3 className="text-[13px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">Contoh Terbaru</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="mt-4 md:mt-8">
+                        <h3 className="text-[12px] md:text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3 md:mb-5 px-1 md:px-0">Ide Cemerlang</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 px-1 md:px-0">
                             {exampleCards.map((card, i) => (
                                 <button
                                     key={i}
                                     onClick={() => setTopik(card.title)}
-                                    className="group text-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 hover:border-[#4A90D9]/30 hover:shadow-md transition-all"
+                                    className="group text-left bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-white/40 dark:border-gray-700/50 rounded-[16px] md:rounded-[20px] p-5 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 block"
                                 >
-                                    <p className="text-[13px] text-gray-400 mb-1 flex items-center gap-1.5">
-                                        <span className="text-[#4A90D9] font-bold text-[11px] bg-[#4A90D9]/10 px-2 py-0.5 rounded-md">Contoh</span>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-blue-600 dark:text-blue-400 font-bold text-[10px] uppercase tracking-wider bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-[6px]">Ide Topik</span>
+                                    </div>
+                                    <p className="text-[13px] md:text-[14px] text-gray-800 dark:text-gray-200 font-semibold leading-snug mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-3">
+                                        "{card.title}"
                                     </p>
-                                    <p className="text-[14px] text-gray-700 dark:text-gray-200 font-medium leading-snug mb-3 group-hover:text-gray-900 dark:group-hover:text-white transition-colors line-clamp-2">
-                                        {card.title}
-                                    </p>
-                                    <p className="text-[12px] text-gray-400">
-                                        {card.jenis} · {card.bagian} · {card.bahasa}
-                                    </p>
-                                    <p className="text-[11px] text-gray-300 mt-1">{card.date}</p>
+                                    <div className="flex flex-wrap gap-1.5 mt-auto">
+                                        <span className="text-[10px] md:text-[11px] bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-[4px]">{card.jenis}</span>
+                                        <span className="text-[10px] md:text-[11px] bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-[4px]">{card.bagian}</span>
+                                    </div>
                                 </button>
                             ))}
                         </div>
@@ -602,6 +716,14 @@ export default function AIWriterPage() {
                 open={promptOpen}
                 onClose={() => setPromptOpen(false)}
                 onSelect={(prompt) => setTopik(prompt)}
+            />
+
+            {/* Save Workbook Modal */}
+            <SaveWorkbookModal
+                open={saveModalOpen}
+                onClose={() => setSaveModalOpen(false)}
+                defaultName={topik.slice(0, 50)} // Auto-fill with a snippet of the context/topic 
+                onSave={handleSaveToWorkbook}
             />
         </div>
     );
