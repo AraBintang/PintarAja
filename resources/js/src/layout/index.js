@@ -1,3 +1,3 @@
-export { default as Sidebar } from './Sidebar';
-export { default as SidebarLayout } from './SidebarLayout';
-export { SidebarProvider, useSidebar } from './SidebarContext';
+export { default as Sidebar } from './Sidebar'
+export { SidebarProvider, useSidebar } from '@/context/SidebarContext'
+export { default as SidebarLayout } from './SidebarLayout'

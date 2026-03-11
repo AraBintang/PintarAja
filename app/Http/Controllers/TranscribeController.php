@@ -1,0 +1,267 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\Transcribe;
+use Gemini\Laravel\Facades\Gemini;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
+class TranscribeController extends Controller
+{
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        $results = Transcribe::select([
+                'M_TranscribeID as id',
+                'M_TranscribeName as name',
+                'M_TranscribeData as data',
+                'M_TranscribeSource as source'
+            ])
+            ->where('M_TranscribeM_UserID', $user->M_UserID)
+            ->orderByDesc('M_TranscribeID')
+            ->get();
+
+        return response()->json($results);
+    }
+
+    private function splitAudio($audioPath)
+    {
+        $chunkDir = storage_path('app/audio_chunks/' . uniqid());
+
+        if (!file_exists($chunkDir)) {
+            mkdir($chunkDir, 0777, true);
+        }
+
+        $command = "ffmpeg -i " . escapeshellarg($audioPath) .
+            " -f segment -segment_time 600 -c copy " .
+            escapeshellarg($chunkDir . "/chunk_%03d.mp3") .
+            " 2>&1";
+
+        exec($command);
+
+        return glob($chunkDir . "/*.mp3");
+    }
+
+    private function transcribeWithGemini($audioPath)
+    {
+        $apiKey = config('services.gemini.key');
+
+        $audioData = base64_encode(file_get_contents($audioPath));
+
+        $ext = pathinfo($audioPath, PATHINFO_EXTENSION);
+
+        $mimeTypes = [
+            'mp3' => 'audio/mpeg',
+            'wav' => 'audio/wav',
+            'webm' => 'audio/webm',
+            'm4a' => 'audio/mp4'
+        ];
+
+        $mimeType = $mimeTypes[$ext] ?? 'audio/mpeg';
+
+        $payload = [
+            "contents" => [[
+                "parts" => [
+                    [
+                        "inlineData" => [
+                            "mimeType" => $mimeType,
+                            "data" => $audioData
+                        ]
+                    ],
+                    [
+                        "text" => "Please transcribe this audio with timestamps."
+                    ]
+                ]
+            ]]
+        ];
+
+        $response = Http::post(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
+            $payload
+        );
+
+        if (!$response->successful()) {
+            throw new \Exception("Gemini API failed: " . $response->body());
+        }
+
+        $result = $response->json();
+
+        return $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
+    }
+
+    public function transcribe(Request $request)
+    {
+        $request->validate([
+            'source' => 'required',
+            'video_url' => 'nullable|url',
+            'file' => 'nullable|file'
+        ]);
+
+        $source = $request->input('source');
+        $audioPath = null;
+
+
+        if ($source === 'youtube') {
+            $youtubeUrl = $request->video_url;
+
+            $filename = uniqid();
+            $audioTemplate = storage_path("app/audio/{$filename}.%(ext)s");
+
+            $ytDlp = "/home/baid/.local/bin/yt-dlp";
+
+            $command = $ytDlp .
+                " -f bestaudio --extract-audio --audio-format mp3 -o " .
+                escapeshellarg($audioTemplate) . " " .
+                escapeshellarg($youtubeUrl) .
+                " 2>&1";
+
+            exec($command, $output, $status);
+
+            if ($status !== 0) {
+                return response()->json([
+                    'error' => 'Failed to download audio',
+                    'log' => $output
+                ], 500);
+            }
+
+            $files = glob(storage_path("app/audio/{$filename}.*"));
+            $audioPath = $files[0] ?? null;
+
+            if (!$audioPath) {
+                return response()->json([
+                    'error' => 'Audio file not found'
+                ], 500);
+            }
+        }
+
+        if ($source === 'upload') {
+            $file = $request->file('file');
+
+            $filename = uniqid() . "." . $file->getClientOriginalExtension();
+            $path = $file->storeAs('uploads', $filename);
+            $fullPath = storage_path("app/$path");
+            $audioPath = storage_path("app/audio/" . uniqid() . ".mp3");
+
+            $command = "ffmpeg -i " .
+                escapeshellarg($fullPath) .
+                " -vn -acodec mp3 " .
+                escapeshellarg($audioPath) .
+                " 2>&1";
+
+            exec($command, $output, $status);
+
+            if ($status !== 0) {
+                return response()->json([
+                    'error' => 'Failed to extract audio',
+                    'log' => $output
+                ], 500);
+            }
+        }
+
+        if ($source === 'record') {
+            $file = $request->file('file');
+
+            $filename = uniqid() . ".webm";
+            $path = $file->storeAs('record', $filename);
+            $fullPath = storage_path("app/$path");
+            $audioPath = storage_path("app/audio/" . uniqid() . ".mp3");
+
+            $command = "ffmpeg -i " .
+                escapeshellarg($fullPath) .
+                " -vn -acodec mp3 " .
+                escapeshellarg($audioPath) .
+                " 2>&1";
+
+            exec($command, $output, $status);
+
+            if ($status !== 0) {
+                return response()->json([
+                    'error' => 'Failed to process record audio',
+                    'log' => $output
+                ], 500);
+            }
+        }
+
+        $maxSize = 20 * 1024 * 1024;
+
+        if (filesize($audioPath) <= $maxSize) {
+            $transcript = $this->transcribeWithGemini($audioPath);
+        } else {
+            $chunks = $this->splitAudio($audioPath);
+
+            $transcriptParts = [];
+
+            foreach ($chunks as $chunk) {
+                $text = $this->transcribeWithGemini($chunk);
+
+                $transcriptParts[] = $text;
+
+                unlink($chunk);
+            }
+
+            $transcript = implode("\n\n", $transcriptParts);
+        }
+
+        $user = $request->user();
+
+        Transcribe::create([
+            'M_TranscribeM_UserID' => $user->M_UserID,
+            'M_TranscribeName' => 'Transcribe ' . now()->format('Y-m-d H:i'),
+            'M_TranscribeData' => $transcript,
+            'M_TranscribeSource' => $source
+        ]);
+
+
+        if ($audioPath && file_exists($audioPath)) {
+            unlink($audioPath);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $transcript
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255'
+        ]);
+
+        $transcribe = Transcribe::where('M_TranscribeID', $id)->first();
+
+        if (!$transcribe) {
+            return response()->json([
+                'message' => 'Data not found.'
+            ], 404);
+        }
+
+        $transcribe->update([
+            'M_TranscribeName' => $validated['name']
+        ]);
+
+        return response()->json([
+            'message' => 'Updated successfully.'
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $transcribe = Transcribe::findOrFail($id);
+
+         if (!$transcribe) {
+            return response()->json([
+                'message' => 'Data not found.'
+            ], 404);
+        }
+
+        $transcribe->delete();
+
+        return response()->json([
+            'message' => 'Deleted successfully'
+        ]);
+    }
+}
