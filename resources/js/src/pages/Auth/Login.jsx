@@ -16,8 +16,8 @@ export default function Login() {
   const [error, setError] = useState(null)
 
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('johndoe@gmail.com')
+  const [password, setPassword] = useState('Aa1234567890')
   const [remember, setRemember] = useState(true)
 
   const handleSubmit = async (e) => {

@@ -136,16 +136,16 @@ export default function ParafrasePage() {
 
   return (
     <div className="flex flex-col h-full bg-[#f7f7f5] dark:bg-[#0f141e] overflow-y-auto overflow-x-hidden pt-0 pb-10 px-6 max-w-full">
-      <div className="max-w-[1200px] mx-auto w-full text-center my-6">
+      <div className="max-w-[1200px] mx-auto w-full z-10 text-center my-6">
         <div className=" flex flex-col items-center justify-center gap-2">
           <div className="w-12 h-12 bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 rounded-xl flex items-center justify-center">
             <Hash className="w-6 h-6 text-gray-500 dark:text-gray-400" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-800 dark:text-gray-100">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-2">
             Parafrase AI
           </h1>
         </div>
-        <p className="text-gray-500 dark:text-gray-400 text-[16px] leading-relaxed">
+        <p className="text-gray-500 dark:text-gray-400 text-[16px] leading-relaxed max-w-xl mx-auto px-4">
           Susun ulang teks Anda untuk meningkatkan keterbacaan dan menghindari plagiarisme.
         </p>
       </div>
