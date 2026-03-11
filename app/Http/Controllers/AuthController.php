@@ -63,7 +63,6 @@ class AuthController extends Controller
             'userName' => 'required|string',
             'email' => 'required|email',
             'password' => 'required|min:8',
-            'phone' => 'required',
         ]);
 
         $user = User::where('M_UserEmail', $credentials['email'])->first();
@@ -78,7 +77,6 @@ class AuthController extends Controller
             'M_UserEmail' => $credentials['email'],
             'M_UserPassword' => Hash::make($credentials['password']),
             'M_UserFullName' => $credentials['userName'],
-            'M_UserPhone' => $credentials['phone'],
         ]);
 
         $otp = random_int(100000, 999999);

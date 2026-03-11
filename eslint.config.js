@@ -53,6 +53,8 @@ export default [
       },
     },
     rules: {
+      "no-undef": "off",
+
       'react/prop-types': 'off',
 
       'react-hooks/rules-of-hooks': 'error',

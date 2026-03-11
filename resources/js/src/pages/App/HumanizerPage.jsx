@@ -1,85 +1,85 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom'
 
 export default function HumanizerPage() {
-    return (
-        <div className="flex flex-col h-full bg-[#f7f7f5] dark:bg-gray-900 p-6 md:p-12 relative overflow-hidden transition-colors duration-300">
-            {/* Background Grid & Elements */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                {/* Dotted Grid */}
-                <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] text-gray-900 dark:text-white" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+  return (
+    <div className="flex flex-col h-full bg-[#f7f7f5] dark:bg-[#0f141e] p-6 md:p-12 relative overflow-hidden transition-colors duration-300">
+      {/* Background Grid & Elements */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Dotted Grid */}
+        <div
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] text-gray-900 dark:text-white"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)',
+            backgroundSize: '32px 32px',
+          }}
+        />
 
-                {/* Glows */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/10 dark:bg-orange-500/5 rounded-full blur-[100px] pointer-events-none transition-colors duration-300" />
+        {/* Glows */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/10 dark:bg-orange-500/5 rounded-full blur-[100px] pointer-events-none transition-colors duration-300" />
 
-                {/* Floating Particles */}
-                <div className="absolute top-1/4 left-1/4 w-3 h-3 rounded-full bg-orange-500/40 animate-blob" />
-                <div className="absolute top-1/3 right-1/4 w-4 h-4 rounded-full bg-amber-500/40 animate-float" style={{ animationDelay: '-2s' }} />
-                <div className="absolute bottom-1/4 left-1/3 w-2 h-2 rounded-full bg-orange-600/60 animate-pulse" />
-                <div className="absolute bottom-1/3 right-1/3 w-5 h-5 rounded-full bg-yellow-500/30 animate-blob" style={{ animationDelay: '-4s' }} />
-                <div className="absolute top-10 right-10 w-24 h-24 rounded-full border border-orange-500/20 animate-float" style={{ animationDelay: '-1s' }} />
-                <div className="absolute bottom-10 left-10 w-32 h-32 rounded-full border border-orange-500/20 animate-float" style={{ animationDelay: '-3s' }} />
-            </div>
+        {/* Floating Particles */}
+        <div className="absolute top-1/4 left-1/4 w-3 h-3 rounded-full bg-orange-500/40 animate-blob" />
+        <div
+          className="absolute top-1/3 right-1/4 w-4 h-4 rounded-full bg-amber-500/40 animate-float"
+          style={{ animationDelay: '-2s' }}
+        />
+        <div className="absolute bottom-1/4 left-1/3 w-2 h-2 rounded-full bg-orange-600/60 animate-pulse" />
+        <div
+          className="absolute bottom-1/3 right-1/3 w-5 h-5 rounded-full bg-yellow-500/30 animate-blob"
+          style={{ animationDelay: '-4s' }}
+        />
+        <div
+          className="absolute top-10 right-10 w-24 h-24 rounded-full border border-orange-500/20 animate-float"
+          style={{ animationDelay: '-1s' }}
+        />
+        <div
+          className="absolute bottom-10 left-10 w-32 h-32 rounded-full border border-orange-500/20 animate-float"
+          style={{ animationDelay: '-3s' }}
+        />
+      </div>
 
-            <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-12 z-10 max-w-6xl mx-auto w-full relative">
-                {/* Text Content */}
-                <div className="flex-1 text-center md:text-left animate-in fade-in slide-in-from-left duration-700">
-                    <h1 className="text-6xl md:text-8xl font-black mb-4 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500 dark:from-orange-400 dark:to-yellow-400 transition-colors duration-300 pb-2">
-                        Coming<br />Soon!
-                    </h1>
-                    <p className="text-xl md:text-2xl font-medium mb-8 text-gray-600 dark:text-gray-400 max-w-md mx-auto md:mx-0 transition-colors duration-300">
-                        Halaman ini masih dalam tahap pengembangan. Fitur unggulan kami akan segera hadir!
-                    </p>
-                    <Link
-                        to="/app/chat"
-                        className="inline-block px-10 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full text-sm tracking-wider uppercase shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all"
-                    >
-                        Go AI Chat
-                    </Link>
-                </div>
-
-                {/* Illustration */}
-                <div className="flex-1 relative animate-in fade-in slide-in-from-right duration-700 max-w-md mx-auto">
-                    <div className="relative z-10 drop-shadow-2xl dark:drop-shadow-[0_20px_25px_rgba(0,0,0,0.5)] animate-float">
-                        <svg viewBox="0 0 500 500" className="w-full h-auto drop-shadow-sm">
-                            <path
-                                d="M50 250 L450 100 L300 400 L240 300 L50 250 Z"
-                                fill="white"
-                                stroke="#1f2937"
-                                strokeWidth="8"
-                                strokeLinejoin="round"
-                                className="dark:stroke-gray-300 dark:fill-gray-800 transition-colors duration-300"
-                            />
-                            <path
-                                d="M240 300 L450 100 L320 280 L240 300 Z"
-                                fill="#e5e7eb"
-                                stroke="#1f2937"
-                                strokeWidth="8"
-                                strokeLinejoin="round"
-                                className="dark:stroke-gray-300 dark:fill-gray-700 transition-colors duration-300"
-                            />
-                            <path
-                                d="M240 300 L320 280 L300 400 L240 300 Z"
-                                fill="#d1d5db"
-                                stroke="#1f2937"
-                                strokeWidth="8"
-                                strokeLinejoin="round"
-                                className="dark:stroke-gray-300 dark:fill-gray-600 transition-colors duration-300"
-                            />
-                        </svg>
-                    </div>
-                </div>
-            </div>
+      <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-12 z-10 max-w-6xl mx-auto w-full relative">
+        {/* Text Content */}
+        <div className="flex-1 text-center md:text-left animate-in fade-in slide-in-from-left duration-700">
+          <h1 className="text-6xl md:text-8xl font-black mb-4 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500 dark:from-orange-400 dark:to-yellow-400 transition-colors duration-300 pb-2">
+            Coming
+            <br />
+            Soon!
+          </h1>
+          <p className="text-xl md:text-2xl font-medium mb-8 text-gray-600 dark:text-gray-400 max-w-md mx-auto md:mx-0 transition-colors duration-300">
+            Halaman ini masih dalam tahap pengembangan. Fitur unggulan kami akan segera hadir!
+          </p>
+          <Link
+            to="/chat"
+            className="inline-block px-10 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full text-sm tracking-wider uppercase shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all"
+          >
+            Go to AI Chat
+          </Link>
         </div>
-    );
+
+        {/* Illustration */}
+        <div className="flex-1 relative animate-in fade-in slide-in-from-right duration-700 max-w-md mx-auto">
+          <div className="relative z-10 drop-shadow-2xl dark:drop-shadow-[0_20px_25px_rgba(0,0,0,0.5)] animate-float">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="240"
+              width="240"
+              viewBox="0 0 640 640"
+              fill="currentColor"
+            >
+              <path d="M568.4 37.7C578.2 34.2 589 36.7 596.4 44C603.8 51.3 606.2 62.2 602.7 72L424.7 568.9C419.7 582.8 406.6 592 391.9 592C377.7 592 364.9 583.4 359.6 570.3L295.4 412.3C290.9 401.3 292.9 388.7 300.6 379.7L395.1 267.3C400.2 261.2 399.8 252.3 394.2 246.7C388.6 241.1 379.6 240.7 373.6 245.8L261.2 340.1C252.1 347.7 239.6 349.7 228.6 345.3L70.1 280.8C57 275.5 48.4 262.7 48.4 248.5C48.4 233.8 57.6 220.7 71.5 215.7L568.4 37.7z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 //
 // import { Copy, RotateCcw, Upload, ChevronDown, UserCheck, Languages, MoreVertical } from 'lucide-react';
 // import mammoth from 'mammoth';
 // import { NavLink } from 'react-router-dom';
-
-
 
 // const AssistantIcon = ({ className }) => (
 //     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -178,7 +178,7 @@ export default function HumanizerPage() {
 //     };
 
 //     return (
-//         <div className="flex flex-col h-full bg-[#f7f7f5] dark:bg-gray-900 overflow-y-auto overflow-x-hidden pt-0 pb-10">
+//         <div className="flex flex-col h-full bg-[#f7f7f5] dark:bg-[#0f141e] overflow-y-auto overflow-x-hidden pt-0 pb-10">
 //             <div className="max-w-[1200px] mx-auto w-full mb-6 mt-6 px-6 md:px-8">
 //                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
 //                     <AssistantIcon className="w-6 h-6 text-orange-500" />
@@ -378,4 +378,3 @@ export default function HumanizerPage() {
 //         </div>
 //     );
 // }
-

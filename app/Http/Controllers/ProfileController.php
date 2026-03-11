@@ -14,7 +14,22 @@ class ProfileController extends Controller
 {
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        $user = $request->user();
+
+        return response()->json([
+            'id' => $user->M_UserID,
+            'email' => $user->M_UserEmail,
+            'name' => $user->M_UserFullName,
+            'image' => $user->M_UserImage,
+            'phone' => $user->M_UserPhone,
+            'role' => $user->M_UserRole,
+            'plan' => $user->M_UserPlan,
+            'is_active' => $user->M_UserIsActive === 'Y',
+            'email_verified_at' => $user->M_UserEmailVerifiedAt,
+            'subscription_expired_at' => $user->M_UserSubsExp,
+            'created_at' => $user->M_UserCreated,
+            'updated_at' => $user->M_UserLastUpdated,
+        ]);
     }
 
     public function update(Request $request)

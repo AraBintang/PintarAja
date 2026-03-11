@@ -1,7 +1,8 @@
 import { RouterProvider } from 'react-router-dom'
-import 'flag-icons/css/flag-icons.min.css'
-import { router } from '@/routes/router'
+
 import { ThemeProvider } from '@/context/ThemeContext'
+import { router } from '@/routes/Router'
+import 'flag-icons/css/flag-icons.min.css'
 
 export default function App() {
   return (

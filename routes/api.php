@@ -30,7 +30,7 @@ Route::middleware('guest:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::prefix('profile')->group(function () {
+    Route::prefix('profiles')->group(function () {
         Route::get('/', [ProfileController::class, 'me']);
         Route::put('/', [ProfileController::class, 'update']);
         Route::put('/password', [ProfileController::class, 'changePassword']);
