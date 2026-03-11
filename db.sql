@@ -281,8 +281,7 @@ CREATE TABLE `m_user` (
 
 INSERT INTO `m_user` (`M_UserID`, `M_UserEmail`, `M_UserEmailVerifiedAt`, `M_UserToken`, `M_UserFullName`, `M_UserImage`, `M_UserPhone`, `M_UserPassword`, `M_UserIsActive`, `M_UserRole`, `M_UserPlan`, `M_UserSubsExp`, `M_UserCreated`, `M_UserLastUpdated`) VALUES
 (1,	'dahyun@gmail.com',	'2026-03-02 09:28:38',	'WGmx2QpNSjTgvOPo3PBIX3uGoT7ALWEMkksAhsIwLqyDSFyiqm6FAeqHG67piPEN',	'Kim Dahyun',	'1736910131.jpeg',	'+82',	'$2y$12$j7O84ba4ZSZhW8iQygDwaeqvX5eOYUvL4z05aDk12s95Yqz/bGLBy',	'Y',	'U',	1,	NULL,	'2024-12-04 08:27:54',	'2026-03-02 12:00:26'),
-(2,	'johndoe@gmail.com',	'2026-03-02 09:28:38',	'TYYXZUHuCOMjBMBjJvw02QDff8r9THmla29FijzgXpVjqAnyiQ0i7fPq6Ptdd7i8',	'Johny Racing 200',	'1737102103.jpg',	'0987654321',	'$2y$12$2xb687fB9DzLzzVDOD00buTX7Y6yZguoJG/5rOlyC6CHSinh7dAUq',	'Y',	'A',	2,	'2026-11-28 16:04:04',	'2024-12-04 08:27:54',	'2026-03-05 11:05:27'),
-(5,	'ubaid.namaku@gmail.com',	'2026-03-02 09:28:38',	'SP2mHnd3hW5QdA2u2SBoCJztH8wPUBtA5OtwN8dqWFXmFnaSunvDMup1MSGv3fzg',	NULL,	NULL,	NULL,	NULL,	'Y',	'U',	1,	NULL,	'2026-03-02 09:16:52',	'2026-03-02 10:07:26');
+(2,	'johndoe@gmail.com',	'2026-03-02 09:28:38',	'TYYXZUHuCOMjBMBjJvw02QDff8r9THmla29FijzgXpVjqAnyiQ0i7fPq6Ptdd7i8',	'Johny Racing 200',	'1737102103.jpg',	'0987654321',	'$2y$12$2xb687fB9DzLzzVDOD00buTX7Y6yZguoJG/5rOlyC6CHSinh7dAUq',	'Y',	'A',	2,	'2026-11-28 16:04:04',	'2024-12-04 08:27:54',	'2026-03-05 11:05:27');
 
 DROP TABLE IF EXISTS `m_workbook`;
 CREATE TABLE `m_workbook` (

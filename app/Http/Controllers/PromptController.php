@@ -12,13 +12,19 @@ class PromptController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = 10;
+        $perPage = (int) $request->input('per_page', 10);
         $page = max(1, (int) $request->input('page', 1));
         $search = $request->input('search');
 
         $query = Prompt::with(['paper', 'section'])
             ->when($search, function ($q) use ($search) {
                 $q->where('M_PromptName', 'like', "%{$search}%");
+            })
+            ->when($request->filled('paperId'), function ($q) use ($request) {
+                $q->where('M_PromptM_PaperID', $request->paperId);
+            })
+            ->when($request->filled('sectionId'), function ($q) use ($request) {
+                $q->where('M_PromptM_SectionID', $request->sectionId);
             })
             ->orderBy('M_PromptID', 'desc');
 
@@ -34,31 +40,34 @@ class PromptController extends Controller
                 'sectionId' => $prompt->M_PromptM_SectionID,
                 'sectionName' => optional($prompt->section)->M_SectionName,
                 'createdAt' => $prompt->M_PromptCreated,
-                'updatedAt' => $prompt->M_PromptLastUpdated
+                'updatedAt' => $prompt->M_PromptLastUpdated,
             ];
         });
 
-        $papers = Paper::select(
-            'M_PaperID as id',
-            'M_PaperName as name'
-        )->orderBy('M_PaperName')->get();
+        $papers = Paper::select('M_PaperID as id', 'M_PaperName as name')
+            ->orderBy('M_PaperName')
+            ->get();
 
-        $sections = Section::select(
-            'M_SectionID as id',
-            'M_SectionName as name'
-        )->orderBy('M_SectionName')
-         ->get();
+        $sections = Section::select('M_SectionID as id', 'M_SectionName as name')
+            ->orderBy('M_SectionName')
+            ->get();
+
+        $summary = [
+            'total' => Prompt::count(),
+            'papers' => Paper::count(),
+        ];
 
         return response()->json([
             'data' => $data,
             'papers' => $papers,
             'sections' => $sections,
+            'summary' => $summary,
             'pagination' => [
                 'current_page' => $paginated->currentPage(),
                 'per_page' => $paginated->perPage(),
                 'total' => $paginated->total(),
-                'last_page' => $paginated->lastPage()
-            ]
+                'last_page' => $paginated->lastPage(),
+            ],
         ]);
     }
 
@@ -68,22 +77,19 @@ class PromptController extends Controller
             'paperId' => 'required|integer',
             'sectionId' => 'required|integer',
             'name' => 'required|string',
-            'value' => 'required|string'
+            'value' => 'required|string',
         ]);
 
-        $prompt = Prompt::create([
+        Prompt::create([
             'M_PromptM_PaperID' => $validated['paperId'],
             'M_PromptM_SectionID' => $validated['sectionId'],
             'M_PromptName' => $validated['name'],
             'M_PromptValue' => $validated['value'],
             'M_PromptCreated' => now(),
-            'M_PromptLastUpdated' => now()
+            'M_PromptLastUpdated' => now(),
         ]);
 
-        return response()->json([
-            'message' => 'Prompt created',
-            'data' => $prompt
-        ], 201);
+        return response()->json(['message' => 'Prompt created'], 201);
     }
 
     public function update(Request $request, $id)
@@ -94,7 +100,7 @@ class PromptController extends Controller
             'paperId' => 'required|integer',
             'sectionId' => 'required|integer',
             'name' => 'required|string',
-            'value' => 'required|string'
+            'value' => 'required|string',
         ]);
 
         $prompt->update([
@@ -102,29 +108,16 @@ class PromptController extends Controller
             'M_PromptM_SectionID' => $validated['sectionId'],
             'M_PromptName' => $validated['name'],
             'M_PromptValue' => $validated['value'],
-            'M_PromptLastUpdated' => now()
+            'M_PromptLastUpdated' => now(),
         ]);
 
-        return response()->json([
-            'message' => 'Prompt updated',
-            'data' => $prompt
-        ]);
+        return response()->json(['message' => 'Prompt updated']);
     }
 
     public function destroy($id)
     {
-        $prompt = Prompt::findOrFail($id);
+        Prompt::findOrFail($id)->delete();
 
-        if (!$prompt) {
-            return response()->json([
-                'message' => 'Data not found.'
-            ], 404);
-        }
-
-        $prompt->delete();
-
-        return response()->json([
-            'message' => 'Prompt deleted'
-        ]);
+        return response()->json(['message' => 'Prompt deleted']);
     }
 }

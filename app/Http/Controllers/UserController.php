@@ -18,7 +18,8 @@ class UserController extends Controller
 
         $query = User::query()
             ->when($search, function ($q) use ($search) {
-                $q->where('M_UserFullName', 'like', "%{$search}%");
+                $q->where('M_UserFullName', 'like', "%{$search}%")
+                  ->orWhere('M_UserEmail', 'like', "%{$search}%");
             })
             ->when($request->filled('role'), function ($q) use ($request) {
                 $q->where('M_UserRole', $request->role);
@@ -29,12 +30,20 @@ class UserController extends Controller
             ->when($request->filled('status'), function ($q) use ($request) {
                 $q->where('M_UserIsActive', $request->status);
             })
-            ->orderBy('M_UserID', 'desc');
+            ->orderBy('M_UserID', 'asc');
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
             'data' => $paginated->items(),
+
+            'summary' => [
+                'total' => User::count(),
+                'active' => User::where('M_UserIsActive', 'Y')->count(),
+                'admin' => User::where('M_UserRole', 'A')->count(),
+                'premium' => User::where('M_UserPlan', '!=', 1)->count(),
+            ],
+
             'pagination' => [
                 'current_page' => $paginated->currentPage(),
                 'per_page' => $paginated->perPage(),

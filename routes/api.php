@@ -115,7 +115,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/', [SettingAiController::class, 'store']);
             Route::put('/{id}', [SettingAiController::class, 'update']);
             Route::put('/activate/{id}', [SettingAiController::class, 'activate']);
-            Route::put('/deactivate{id}', [SettingAiController::class, 'deactivate']);
+            Route::put('/deactivate/{id}', [SettingAiController::class, 'deactivate']);
             Route::delete('/{id}', [SettingAiController::class, 'destroy']);
         });
 

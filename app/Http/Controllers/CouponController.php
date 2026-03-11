@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
 use App\Models\Coupons;
+use App\Models\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -42,14 +43,32 @@ class CouponController extends Controller
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
-        $plans = DB::table('m_plan')
+        $plans = Plan::query()
             ->select('M_PlanID as id', 'M_PlanName as name')
-            ->orderBy('M_PlanName')
+            ->orderBy('M_PlanID', 'desc')
             ->get();
+
+        $now = now();
+
+        $summary = [
+            'total' => Coupon::count(),
+            'used' => Coupon::where('M_CouponUsed', 'Y')->count(),
+           'active' => Coupon::where('M_CouponUsed', 'N')
+                ->where(function ($q) {
+                    $q->whereNull('M_CouponExpired')
+                      ->orWhereDate('M_CouponExpired', '>=', now());
+                })
+                ->count(),
+           'expired' => Coupon::where('M_CouponUsed', 'N')
+                ->whereNotNull('M_CouponExpired')
+                ->whereDate('M_CouponExpired', '<', now())
+                ->count(),
+        ];
 
         return response()->json([
             'data' => $paginated->items(),
             'plans' => $plans,
+            'summary' => $summary,
             'pagination' => [
                 'current_page' => $paginated->currentPage(),
                 'per_page' => $paginated->perPage(),

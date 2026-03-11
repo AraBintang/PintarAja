@@ -3,22 +3,23 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Clock,
   Copy,
   Crown,
   Diamond,
   Filter,
   Plus,
   Search,
+  Sparkles,
   Tag,
   Ticket,
   Trash2,
-  X,
   XCircle,
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
 
+import CouponForm from '@/components/coupon/CouponForm'
+import DeleteModal from '@/components/DeleteModal'
 import {
   Select,
   SelectContent,
@@ -27,202 +28,131 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useSnackbar } from '@/context/SnackbarContext'
+import { useCoupons } from '@/helpers/useCoupons'
+import { Debounce } from '@/utils/Debounce'
 
-const MOCK_COUPONS = [
-  {
-    id: 1,
-    code: '2G96Y2679G',
-    type: 'Premium 30 Hari',
-    expired: '2026-04-03',
-    used: '-',
-    createdAt: '2026-03-03 12:45:49',
-    status: 'active',
-  },
-  {
-    id: 2,
-    code: 'LUVM4TNQLD',
-    type: 'Premium 7 Hari',
-    expired: '~',
-    used: 'sekolahonline55@gmail.com',
-    createdAt: '2026-03-03 09:50:06',
-    status: 'used',
-  },
-  {
-    id: 3,
-    code: 'Y43P6KSF8K',
-    type: 'Premium 7 Hari',
-    expired: '-',
-    used: 'ubaid.namaku@gmail.com',
-    createdAt: '2026-02-27 11:33:09',
-    status: 'used',
-  },
-  {
-    id: 4,
-    code: 'GA3MB3HYPL',
-    type: 'Premium 7 Hari',
-    expired: '2026-02-15',
-    used: '-',
-    createdAt: '2026-02-15 07:24:13',
-    status: 'expired',
-  },
-  {
-    id: 5,
-    code: '4EVT36EC3T',
-    type: 'Premium 1 Tahun',
-    expired: '2026-02-06',
-    used: '-',
-    createdAt: '2026-02-06 13:04:00',
-    status: 'expired',
-  },
-  {
-    id: 6,
-    code: 'X9MG3L4V2K',
-    type: 'Premium 7 Hari',
-    expired: '2026-02-06',
-    used: '-',
-    createdAt: '2026-02-06 13:03:10',
-    status: 'expired',
-  },
-  {
-    id: 7,
-    code: 'ME9BSUJZYN',
-    type: 'Premium 30 Hari',
-    expired: '~',
-    used: 'dindaarista1520@gmail.com',
-    createdAt: '2026-02-02 23:05:33',
-    status: 'used',
-  },
-  {
-    id: 8,
-    code: 'BB8JMB88VZ',
-    type: 'Premium 7 Hari',
-    expired: '2026-01-30',
-    used: '-',
-    createdAt: '2026-01-30 22:23:39',
-    status: 'expired',
-  },
-  {
-    id: 9,
-    code: '4AE66XQSVG',
-    type: 'Premium 30 Hari',
-    expired: '2026-01-22',
-    used: '-',
-    createdAt: '2026-01-22 19:39:35',
-    status: 'expired',
-  },
-  {
-    id: 10,
-    code: 'BDVDH44LG3',
-    type: 'Premium 30 Hari',
-    expired: '~',
-    used: 'gustinaresiyanti@gmail.com',
-    createdAt: '2026-01-22 09:51:43',
-    status: 'used',
-  },
-]
+const PAGE_SIZE = 10
 
-/* ─── Helper: status styling ─── */
 function getStatusConfig(status) {
   switch (status) {
     case 'active':
       return {
         label: 'Aktif',
-        icon: CheckCircle2,
-        bg: 'bg-emerald-50',
-        text: 'text-emerald-700',
-        border: 'border-emerald-100',
+        bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+        text: 'text-emerald-700 dark:text-emerald-400',
+        border: 'border-emerald-100 dark:border-emerald-900/30',
         dot: 'bg-emerald-500',
+        pulse: true,
       }
     case 'used':
       return {
         label: 'Digunakan',
-        icon: CheckCircle2,
-        bg: 'bg-blue-50',
-        text: 'text-blue-700',
-        border: 'border-blue-100',
-        dot: 'bg-blue-500',
-      }
-    case 'expired':
-      return {
-        label: 'Kadaluarsa',
-        icon: XCircle,
-        bg: 'bg-gray-50 dark:bg-gray-700',
-        text: 'text-gray-500 dark:text-gray-400',
-        border: 'border-gray-100 dark:border-gray-700',
-        dot: 'bg-gray-400',
+        bg: 'bg-blue-50 dark:bg-orange-900/20',
+        text: 'text-blue-700 dark:text-orange-400',
+        border: 'border-blue-100 dark:border-orange-900/30',
+        dot: 'bg-blue-500 dark:bg-orange-400',
+        pulse: false,
       }
     default:
       return {
-        label: status,
-        icon: Clock,
+        label: 'Kadaluarsa',
         bg: 'bg-gray-50 dark:bg-gray-700',
         text: 'text-gray-500 dark:text-gray-400',
-        border: 'border-gray-200 dark:border-gray-600',
+        border: 'border-gray-100 dark:border-gray-600',
         dot: 'bg-gray-400',
+        pulse: false,
       }
   }
 }
 
-/* ─── Helper: type badge color ─── */
-function getTypeBadge(type) {
-  if (type.includes('1 Tahun'))
+function getTypeBadge(planDays = '') {
+  if (planDays >= 180)
     return {
-      bg: 'bg-gradient-to-r from-amber-50 to-orange-50',
-      text: 'text-amber-700',
-      border: 'border-amber-100',
+      bg: 'bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20',
+      text: 'text-amber-700 dark:text-amber-400',
+      border: 'border-amber-100 dark:border-amber-900/30',
       Icon: Crown,
     }
-  if (type.includes('30 Hari'))
+  if (planDays >= 90)
     return {
-      bg: 'bg-gradient-to-r from-violet-50 to-purple-50',
-      text: 'text-violet-700',
-      border: 'border-violet-100',
+      bg: 'bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20',
+      text: 'text-amber-700 dark:text-amber-400',
+      border: 'border-amber-100 dark:border-amber-900/30',
+      Icon: Sparkles,
+    }
+  if (planDays >= 30)
+    return {
+      bg: 'bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20',
+      text: 'text-violet-700 dark:text-violet-400',
+      border: 'border-violet-100 dark:border-violet-900/30',
       Icon: Diamond,
     }
   return {
-    bg: 'bg-gradient-to-r from-blue-50 to-cyan-50',
-    text: 'text-blue-700',
-    border: 'border-blue-100',
+    bg: 'bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20',
+    text: 'text-blue-700 dark:text-orange-400',
+    border: 'border-blue-100 dark:border-orange-900/30',
     Icon: Zap,
   }
 }
 
+function deriveCouponStatus(coupon) {
+  if (coupon.used === 'Y' || coupon.userEmail) return 'used'
+  if (coupon.expired && coupon.expired !== '-' && coupon.expired !== '~') {
+    if (new Date(coupon.expired) < new Date()) return 'expired'
+  }
+  return 'active'
+}
+
 export default function CouponPage() {
+  const { showSnackbar } = useSnackbar()
+
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const [filterStatus, setFilterStatus] = useState('')
+  const [page, setPage] = useState(1)
   const [copiedId, setCopiedId] = useState(null)
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
-  const totalCoupons = MOCK_COUPONS.length
-  const activeCoupons = MOCK_COUPONS.filter((c) => c.status === 'active').length
-  const usedCoupons = MOCK_COUPONS.filter((c) => c.status === 'used').length
-  const expiredCoupons = MOCK_COUPONS.filter((c) => c.status === 'expired').length
+  const debouncedSearch = Debounce(searchQuery, 400)
+
+  const { coupons, plans, pagination, summary, loading, createCoupon, deleteCoupon } = useCoupons({
+    search: debouncedSearch,
+    page,
+    perPage: PAGE_SIZE,
+  })
+
+  const displayCoupons = filterStatus
+    ? coupons.filter((c) => deriveCouponStatus(c) === filterStatus)
+    : coupons
 
   const stats = [
     {
       label: 'Total Kupon',
-      value: totalCoupons,
+      value: summary.total,
       icon: Ticket,
-      bgLight: 'bg-blue-50 dark:bg-blue-900/20',
-      textColor: 'text-blue-600 dark:text-blue-400',
+      bgLight: 'bg-blue-50 dark:bg-orange-900/20',
+      textColor: 'text-blue-600 dark:text-orange-400',
     },
     {
       label: 'Aktif',
-      value: activeCoupons,
+      value: summary.active,
       icon: CheckCircle2,
       bgLight: 'bg-emerald-50 dark:bg-emerald-900/20',
       textColor: 'text-emerald-600 dark:text-emerald-400',
     },
     {
       label: 'Digunakan',
-      value: usedCoupons,
+      value: summary.used,
       icon: Tag,
-      bgLight: 'bg-blue-50 dark:bg-blue-900/20',
-      textColor: 'text-blue-600 dark:text-blue-400',
+      bgLight: 'bg-blue-50 dark:bg-orange-900/20',
+      textColor: 'text-blue-600 dark:text-orange-400',
     },
     {
       label: 'Kadaluarsa',
-      value: expiredCoupons,
+      value: summary.expired,
       icon: XCircle,
       bgLight: 'bg-gray-100 dark:bg-gray-700/50',
       textColor: 'text-gray-500 dark:text-gray-400',
@@ -235,25 +165,70 @@ export default function CouponPage() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
+  const handleFormSubmit = async (payload) => {
+    setActionLoading(true)
+    try {
+      await createCoupon(payload)
+      showSnackbar('success', 'Kupon berhasil digenerate')
+      setIsFormOpen(false)
+    } catch (err) {
+      showSnackbar('error', err.message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return
+    setActionLoading(true)
+    try {
+      await deleteCoupon(deleteTarget.id)
+      showSnackbar('success', 'Kupon berhasil dihapus')
+      setDeleteTarget(null)
+    } catch (err) {
+      showSnackbar('error', err.message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const totalPages = pagination?.last_page ?? 1
+  const currentPage = pagination?.current_page ?? 1
+
+  const getPageNumbers = () => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
+    const pages = [1]
+    if (currentPage > 3) pages.push('...')
+    const start = Math.max(2, currentPage - 1)
+    const end = Math.min(totalPages - 1, currentPage + 1)
+    for (let i = start; i <= end; i++) pages.push(i)
+    if (currentPage < totalPages - 2) pages.push('...')
+    pages.push(totalPages)
+    return pages
+  }
+
+  const selectTriggerClass =
+    'w-full sm:w-[180px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 rounded-xl text-[13px] focus:ring-0'
+
   return (
-    <div className="flex-1 h-full bg-[#f7f7f5] dark:bg-[#0f141e] text-gray-600 dark:text-gray-300 overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-4 sm:py-6 font-sans">
+    <div className="flex-1 h-full bg-[#f7f7f5] dark:bg-[#0f141e] text-gray-600 dark:text-gray-300 overflow-y-auto overflow-x-hidden px-6 pb-6 pt-16 font-sans">
       <div className="max-w-[1200px] mx-auto overflow-hidden">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 sm:mb-6">
           <div>
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2.5">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-none shrink-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-600 dark:bg-orange-500 flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-orange-900/30 shrink-0">
                 <Ticket className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               Coupon Setting
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 text-[12px] sm:text-sm mt-1 sm:ml-[46px]">
+            <p className="text-gray-500 dark:text-gray-400 text-[12px] sm:text-sm mt-1">
               Kelola kode kupon, diskon, dan masa berlaku
             </p>
           </div>
           <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 dark:hover:shadow-none transition-all hover:-translate-y-0.5 text-[14px] w-full sm:w-auto"
+            onClick={() => setIsFormOpen(true)}
+            className="flex items-center justify-center gap-2 bg-blue-600 dark:bg-orange-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-700 dark:hover:bg-orange-600 hover:shadow-lg hover:shadow-blue-200 dark:hover:shadow-orange-900/30 transition-all hover:-translate-y-0.5 text-[14px] w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
             Add New Coupon
@@ -273,7 +248,7 @@ export default function CouponPage() {
                 <stat.icon className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${stat.textColor}`} />
               </div>
               <span className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-100 block mt-2 sm:mt-3">
-                {stat.value}
+                {loading ? '—' : stat.value}
               </span>
               <p className="text-[11px] sm:text-[13px] text-gray-500 dark:text-gray-400 font-medium mt-0.5 sm:mt-1">
                 {stat.label}
@@ -290,9 +265,12 @@ export default function CouponPage() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari kupon..."
-                className="w-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl pl-11 pr-4 py-3.5 text-[14px] text-gray-800 dark:text-gray-100 shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:outline-none transition-all"
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setPage(1)
+                }}
+                placeholder="Cari kode atau email..."
+                className="w-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl pl-11 pr-4 py-3.5 text-[14px] text-gray-800 dark:text-gray-100 shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 dark:focus:border-orange-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-orange-900/30 focus:outline-none transition-all"
               />
             </div>
 
@@ -300,7 +278,7 @@ export default function CouponPage() {
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center justify-center gap-2 px-4 py-3.5 text-[13px] font-medium rounded-xl border transition-all w-full sm:w-auto ${
                 showFilters
-                  ? 'bg-blue-50 border-blue-200 text-blue-700'
+                  ? 'bg-blue-50 dark:bg-orange-900/20 border-blue-200 dark:border-orange-700 text-blue-700 dark:text-orange-400'
                   : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
               }`}
             >
@@ -309,27 +287,21 @@ export default function CouponPage() {
             </button>
           </div>
 
-          {/* Expandable Filters */}
           {showFilters && (
             <div className="p-4 bg-gray-50/50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 rounded-2xl flex flex-col sm:flex-row gap-3">
-              <Select>
-                <SelectTrigger className="w-full sm:w-[180px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 rounded-xl text-[13px] focus:ring-0">
-                  <SelectValue placeholder="Semua Tipe" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectGroup>
-                    <SelectItem value="7hari">Premium 7 Hari</SelectItem>
-                    <SelectItem value="30hari">Premium 30 Hari</SelectItem>
-                    <SelectItem value="1tahun">Premium 1 Tahun</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <Select>
-                <SelectTrigger className="w-full sm:w-[180px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 rounded-xl text-[13px] focus:ring-0">
+              <Select
+                value={filterStatus}
+                onValueChange={(v) => {
+                  setFilterStatus(v === 'all' ? '' : v)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger className={selectTriggerClass}>
                   <SelectValue placeholder="Semua Status" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectGroup>
+                    <SelectItem value="all">Semua Status</SelectItem>
                     <SelectItem value="active">Aktif</SelectItem>
                     <SelectItem value="used">Digunakan</SelectItem>
                     <SelectItem value="expired">Kadaluarsa</SelectItem>
@@ -340,120 +312,169 @@ export default function CouponPage() {
           )}
         </div>
 
-        {/* Table Container */}
+        {/* Table */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
-          {/* Table wrapper */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px] text-left border-collapse">
+            <table className="w-full min-w-[900px] text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-700">
-                  <th className="px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Coupon Code
-                  </th>
-                  <th className="px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Discount
-                  </th>
-                  <th className="px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Valid Until
-                  </th>
-                  <th className="px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">
-                    Action
-                  </th>
+                  {['Coupon Code', 'Type', 'Valid Until', 'Status', 'Used By', 'Action'].map(
+                    (h, i) => (
+                      <th
+                        key={h}
+                        className={`px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ${i === 3 ? 'text-center' : i === 5 ? 'text-right' : ''}`}
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
-                {MOCK_COUPONS.map((coupon) => {
-                  const statusConfig = getStatusConfig(coupon.status)
-                  const typeBadge = getTypeBadge(coupon.type)
-                  return (
-                    <tr key={coupon.id} className="hover:bg-blue-50/20 transition-colors group">
-                      <td className="px-6 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <code className="text-[14px] font-bold text-gray-800 dark:text-gray-100 tracking-wide bg-gray-50 dark:bg-gray-700 px-2.5 py-1 rounded-lg border border-gray-100 dark:border-gray-700 font-mono">
-                            {coupon.code}
-                          </code>
-                          <button
-                            onClick={() => handleCopy(coupon.code, coupon.id)}
-                            className="w-7 h-7 rounded-md bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-300 transition-colors"
-                            title="Copy code"
-                          >
-                            {copiedId === coupon.id ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      <td colSpan={6} className="px-6 py-4">
+                        <div className="h-8 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse" />
+                      </td>
+                    </tr>
+                  ))
+                ) : displayCoupons.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-16 text-center text-gray-400 dark:text-gray-500 text-[14px]"
+                    >
+                      Tidak ada kupon ditemukan
+                    </td>
+                  </tr>
+                ) : (
+                  displayCoupons.map((coupon) => {
+                    const status = deriveCouponStatus(coupon)
+                    const statusConfig = getStatusConfig(status)
+                    const typeBadge = getTypeBadge(coupon.days ?? 0)
+                    return (
+                      <tr
+                        key={coupon.id}
+                        className="hover:bg-blue-50/20 dark:hover:bg-orange-900/10 transition-colors"
+                      >
+                        <td className="px-6 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <code className="text-[14px] font-bold text-gray-800 dark:text-gray-100 tracking-wide bg-gray-50 dark:bg-gray-700 px-2.5 py-1 rounded-lg border border-gray-100 dark:border-gray-600 font-mono">
+                              {coupon.code}
+                            </code>
+                            {status == 'active' && (
+                              <button
+                                onClick={() => handleCopy(coupon.code, coupon.id)}
+                                className="w-7 h-7 rounded-md bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-300 transition-colors"
+                                title="Copy code"
+                              >
+                                {copiedId === coupon.id ? (
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
                             )}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-semibold border ${typeBadge.bg} ${typeBadge.text} ${typeBadge.border}`}
-                        >
-                          <typeBadge.Icon className="w-3.5 h-3.5" />
-                          {coupon.type}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-[13px] text-gray-600 dark:text-gray-300">
-                        {/* Assuming discount is not in MOCK_COUPONS, placeholder for now */}-
-                      </td>
-                      <td className="px-4 py-3.5">
-                        {coupon.expired === '~' || coupon.expired === '-' ? (
-                          <span className="text-[13px] text-gray-400">—</span>
-                        ) : (
-                          <span className="text-[13px] text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                            {coupon.expired}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-semibold ${statusConfig.bg} ${statusConfig.text} border ${statusConfig.border}`}
-                        >
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot} ${coupon.status === 'active' ? 'animate-pulse' : ''}`}
-                          ></span>
-                          {statusConfig.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1.5 transition-opacity">
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-semibold border ${typeBadge.bg} ${typeBadge.text} ${typeBadge.border}`}
+                          >
+                            <typeBadge.Icon className="w-3.5 h-3.5" />
+                            {coupon.planName}
+                            {` ${coupon.days} Hari`}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {!coupon.expired || coupon.expired === '-' || coupon.expired === '~' ? (
+                            <span className="text-[13px] text-gray-400">—</span>
+                          ) : (
+                            <span className="text-[13px] text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                              {coupon.expired}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-semibold border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot} ${statusConfig.pulse ? 'animate-pulse' : ''}`}
+                            />
+                            {statusConfig.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-[13px] text-gray-500 dark:text-gray-400 max-w-[180px] truncate">
+                          {coupon.userEmail ?? '—'}
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
                           <button
+                            onClick={() => setDeleteTarget(coupon)}
                             title="Hapus"
-                            className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                            className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 flex items-center justify-center text-red-500 transition-colors ml-auto"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between flex-wrap gap-3">
             <p className="text-[13px] text-gray-500 dark:text-gray-400">
               Menampilkan{' '}
-              <span className="font-semibold text-gray-800 dark:text-gray-100">1-10</span> dari{' '}
-              <span className="font-semibold text-gray-800 dark:text-gray-100">10</span> kupon
+              <span className="font-semibold text-gray-800 dark:text-gray-100">
+                {pagination ? (currentPage - 1) * PAGE_SIZE + 1 : 0}–
+                {pagination ? Math.min(currentPage * PAGE_SIZE, pagination.total) : 0}
+              </span>{' '}
+              dari{' '}
+              <span className="font-semibold text-gray-800 dark:text-gray-100">
+                {pagination?.total ?? 0}
+              </span>{' '}
+              kupon
             </p>
             <div className="flex items-center gap-1.5">
-              <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 disabled:opacity-40 transition-colors"
+              >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-[13px] shadow-sm shadow-blue-200 dark:shadow-none">
-                1
-              </button>
-              <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors">
+
+              {getPageNumbers().map((p, i) =>
+                p === '...' ? (
+                  <span key={`e-${i}`} className="text-gray-400 text-sm px-1">
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-lg font-medium text-[13px] transition-colors ${
+                      currentPage === p
+                        ? 'bg-blue-600 dark:bg-orange-500 text-white shadow-sm shadow-blue-200 dark:shadow-orange-900/30'
+                        : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
+
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 disabled:opacity-40 transition-colors"
+              >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -461,108 +482,22 @@ export default function CouponPage() {
         </div>
       </div>
 
-      {/* Add Coupon Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col">
-            <div className="bg-blue-600 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-white font-bold text-lg tracking-wide uppercase">
-                Generate Coupons
-              </h3>
-              <button
-                onClick={() => setIsAddModalOpen(false)}
-                className="text-white/80 hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-                {/* Type */}
-                <div className="space-y-2">
-                  <label className="text-[13px] font-semibold text-gray-600 dark:text-gray-300 block">
-                    Coupon Type
-                  </label>
-                  <Select defaultValue="percent">
-                    <SelectTrigger className="w-full bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded-xl text-[14px] h-11 focus:ring-0 focus:border-blue-400 focus:bg-white dark:focus:bg-gray-800 transition-all">
-                      <SelectValue placeholder="Discount Type" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectGroup>
-                        <SelectItem value="7hari">
-                          <span className="inline-flex items-center gap-2">
-                            <Zap className="w-3.5 h-3.5 text-blue-500" /> Premium 7 Hari
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="30hari">
-                          <span className="inline-flex items-center gap-2">
-                            <Diamond className="w-3.5 h-3.5 text-violet-500" /> Premium 30 Hari
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="1tahun">
-                          <span className="inline-flex items-center gap-2">
-                            <Crown className="w-3.5 h-3.5 text-amber-500" /> Premium 1 Tahun
-                          </span>
-                        </SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {/* Plan */}
-                <div className="space-y-2">
-                  <label className="text-[13px] font-semibold text-gray-600 dark:text-gray-300 block">
-                    Status
-                  </label>
-                  <Select defaultValue="active">
-                    <SelectTrigger className="w-full bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded-xl text-[14px] h-11 focus:ring-0 focus:border-blue-400 focus:bg-white dark:focus:bg-gray-800 transition-all">
-                      <SelectValue placeholder="Active Status" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectGroup>
-                        <SelectItem value="free">Free Account</SelectItem>
-                        <SelectItem value="premium">Premium Plan</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {/* Coupon Code */}
-                <div className="space-y-2">
-                  <label className="text-[13px] font-semibold text-gray-600 dark:text-gray-300 block">
-                    Coupon Code
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. PROMO2024"
-                    className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 h-11 text-[14px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:bg-white dark:focus:bg-gray-800 focus:outline-none transition-all"
-                  />
-                </div>
-                {/* Discount Value */}
-                <div className="space-y-2">
-                  <label className="text-[13px] font-semibold text-gray-600 dark:text-gray-300 block">
-                    Discount Value (%)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 10"
-                    className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 h-11 text-[14px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:bg-white dark:focus:bg-gray-800 focus:outline-none transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-              <button
-                onClick={() => setIsAddModalOpen(false)}
-                className="px-6 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors"
-              >
-                Batal
-              </button>
-              <button className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm hover:shadow-md hover:shadow-blue-200 dark:hover:shadow-none transition-all uppercase tracking-wide">
-                Simpan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CouponForm
+        open={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={handleFormSubmit}
+        plans={plans}
+        loading={actionLoading}
+      />
+
+      <DeleteModal
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+        loading={actionLoading}
+        data={'coupon'}
+        name={deleteTarget?.code ?? ''}
+      />
     </div>
   )
 }

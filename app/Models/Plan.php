@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Plan;
 use App\Models\SettingAI;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,15 @@ class Plan extends Model
         'M_PlanCreated',
         'M_PlanLastUpdated',
     ];
+
+    public function plan()
+    {
+        return $this->belongsTo(
+            Plan::class,
+            'M_UserPlan',
+            'M_PlanID'
+        );
+    }
 
     public function aiSettings()
     {
