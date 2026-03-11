@@ -12,7 +12,7 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react'
-import { useState } from 'react'
+import React, { useRef, useState } from 'react'
 
 import {
     Select,
@@ -23,7 +23,6 @@ import {
     SelectValue,
     SelectLabel
 } from '@/components/ui/select';
-import { Zap, FileText, Ruler, BookOpen, Sparkles, Copy, Check, Download, RotateCcw, ChevronUp, ChevronDown, FileDown, FolderPlus, Loader2 } from 'lucide-react';
 import { LANGUAGES } from '../../data/languages';
 import TiptapEditor from '../../components/TiptapEditor';
 

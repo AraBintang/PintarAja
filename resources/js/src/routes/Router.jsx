@@ -1,50 +1,69 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 
-import Login from '@/pages/Auth/Login'
-import Register from '@/pages/Auth/Register'
-import ForgotPassword from '@/pages/Auth/ForgotPassword'
-import Landing from '@/pages/Landing'
-import ProtectedRoute from '@/routes/protectedRoute'
 import SidebarLayout from '@/layout/SidebarLayout'
-import ChatPage from '@/pages/App/ChatPage'
+import AdminAIPage from '@/pages/Admin/AIPage'
+import AdminAttributePage from '@/pages/Admin/AttributePage'
+import CouponPage from '@/pages/Admin/CouponPage'
+import AdminPlanPage from '@/pages/Admin/PlanPage'
+import PromptAIPage from '@/pages/Admin/PromptAIPage'
+import AdminUserPage from '@/pages/Admin/UserPage'
 import AIWriterPage from '@/pages/App/AIWriterPage'
+import ChatPage from '@/pages/App/ChatPage'
 import HumanizerPage from '@/pages/App/HumanizerPage'
 import ParafrasePage from '@/pages/App/ParafrasePage'
 import TranscribePage from '@/pages/App/TranscribePage'
-import SettingsPage from '@/pages/App/SettingsPage'
-import AdminUserPage from '@/pages/App/AdminUserPage'
-import AdminAIPage from '@/pages/App/AdminAIPage'
-import AdminAttributePage from '@/pages/App/AdminAttributePage'
-import AdminPlanPage from '@/pages/App/AdminPlanPage'
-import CouponPage from '@/pages/App/CouponPage'
-import PromptAIPage from '@/pages/App/PromptAIPage'
+import ForgotPassword from '@/pages/Auth/ForgotPassword'
+import GoogleAuth from '@/pages/Auth/GoogleAuth'
+import Login from '@/pages/Auth/Login'
+import Register from '@/pages/Auth/Register'
+import Landing from '@/pages/Landing'
+import AdminRoute from '@/routes/AdminRoute'
+import GuestRoute from '@/routes/GuestRoute'
+import ProtectedRoute from '@/routes/ProtectedRoute'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 export const router = createBrowserRouter([
-  { path: '/', element: <Landing /> },
-  { path: '/login', element: <Login /> },
-  { path: '/register', element: <Register /> },
-  { path: '/forgot-password', element: <ForgotPassword /> },
   {
-    path: '/app',
-    element: <SidebarLayout />,
+    element: <GuestRoute />,
     children: [
-      { index: true, element: <Navigate to="/app/chat" replace /> },
-      { path: 'chat', element: <ChatPage /> },
-      { path: 'docs', element: <AIWriterPage /> },
-      { path: 'new', element: <ChatPage /> },
-      { path: 'asisten', element: <HumanizerPage /> },
-      { path: 'tanya', element: <ParafrasePage /> },
-      { path: 'transkripsi', element: <TranscribePage /> },
-      { path: 'settings', element: <SettingsPage /> },
-      { path: 'admin/attribute', element: <AdminAttributePage /> },
-      { path: 'admin/ai', element: <AdminAIPage /> },
-      { path: 'admin/plan', element: <AdminPlanPage /> },
-      { path: 'admin/user', element: <AdminUserPage /> },
-      { path: 'admin/coupons', element: <CouponPage /> },
-      { path: 'admin/prompt', element: <PromptAIPage /> },
+      { path: '/home', element: <Landing /> },
+      { path: '/login', element: <Login /> },
+      { path: '/register', element: <Register /> },
+      { path: '/forgot-password', element: <ForgotPassword /> },
+      { path: '/google-auth', element: <GoogleAuth /> },
     ],
   },
+
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <SidebarLayout />,
+        children: [
+          { index: true, element: <Navigate to="chat" replace /> },
+
+          { path: 'new', element: <ChatPage /> },
+          { path: 'chat', element: <ChatPage /> },
+          { path: 'writer', element: <AIWriterPage /> },
+          { path: 'humanize', element: <HumanizerPage /> },
+          { path: 'paraphrase', element: <ParafrasePage /> },
+          { path: 'transcribe', element: <TranscribePage /> },
+
+          {
+            element: <AdminRoute />,
+            children: [
+              { path: 'admin/attribute', element: <AdminAttributePage /> },
+              { path: 'admin/prompt', element: <PromptAIPage /> },
+              { path: 'admin/ai', element: <AdminAIPage /> },
+              { path: 'admin/plan', element: <AdminPlanPage /> },
+              { path: 'admin/coupons', element: <CouponPage /> },
+              { path: 'admin/user', element: <AdminUserPage /> },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
   { path: '*', element: <NotFoundPage /> },
 ])
-
