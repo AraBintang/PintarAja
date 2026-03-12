@@ -11,6 +11,8 @@ import {
   Ruler,
   Sparkles,
   Zap,
+  Loader2,
+  FolderPlus,
 } from 'lucide-react'
 import React, { useState } from 'react'
 
