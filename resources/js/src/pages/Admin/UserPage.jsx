@@ -29,7 +29,7 @@ import { Debounce } from '@/utils/Debounce'
 
 function getInitials(name = '') {
   return name
-    .split(' ')
+    ?.split(' ')
     .filter(Boolean)
     .slice(0, 2)
     .map((w) => w[0].toUpperCase())
@@ -45,8 +45,8 @@ const avatarColors = [
 ]
 function getAvatarColor(name = '') {
   let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return avatarColors[Math.abs(hash) % avatarColors.length]
+  for (let i = 0; i < name?.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return avatarColors[Math.abs(hash) % avatarColors?.length]
 }
 
 const PAGE_SIZE = 10
@@ -338,7 +338,7 @@ export default function AdminUserPage() {
                       </td>
                     </tr>
                   ))
-                ) : users.length === 0 ? (
+                ) : users?.length === 0 ? (
                   <tr>
                     <td
                       colSpan={6}

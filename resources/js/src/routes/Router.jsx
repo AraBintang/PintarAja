@@ -11,6 +11,7 @@ import AIWriterPage from '@/pages/App/AIWriterPage'
 import ChatPage from '@/pages/App/ChatPage'
 import HumanizerPage from '@/pages/App/HumanizerPage'
 import ParafrasePage from '@/pages/App/ParafrasePage'
+import PaymentPage from '@/pages/App/PaymentPage'
 import TranscribePage from '@/pages/App/TranscribePage'
 import ForgotPassword from '@/pages/Auth/ForgotPassword'
 import GoogleAuth from '@/pages/Auth/GoogleAuth'
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
           { path: 'humanize', element: <HumanizerPage /> },
           { path: 'paraphrase', element: <ParafrasePage /> },
           { path: 'transcribe', element: <TranscribePage /> },
+          { path: 'payment', element: <PaymentPage /> },
 
           {
             element: <AdminRoute />,
