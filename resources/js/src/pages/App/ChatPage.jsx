@@ -404,7 +404,7 @@ export default function ChatPage() {
       <div className="sticky bottom-0 pt-2 bg-[#f7f7f5] dark:bg-[#0f141e] px-4 transition-all duration-300">
         <form
           onSubmit={handleSendMessage}
-          className="max-w-3xl mx-auto w-full bg-[#f4f4f4] dark:bg-[#212121] rounded-[32px] border border-gray-200/60 dark:border-gray-700/50 shadow-sm"
+          className="max-w-3xl mx-auto w-full bg-white dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50 shadow-sm"
         >
           <div className="flex flex-col">
             {attachedFiles.length > 0 && (
@@ -462,7 +462,7 @@ export default function ChatPage() {
                 <button
                   type="button"
                   onClick={() => setShowAttachMenu(!showAttachMenu)}
-                  className="w-9 h-9 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 transition-colors relative z-30 flex-shrink-0"
+                  className="w-9 h-9 rounded-full border bg-[#eeedeb] dark:bg-black/20 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 transition-colors relative z-30 flex-shrink-0"
                   title="Lampirkan file"
                 >
                   <Plus
@@ -474,7 +474,7 @@ export default function ChatPage() {
                 {showAttachMenu && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setShowAttachMenu(false)} />
-                    <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-20 py-2 w-48 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-20 py-2 w-48 animate-in fade-in slide-in-from-bottom-2">
                       <button
                         type="button"
                         onClick={() => {
@@ -514,7 +514,7 @@ export default function ChatPage() {
                     </div>
                   </>
                 )}
-                <div className="flex items-center ml-1 bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full">
+                <div className="flex items-center ml-1 bg-[#eeedeb] dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full">
                   {/* <button
                     type="button"
                     className="flex items-center gap-1.5 px-2.5 py-1 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -538,7 +538,7 @@ export default function ChatPage() {
                 <button
                   type="submit"
                   disabled={!inputValue.trim() && attachedFiles.length === 0}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${inputValue.trim() || attachedFiles.length > 0 ? 'bg-black dark:bg-white text-white dark:text-black hover:scale-105' : 'bg-[#e0e0e0] dark:bg-[#2a2a2a] text-gray-400 dark:text-[#555]'}`}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${inputValue.trim() || attachedFiles.length > 0 ? 'bg-black dark:bg-white text-white dark:text-black hover:scale-105' : 'bg-[#eeedeb] dark:bg-black/20 text-gray-400 dark:text-[#555]'}`}
                 >
                   <ArrowUp className="w-[18px] h-[18px]" />
                 </button>

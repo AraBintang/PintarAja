@@ -1,10 +1,12 @@
-import { Moon, Sun } from 'lucide-react'
+import { Monitor, Moon, Sun } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useTheme } from '@/context/ThemeContext'
 
 export default function ForgotPassword() {
+  const { theme, toggleTheme } = useTheme()
+
   const [email, setEmail] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
 
@@ -14,44 +16,42 @@ export default function ForgotPassword() {
     setIsSubmitted(true)
   }
 
-  const { isDark, toggleTheme } = useTheme()
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#f7f7f5] dark:bg-gray-900 p-6 font-sans transition-colors duration-300">
-      {/* Dark mode toggle */}
       <button
         onClick={toggleTheme}
-        className="fixed top-4 right-4 z-50 p-2.5 rounded-xl bg-white dark:bg-gray-800 shadow-md hover:shadow-lg text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all border border-gray-100 dark:border-gray-700"
-        title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-gray-800 shadow-md hover:shadow-lg text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all border border-gray-100 dark:border-gray-700"
       >
-        {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        {theme === 'light' && <Sun className="w-5 h-5" />}
+        {theme === 'dark' && <Moon className="w-5 h-5" />}
+        {theme === 'system' && <Monitor className="w-5 h-5" />}
       </button>
-      {/* Logo/Brand */}
-      <div className="mb-8 flex items-end gap-0 animate-in fade-in slide-in-from-top-4 duration-700">
-        <img src="/p doank.png" alt="Pintaraja" className="w-10 h-10 object-contain" />
+
+      <div className="mb-8 flex items-end gap-0">
+        <img src="/p doank.png" alt="Pintaraja" className="mb-1 w-10 h-10 object-contain" />
         <span className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight pb-[2px] -ml-[3px]">
           intaraja
         </span>
       </div>
 
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Reset Password</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-[15px]">
+          Masukkan email Kamu untuk menerima link reset password
+        </p>
+      </div>
+
       <div className="w-full max-w-[420px] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-        <div className="bg-white dark:bg-gray-800 rounded-[32px] p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] border border-gray-100/50 dark:border-gray-700/50">
+        <div className="bg-white dark:bg-gray-800 rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] border border-gray-100/50 dark:border-gray-700/50">
           {!isSubmitted ? (
             <>
-              <div className="text-center mb-10">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
-                  Reset Password
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400 text-[15px]">
-                  Masukkan email Kamu untuk menerima link reset password
-                </p>
-              </div>
-
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[14px] font-semibold text-gray-700 dark:text-gray-300 ml-1">
-                    Email
-                  </label>
+                  <div className="mb-2">
+                    <label className="text-[14px] font-semibold text-gray-700 dark:text-gray-300 ml-1">
+                      Email
+                    </label>
+                  </div>
                   <div className="relative group">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#4A90D9] transition-colors">
                       <svg
@@ -117,20 +117,16 @@ export default function ForgotPassword() {
               </button>
             </div>
           )}
-
-          <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-700 text-center">
-            <p className="text-gray-500 dark:text-gray-400 text-[14px]">
-              Ingat password Kamu?{' '}
-              <Link to="/login" className="text-[#4A90D9] font-bold hover:underline">
-                Kembali ke Login
-              </Link>
-            </p>
-          </div>
         </div>
 
-        <p className="mt-10 text-center text-gray-400 dark:text-gray-500 text-xs tracking-wide">
-          &copy; {new Date().getFullYear()} PINTARAJA AI • SMART EDUCATION
-        </p>
+        <div className="mt-8 text-center">
+          <p className="text-gray-500 dark:text-gray-400 text-[14px]">
+            Ingat password Kamu?{' '}
+            <Link to="/login" className="text-[#4A90D9] font-bold hover:underline">
+              Kembali ke Login
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

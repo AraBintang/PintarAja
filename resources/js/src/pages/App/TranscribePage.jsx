@@ -1,4 +1,15 @@
-import { ArrowLeft, Check, FileAudio, Loader2, Mic, Pause, Play, Upload, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  Check,
+  Download,
+  FileAudio,
+  Loader2,
+  Mic,
+  Pause,
+  Play,
+  Upload,
+  X,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export default function TranscribePage() {
@@ -356,7 +367,7 @@ export default function TranscribePage() {
         /* ─── Result State ─── */
         <div className="flex flex-col items-center max-w-5xl w-full relative pt-12 md:pt-0">
           {/* Back Button */}
-          <div className="absolute -top-12 md:-top-16 left-0 flex items-center">
+          <div className="absolute top-16 md:top-4 left-0 flex items-center">
             <button
               onClick={handleReset}
               className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-[13px] font-semibold text-gray-600 dark:text-gray-300 hover:text-[#4A90D9] transition-colors shadow-sm"
@@ -366,7 +377,7 @@ export default function TranscribePage() {
             </button>
           </div>
 
-          <div className="w-full bg-white dark:bg-gray-800 rounded-[24px] shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row min-h-[500px]">
+          <div className="w-full mt-18 bg-white dark:bg-gray-800 rounded-[24px] shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row min-h-[500px]">
             {/* Summary Section */}
             <div className="w-full md:w-1/3 p-6 sm:p-8 bg-gray-50/50 dark:bg-gray-800/50 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700">
               <h2
@@ -403,8 +414,8 @@ export default function TranscribePage() {
             <div className="w-full md:w-2/3 p-6 sm:p-8 flex flex-col">
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
                 <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Transcript</h3>
-                <button className="text-[13px] font-semibold text-[#4A90D9] hover:text-[#387DC0] transition-colors bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-4 py-2 rounded-xl">
-                  Export Text
+                <button className="text-[13px] flex gap-2 align-center font-semibold text-[#4A90D9] hover:text-[#387DC0] transition-colors bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-4 py-2 rounded-xl">
+                  <Download size={18} /> Export Text
                 </button>
               </div>
 
