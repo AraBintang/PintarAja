@@ -14,7 +14,7 @@ class ProfileController extends Controller
 {
     public function me(Request $request)
     {
-        $user = $request->user();
+        $user = $request->user()->load('plan');
 
         return response()->json([
             'id' => $user->M_UserID,
@@ -23,7 +23,10 @@ class ProfileController extends Controller
             'image' => $user->M_UserImage,
             'phone' => $user->M_UserPhone,
             'role' => $user->M_UserRole,
-            'plan' => $user->M_UserPlan,
+
+            'plan_id' => $user->M_UserPlan,
+            'plan_name' => $user->plan?->M_PlanName,
+
             'is_active' => $user->M_UserIsActive === 'Y',
             'email_verified_at' => $user->M_UserEmailVerifiedAt,
             'subscription_expired_at' => $user->M_UserSubsExp,
@@ -59,14 +62,30 @@ class ProfileController extends Controller
 
     public function changePassword(Request $request)
     {
-        $request->validate([
-            'password' => 'required|min:8'
-        ]);
-
         $user = $request->user();
 
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $request->validate([
+            'password_old' => 'nullable|string|min:8',
+            'password' => 'required|string|min:8'
+        ]);
+
+        if (!empty($user->M_UserPassword)) {
+
+            if (!$request->password_old) {
+                return response()->json([
+                    'message' => 'Password lama wajib diisi'
+                ], 400);
+            }
+
+            if (!Hash::check($request->password_old, $user->M_UserPassword)) {
+                return response()->json([
+                    'message' => 'Password lama salah'
+                ], 400);
+            }
         }
 
         $user->update([

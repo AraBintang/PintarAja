@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Plan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -27,6 +28,7 @@ class User extends Authenticatable
         'M_UserFullName',
         'M_UserImage',
         'M_UserPhone',
+        'M_UserPassword',
         'M_UserIsActive',
         'M_UserRole',
         'M_UserPlan',
@@ -73,6 +75,15 @@ class User extends Authenticatable
             'M_UserCreated' => 'datetime',
             'M_UserLastUpdated' => 'datetime',
         ];
+    }
+
+    public function plan()
+    {
+        return $this->belongsTo(
+            Plan::class,
+            'M_UserPlan',
+            'M_PlanID'
+        );
     }
 
     public $timestamps = false;

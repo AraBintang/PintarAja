@@ -866,9 +866,9 @@ export default function AIWriterPage() {
 
         {/* Example Cards */}
         {!isGenerated && !isGenerating && (
-          <div className="mt-4 md:mt-8">
+          <div className="mb-6">
             <h3 className="text-[12px] md:text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3 md:mb-5 px-1 md:px-0">
-              Ide Cemerlang
+              Library Terbaru
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 px-1 md:px-0">
               {exampleCards.map((card, i) => (

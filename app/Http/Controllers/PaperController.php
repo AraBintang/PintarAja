@@ -12,15 +12,15 @@ class PaperController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = 10;
+        $perPage = (int) $request->input('per_page', 10);
         $page = max(1, (int) $request->input('page', 1));
         $search = $request->input('search');
 
-        $query = Paper::query()
-        ->when($search, function ($q) use ($search) {
-            $q->where('M_PaperName', 'like', "%{$search}%");
-        })
-        ->orderBy('M_PaperID', 'desc');
+        $query = Paper::with('sections')
+            ->when($search, function ($q) use ($search) {
+                $q->where('M_PaperName', 'like', "%{$search}%");
+            })
+            ->orderBy('M_PaperID', 'desc');
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
@@ -33,20 +33,26 @@ class PaperController extends Controller
                 'sections' => $paper->sections->map(function ($s) {
                     return [
                         'id' => $s->M_SectionID,
-                        'name' => $s->M_SectionName
+                        'name' => $s->M_SectionName,
                     ];
-                })
+                }),
             ];
         });
 
+        $summary = [
+            'total' => Paper::count(),
+            'sections' => Section::count(),
+        ];
+
         return response()->json([
             'data' => $data,
+            'summary' => $summary,
             'pagination' => [
                 'current_page' => $paginated->currentPage(),
                 'per_page' => $paginated->perPage(),
                 'total' => $paginated->total(),
-                'last_page' => $paginated->lastPage()
-            ]
+                'last_page' => $paginated->lastPage(),
+            ],
         ]);
     }
 
@@ -54,7 +60,7 @@ class PaperController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string',
-            'sections' => 'nullable|array'
+            'sections' => 'nullable|array',
         ]);
 
         DB::beginTransaction();
@@ -63,31 +69,22 @@ class PaperController extends Controller
             $paper = Paper::create([
                 'M_PaperName' => $validated['name'],
                 'M_PaperCreated' => now(),
-                'M_PaperLastUpdated' => now()
+                'M_PaperLastUpdated' => now(),
             ]);
 
-            if (!empty($validated['sections'])) {
-                foreach ($validated['sections'] as $sectionName) {
-                    Section::create([
-                        'M_SectionM_PaperID' => $paper->M_PaperID,
-                        'M_SectionName' => $sectionName
-                    ]);
-                }
+            foreach ($validated['sections'] ?? [] as $sectionName) {
+                Section::create([
+                    'M_SectionM_PaperID' => $paper->M_PaperID,
+                    'M_SectionName' => $sectionName,
+                ]);
             }
 
             DB::commit();
 
-            return response()->json([
-                'message' => 'Paper created',
-                'data' => $paper
-            ], 201);
-
+            return response()->json(['message' => 'Paper created'], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-
-            return response()->json([
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
@@ -97,7 +94,7 @@ class PaperController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string',
-            'sections' => 'nullable|array'
+            'sections' => 'nullable|array',
         ]);
 
         DB::beginTransaction();
@@ -105,7 +102,7 @@ class PaperController extends Controller
         try {
             $paper->update([
                 'M_PaperName' => $validated['name'],
-                'M_PaperLastUpdated' => now()
+                'M_PaperLastUpdated' => now(),
             ]);
 
             $existingSections = Section::where('M_SectionM_PaperID', $id)->get();
@@ -118,30 +115,21 @@ class PaperController extends Controller
             }
 
             foreach ($newSections as $sectionName) {
-                $exists = $existingSections
-                    ->where('M_SectionName', $sectionName)
-                    ->first();
-
+                $exists = $existingSections->firstWhere('M_SectionName', $sectionName);
                 if (!$exists) {
                     Section::create([
                         'M_SectionM_PaperID' => $id,
-                        'M_SectionName' => $sectionName
+                        'M_SectionName' => $sectionName,
                     ]);
                 }
             }
 
             DB::commit();
 
-            return response()->json([
-                'message' => 'Paper updated'
-            ]);
-
+            return response()->json(['message' => 'Paper updated']);
         } catch (\Exception $e) {
             DB::rollBack();
-
-            return response()->json([
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
@@ -155,15 +143,10 @@ class PaperController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'message' => 'Paper deleted'
-            ]);
+            return response()->json(['message' => 'Paper deleted']);
         } catch (\Exception $e) {
             DB::rollBack();
-
-            return response()->json([
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 }

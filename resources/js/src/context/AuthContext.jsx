@@ -35,7 +35,19 @@ export function AuthProvider({ children }) {
     }
 
     initAuth()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const me = async () => {
+    try {
+      const res = await request('/profiles')
+
+      setUser(res)
+    } catch (err) {
+      showSnackbar('error', err.message)
+      logout()
+    }
+  }
 
   const login = async (token) => {
     try {
@@ -63,6 +75,7 @@ export function AuthProvider({ children }) {
       value={{
         user,
         token,
+        me,
         login,
         logout,
         loading,

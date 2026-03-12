@@ -1,6 +1,7 @@
-import { Crown, History, Menu, MessagesSquare, Monitor, Moon, Sun } from 'lucide-react'
+import { Crown, History, Menu, MessagesSquare, Monitor, Moon, Sun, User } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 
+import { useAuth } from '@/context/AuthContext'
 import { useRightSidebar } from '@/context/RightSidebarContext'
 import { useSidebar } from '@/context/SidebarContext'
 import { useTheme } from '@/context/ThemeContext'
@@ -10,6 +11,7 @@ export default function TopBar() {
   const { toggle: toggleRight } = useRightSidebar()
   const { toggle: toggleLeft } = useSidebar()
   const { theme, toggleTheme } = useTheme()
+  const { user } = useAuth()
 
   const isHumanizePage = location.pathname.startsWith('/humanize')
   const isAdminPage = location.pathname.startsWith('/admin')
@@ -27,9 +29,13 @@ export default function TopBar() {
       </div>
 
       <div className="fixed top-3 right-3 z-40 flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 py-1.5 pl-2 !pr-2.5 rounded-full shadow">
-        <button className="flex items-center gap-1 px-2.5 py-1.5 bg-[#4A90D9]/10 text-[#4A90D9] rounded-full text-[10px] font-bold border border-[#4A90D9]/20">
-          <Crown className="w-3 h-3 fill-current" />
-          Premium
+        <button className="flex items-center gap-1 px-2.5 py-1.5 bg-[#4A90D9]/10 dark:bg-[#8C4B00]/10 text-[#4A90D9] dark:text-[#F2901E] rounded-full text-[10px] font-bold border border-[#4A90D9]/20 dark:border-[#8C4B00]/20">
+          {user?.plan_id !== 1 ? (
+            <Crown className="w-3 h-3 fill-current" />
+          ) : (
+            <User className="w-3 h-3 fill-current" />
+          )}
+          {user?.plan_name}
         </button>
 
         <button

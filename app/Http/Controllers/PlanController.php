@@ -18,9 +18,9 @@ class PlanController extends Controller
 
         $query = Plan::with('aiSettings')
             ->when($search, function ($q) use ($search) {
-                $q->where('M_PlanName', 'like', "%$search%");
+                $q->where('M_PlanName', 'like', "%{$search}%");
             })
-            ->orderBy('M_PlanID', 'desc');
+            ->orderBy('M_PlanID', 'asc');
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
@@ -37,122 +37,117 @@ class PlanController extends Controller
                 'aiSettings' => $plan->aiSettings->map(function ($ai) {
                     return [
                         'id' => $ai->M_SettingID,
-                        'name' => $ai->M_SettingName
+                        'name' => $ai->M_SettingName,
                     ];
-                })
+                }),
             ];
         });
 
-        $ai = SettingAI::query()
-            ->select([
-                'M_SettingID as id',
-                'M_SettingName as name',
-            ])
-            ->get();
+        $ai = SettingAI::select('M_SettingID as id', 'M_SettingName as name')->get();
+
+        $summary = [
+            'total' => Plan::count(),
+            'popular' => Plan::where('M_PlanIsPopular', 'Y')->count(),
+        ];
 
         return response()->json([
             'data' => $data,
             'ai' => $ai,
+            'summary' => $summary,
             'pagination' => [
                 'current_page' => $paginated->currentPage(),
                 'per_page' => $paginated->perPage(),
                 'total' => $paginated->total(),
-                'last_page' => $paginated->lastPage()
-            ]
+                'last_page' => $paginated->lastPage(),
+            ],
         ]);
     }
 
     public function store(Request $request)
     {
-        $validated=$request->validate([
-            'name'=>'required',
-            'tagLine'=>'required',
-            'price'=>'required|array',
-            'features'=>'required|array',
-            'isPopular'=>'required|in:Y,N',
-            'aiSettings'=>'nullable|array'
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'tagLine' => 'required|string',
+            'price' => 'required|array',
+            'features' => 'required|array',
+            'isPopular' => 'required|in:Y,N',
+            'aiSettings' => 'nullable|array',
         ]);
 
-        DB::transaction(function()use($validated,&$plan){
+        DB::transaction(function () use ($validated) {
+            $plan = Plan::create([
+                'M_PlanName' => $validated['name'],
+                'M_PlanTagLine' => $validated['tagLine'],
+                'M_PlanPrice' => json_encode($validated['price']),
+                'M_PlanFeature' => json_encode($validated['features']),
+                'M_PlanIsPopular' => $validated['isPopular'],
+                'M_PlanCreated' => now(),
+                'M_PlanLastUpdated' => now(),
+            ]);
 
-        $plan=Plan::create([
-            'M_PlanName'=>$validated['name'],
-            'M_PlanTagLine'=>$validated['tagLine'],
-            'M_PlanPrice'=>json_encode($validated['price']),
-            'M_PlanFeature'=>json_encode($validated['features']),
-            'M_PlanIsPopular'=>$validated['isPopular'],
-            'M_PlanCreated'=>now(),
-            'M_PlanLastUpdated'=>now()
-        ]);
-
-        if(!empty($validated['aiSettings'])){
-            foreach($validated['aiSettings'] as $aiId){
+            foreach ($validated['aiSettings'] ?? [] as $aiId) {
                 DB::table('m_plansetting')->insert([
-                    'M_PlanSettingM_PlanID'=>$plan->M_PlanID,
-                    'M_PlanSettingM_SettingID'=>$aiId,
-                    'M_PlanSettingCreated'=>now(),
-                    'M_PlanSettingLastUpdated'=>now()
+                    'M_PlanSettingM_PlanID' => $plan->M_PlanID,
+                    'M_PlanSettingM_SettingID' => $aiId,
+                    'M_PlanSettingCreated' => now(),
+                    'M_PlanSettingLastUpdated' => now(),
                 ]);
             }
-        }
-
         });
 
-        return response()->json(['message'=>'Plan created','data'=>$plan],201);
+        return response()->json(['message' => 'Plan created'], 201);
     }
 
-    public function update(Request $request,$id)
+    public function update(Request $request, $id)
     {
-        $plan=Plan::findOrFail($id);
+        $plan = Plan::findOrFail($id);
 
-        $validated=$request->validate([
-            'name'=>'required',
-            'tagLine'=>'required',
-            'price'=>'required|array',
-            'features'=>'required|array',
-            'isPopular'=>'required|in:Y,N',
-            'aiSettings'=>'nullable|array'
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'tagLine' => 'required|string',
+            'price' => 'required|array',
+            'features' => 'required|array',
+            'isPopular' => 'required|in:Y,N',
+            'aiSettings' => 'nullable|array',
         ]);
 
-        DB::transaction(function()use($plan,$validated){
+        DB::transaction(function () use ($plan, $validated) {
             $plan->update([
-                'M_PlanName'=>$validated['name'],
-                'M_PlanTagLine'=>$validated['tagLine'],
-                'M_PlanPrice'=>json_encode($validated['price']),
-                'M_PlanFeature'=>json_encode($validated['features']),
-                'M_PlanIsPopular'=>$validated['isPopular'],
-                'M_PlanLastUpdated'=>now()
+                'M_PlanName' => $validated['name'],
+                'M_PlanTagLine' => $validated['tagLine'],
+                'M_PlanPrice' => json_encode($validated['price']),
+                'M_PlanFeature' => json_encode($validated['features']),
+                'M_PlanIsPopular' => $validated['isPopular'],
+                'M_PlanLastUpdated' => now(),
             ]);
 
             DB::table('m_plansetting')
-                ->where('M_PlanSettingM_PlanID',$plan->M_PlanID)
+                ->where('M_PlanSettingM_PlanID', $plan->M_PlanID)
                 ->delete();
 
-            if(!empty($validated['aiSettings'])){
-                foreach($validated['aiSettings'] as $aiId){
-                    DB::table('m_plansetting')->insert([
-                        'M_PlanSettingM_PlanID'=>$plan->M_PlanID,
-                        'M_PlanSettingM_SettingID'=>$aiId,
-                        'M_PlanSettingCreated'=>now(),
-                        'M_PlanSettingLastUpdated'=>now()
-                    ]);
-                }
+            foreach ($validated['aiSettings'] ?? [] as $aiId) {
+                DB::table('m_plansetting')->insert([
+                    'M_PlanSettingM_PlanID' => $plan->M_PlanID,
+                    'M_PlanSettingM_SettingID' => $aiId,
+                    'M_PlanSettingCreated' => now(),
+                    'M_PlanSettingLastUpdated' => now(),
+                ]);
             }
         });
 
-        return response()->json(['message'=>'Plan updated']);
+        return response()->json(['message' => 'Plan updated']);
     }
 
     public function destroy($id)
     {
-        DB::transaction(function()use($id){
+        DB::transaction(function () use ($id) {
             DB::table('m_plansetting')
-                ->where('M_PlanSettingM_PlanID',$id)
+                ->where('M_PlanSettingM_PlanID', $id)
                 ->delete();
 
-            Plan::where('M_PlanID',$id)->delete();
+            Plan::where('M_PlanID', $id)->delete();
         });
 
-        return response()->json(['message'=>'Plan deleted']);
+        return response()->json(['message' => 'Plan deleted']);
     }
 }
