@@ -8,6 +8,7 @@ import { useTheme } from '@/context/ThemeContext'
 export default function Register() {
   const { theme, toggleTheme } = useTheme()
 
+  const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -33,19 +34,16 @@ export default function Register() {
     setError(null)
 
     try {
-      const res = await request('/login', {
+      await request('/register', {
         method: 'POST',
         body: {
-          email,
-          password,
-          remember,
+          userName: formData.name,
+          email: formData.email,
+          password: formData.password,
         },
       })
 
-      localStorage.setItem('token', res.token)
-      localStorage.setItem('user', JSON.stringify(res.user))
-
-      navigate('/chat', { replace: true })
+      navigate('/verify-otp', { replace: true })
     } catch (err) {
       setError(err.message || 'Login gagal')
     } finally {

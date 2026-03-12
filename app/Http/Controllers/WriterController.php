@@ -31,6 +31,7 @@ class WriterController extends Controller
 
         $sections = Section::select(
             'M_SectionID as id',
+            'M_SectionM_PaperID as paper_id',
             'M_SectionName as name'
         )->orderBy('M_SectionName')->get();
 
@@ -64,6 +65,7 @@ class WriterController extends Controller
             ->select(
                 'm_document.M_DocumentID as id',
                 'm_document.M_DocumentName as title',
+                'm_document.M_DocumentResult as result',
                 'm_workbook.M_WorkbookName as workbook',
                 'm_document.M_DocumentLastUpdated as lastEdited'
             )

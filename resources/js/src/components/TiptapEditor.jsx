@@ -17,6 +17,7 @@ import {
   Strikethrough,
   Undo2,
 } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 
 /* ─── Toolbar Button ─── */
 function ToolbarButton({ onClick, isActive, children, title }) {
@@ -174,6 +175,8 @@ export default function TiptapEditor({
   onUpdate,
   placeholder = 'Hasil AI akan muncul di sini...',
 }) {
+  const isExternalUpdate = useRef(false)
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -188,9 +191,23 @@ export default function TiptapEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      onUpdate?.(editor.getHTML())
+      if (!isExternalUpdate.current) {
+        onUpdate?.(editor.getHTML())
+      }
     },
   })
+
+  useEffect(() => {
+    if (!editor || !content) return
+
+    const currentHTML = editor.getHTML()
+
+    if (content !== currentHTML) {
+      isExternalUpdate.current = true
+      editor.commands.setContent(content, false)
+      isExternalUpdate.current = false
+    }
+  }, [content, editor])
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">

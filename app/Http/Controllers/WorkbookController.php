@@ -35,9 +35,12 @@ class WorkbookController extends Controller
             'name' => 'required|string',
         ]);
 
+        $user = $request->user(); 
+
         try {
             $workbook = Workbook::create([
                 'M_WorkbookName' => $validatedData['name'],
+                'M_WorkbookM_UserID' => $user->M_UserID,
                 'M_WorkbookCreated' => now(),
                 'M_WorkbookLastUpdated' => now(),
             ]);

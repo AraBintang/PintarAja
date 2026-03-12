@@ -57,7 +57,7 @@ export function useUsers({
   const createUser = async (payload) => {
     await request('/users', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     })
     await fetchUsers()
   }
@@ -65,7 +65,7 @@ export function useUsers({
   const updateUser = async (id, payload) => {
     await request(`/users/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: payload,
     })
     await fetchUsers()
   }
