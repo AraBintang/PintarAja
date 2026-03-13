@@ -38,6 +38,7 @@ export const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
+      { path: 'payment', element: <PaymentPage /> },
       {
         element: <SidebarLayout />,
         children: [
@@ -49,7 +50,6 @@ export const router = createBrowserRouter([
           { path: 'humanize', element: <HumanizerPage /> },
           { path: 'paraphrase', element: <ParafrasePage /> },
           { path: 'transcribe', element: <TranscribePage /> },
-          { path: 'payment', element: <PaymentPage /> },
 
           {
             element: <AdminRoute />,

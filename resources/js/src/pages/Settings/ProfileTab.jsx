@@ -1,4 +1,4 @@
-import { Check, Eye, EyeOff } from 'lucide-react'
+import { Check, Eye, EyeOff, ShoppingBag, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 
 import { useAuth } from '@/context/AuthContext'
@@ -6,7 +6,7 @@ import { useSettingsModal } from '@/context/SettingsModalContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
 
-export default function ProfileTab() {
+export default function ProfileTab({ setActiveTab }) {
   const { user, me, logout } = useAuth()
   const { showSnackbar } = useSnackbar()
   const { closeSettings } = useSettingsModal()

@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   ClipboardList,
   Copy,
@@ -60,7 +61,19 @@ const PAYMENT_METHODS = [
   },
 ]
 
-
+/* ─── Helper Components ─── */
+function StepItem({ number, text }) {
+  return (
+    <div className="flex gap-4 group">
+      <div className="flex shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold items-center justify-center text-xs border border-blue-200 dark:border-blue-800 shadow-sm mt-0.5 group-hover:bg-blue-500 group-hover:text-white dark:group-hover:bg-blue-500 transition-colors">
+        {number}
+      </div>
+      <div className="flex-1 text-sm text-gray-700 dark:text-gray-300 leading-relaxed pt-0.5">
+        {text}
+      </div>
+    </div>
+  )
+}
 
 export default function PaymentPage() {
   const navigate = useNavigate()
@@ -76,6 +89,7 @@ export default function PaymentPage() {
   const [phone, setPhone] = useState('')
   const [selectedMethod, setSelectedMethod] = useState(null)
   const [changePlanOpen, setChangePlanOpen] = useState(false)
+  const [isInstructionsOpen, setIsInstructionsOpen] = useState(false)
 
   // Redirect if no plan selected
   useEffect(() => {
@@ -118,41 +132,7 @@ export default function PaymentPage() {
     showSnackbar('success', 'Pesanan berhasil dibuat')
   }
 
-  const handleDownloadInstructions = () => {
-    const methodObj = PAYMENT_METHODS.flatMap(g => g.methods).find(m => m.id === selectedMethod)
-    const content = `=========================================
-BUKTI INSTRUKSI PEMBAYARAN - PINTARAJA
-=========================================
 
-ORDER ID         : ${transactionId}
-NAMA PEMESAN     : ${user?.name || '-'}
-EMAIL            : ${user?.email || '-'}
-PAKET            : ${plan.name}
-METODE PEMBAYARAN: ${methodObj?.name || selectedMethod}
-
-=========================================
-TOTAL PEMBAYARAN : Rp ${formatPrice(price)}
-KODE / VA NUMBER : ${paymentCode}
-=========================================
-
-Harap segera lakukan pembayaran sebelum batas waktu yang ditentukan.
-Bila menggunakan Virtual Account (VA), jumlah transfer akan terdeteksi otomatis.
-Bila menggunakan Retail (Alfamart/Indomaret), tunjukkan kode di atas ke kasir kasir.
-  
-Terima kasih telah berlangganan di Pintaraja!`.trim()
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `Instruksi_Pembayaran_${transactionId}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    
-    showSnackbar('success', 'Instruksi pembayaran berhasil diunduh')
-  }
 
   const handleChangePlan = (newPlan) => {
     setPlan(newPlan)
@@ -453,22 +433,85 @@ Terima kasih telah berlangganan di Pintaraja!`.trim()
                   </div>
                 </div>
 
+                {/* OVO/E-Wallet Instructions Design Enhanced */}
+                <div className="bg-white dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+                  <button
+                    onClick={() => setIsInstructionsOpen(!isInstructionsOpen)}
+                    className="w-full flex items-center justify-between p-5 md:p-6 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 text-[#4A90D9] dark:text-blue-400 flex items-center justify-center shrink-0">
+                        <ClipboardList className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                        Langkah Pembayaran
+                      </h3>
+                    </div>
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${
+                        isInstructionsOpen ? 'rotate-180 text-[#4A90D9]' : ''
+                      }`}
+                    />
+                  </button>
+                  
+                  <div
+                    className={`transition-all duration-300 ease-in-out ${
+                      isInstructionsOpen
+                        ? 'max-h-[800px] opacity-100 border-t border-gray-100 dark:border-gray-700'
+                        : 'max-h-0 opacity-0 overflow-hidden'
+                    }`}
+                  >
+                    <div className="p-5 md:p-6 bg-gray-50/50 dark:bg-gray-900/20">
+                      <div className="space-y-4">
+                        {selectedMethod === 'qris' ? (
+                          <>
+                            <StepItem number="1" text="Buka aplikasi m-banking atau e-wallet (OVO, GoPay, Dana, dll) di smartphone Anda." />
+                            <StepItem number="2" text={<>Pilih menu <strong>Scan QRIS</strong> pada halaman utama aplikasi.</>} />
+                            <StepItem number="3" text="Arahkan kamera ke QR Code di atas, atau pilih ikon galeri untuk mengunggah screenshot QR Code." />
+                            <StepItem number="4" text={<>Pastikan nama merchant penerima dan total nominal <strong>Rp {formatPrice(price)}</strong> sudah sesuai.</>} />
+                            <StepItem number="5" text="Klik Konfirmasi/Bayar dan masukkan PIN aplikasi Anda untuk menyelesaikan transaksi." />
+                          </>
+                        ) : selectedMethod?.includes('va') ? (
+                          <>
+                            <StepItem number="1" text="Buka aplikasi Mobile Banking, Internet Banking, atau kunjungi ATM terdekat sesuai bank yang dipilih." />
+                            <StepItem number="2" text={<>Pilih menu Pembayaran, lalu pilih <strong>Transfer ke Virtual Account (VA)</strong>.</>} />
+                            <StepItem number="3" text={<>Masukkan nomor VA Anda: <strong className="text-gray-900 dark:text-white bg-white dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">{paymentCode}</strong></>} />
+                            <StepItem number="4" text={<>Pastikan nama pelanggan adalah <strong>{user?.name || 'Pintaraja Customer'}</strong> dengan nominal tagihan tepat <strong>Rp {formatPrice(price)}</strong>.</>} />
+                            <StepItem number="5" text="Masukkan PIN/Password untuk mengonfirmasi pembayaran." />
+                          </>
+                        ) : selectedMethod === 'alfamart' || selectedMethod === 'indomaret' ? (
+                          <>
+                            <StepItem number="1" text={<>Kunjungi gerai <strong>{selectedMethod === 'alfamart' ? 'Alfamart / Alfamidi' : 'Indomaret'}</strong> terdekat sebelum batas waktu berakhir.</>} />
+                            <StepItem number="2" text={<>Sampaikan kepada kasir bahwa Anda ingin melakukan pembayaran merchant <strong>Pintaraja</strong> via {selectedMethod === 'alfamart' ? 'Alfamart' : 'Indomaret'}.</>} />
+                            <StepItem number="3" text={<>Tunjukkan detail kode pembayaran Anda: <strong className="text-xl inline-block mt-2 text-gray-900 dark:text-white bg-white dark:bg-gray-800 px-3 py-1 rounded border border-gray-200 dark:border-gray-700 tracking-wider shadow-sm">{paymentCode}</strong></>} />
+                            <StepItem number="4" text={<>Lakukan pembayaran tunai atau non-tunai sebesar <strong>Rp {formatPrice(price)}</strong> sesuai tagihan (kasir mungkin membebankan biaya admin tambahan).</>} />
+                            <StepItem number="5" text="Simpan struk pembayaran fisik yang diberikan kasir sebagai bukti transaksi yang sah." />
+                          </>
+                        ) : (
+                          <>
+                            <StepItem number="1" text={<>Buka aplikasi <strong>{PAYMENT_METHODS.flatMap(g => g.methods).find(m => m.id === selectedMethod)?.name || 'E-Wallet'}</strong> di smartphone Anda.</>} />
+                            <StepItem number="2" text="Pilih ikon notifikasi (lonceng) atau cek halaman utama aplikasi untuk mencari tagihan masuk dari Pintaraja." />
+                            <StepItem number="3" text={<>Pastikan nominal pembayaran <strong>Rp {formatPrice(price)}</strong> sudah benar.</>} />
+                            <StepItem number="4" text="Pilih Konfirmasi Pembayaran dan ketikkan PIN keamanan akun Anda." />
+                            <StepItem number="5" text="Tunggu beberapa saat sampai status pembayaran di aplikasi berubah menjadi 'Berhasil'." />
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     onClick={() => navigate('/chat', { replace: true })}
-                    className="flex-1 py-3.5 rounded-2xl bg-[#4A90D9] hover:bg-[#3A7BC8] text-white font-bold text-sm transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+                    className="w-full py-4 rounded-2xl bg-[#4A90D9] hover:bg-[#3A7BC8] text-white font-bold text-sm transition-all active:scale-95 shadow-lg shadow-blue-500/20"
                   >
                     Kembali ke Dashboard
                   </button>
-                  <button
-                     onClick={handleDownloadInstructions}
-                     className="flex-1 py-3.5 rounded-2xl bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Unduh Instruksi
-                  </button>
                 </div>
+
+
 
               </div>
             </div>

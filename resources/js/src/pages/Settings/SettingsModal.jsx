@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { useSettingsModal } from '@/context/SettingsModalContext'
 
+import OrderHistoryTab from './OrderHistoryTab'
 import ProfileTab from './ProfileTab'
 import SettingsSidebar from './SettingsSidebar'
 import SubscriptionTab from './SubscriptionTab'
@@ -21,6 +22,8 @@ export default function SettingsModal() {
       const tab = searchParams.get('tab')
       if (tab === 'subscription') {
         setActiveTab('Subscription')
+      } else if (tab === 'history') {
+        setActiveTab('Histori Pesanan')
       }
 
       // Clean the URL so that subsequent reloads don't automatically pop it open again unexpectedly
@@ -55,8 +58,9 @@ export default function SettingsModal() {
 
         {/* Content area */}
         <div className="flex-1 overflow-y-auto min-h-0">
-          {activeTab === 'Profil' && <ProfileTab />}
+          {activeTab === 'Profil' && <ProfileTab setActiveTab={setActiveTab} />}
           {activeTab === 'Subscription' && <SubscriptionTab />}
+          {activeTab === 'Histori Pesanan' && <OrderHistoryTab />}
         </div>
       </div>
     </div>

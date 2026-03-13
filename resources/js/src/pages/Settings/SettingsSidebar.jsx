@@ -1,4 +1,4 @@
-import { CreditCard, LogOut, User } from 'lucide-react'
+import { CreditCard, LogOut, User, ShoppingCart } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -60,6 +60,18 @@ export default function SettingsSidebar({ activeTab, setActiveTab }) {
         >
           <CreditCard size={18} className="shrink-0" />
           <span>Subscription</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('Histori Pesanan')}
+          className={`flex-shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'Histori Pesanan'
+              ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm'
+              : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+          }`}
+        >
+          <ShoppingCart size={18} className="shrink-0" />
+          <span className="whitespace-nowrap">Histori Pesanan</span>
         </button>
 
         {/* Divider: vertical on mobile, horizontal on desktop */}
