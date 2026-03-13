@@ -450,11 +450,11 @@ export default function PromptAIPage() {
       {/* Preview Modal */}
       {previewTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm"
           onClick={() => setPreviewTarget(null)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden border border-gray-100 dark:border-gray-700"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-blue-600 dark:bg-orange-500 px-6 py-4 flex items-center justify-between">
