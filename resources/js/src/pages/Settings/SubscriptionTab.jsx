@@ -1,6 +1,8 @@
 import { ChevronRight, CreditCard, Gift, Package } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
+import PlanSelectionModal from '@/components/plan/PlanSelectionModal'
 import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
@@ -8,9 +10,20 @@ import { request } from '@/utils/Http'
 export default function SubscriptionTab() {
   const { user } = useAuth()
   const { showSnackbar } = useSnackbar()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [redeemCode, setRedeemCode] = useState('')
   const [loading, setLoading] = useState(false)
+  const [planModalOpen, setPlanModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('openPlans') === 'true') {
+      setPlanModalOpen(true)
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('openPlans')
+      setSearchParams(newParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const expiredAt = user?.subscription_expired_at ? new Date(user.subscription_expired_at) : null
 
@@ -123,6 +136,7 @@ export default function SubscriptionTab() {
 
         {/* ACTION BUTTON */}
         <button
+          onClick={() => setPlanModalOpen(true)}
           className="
           w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2
           bg-[#2686D4] text-white
@@ -169,6 +183,11 @@ export default function SubscriptionTab() {
           </div>
         </div>
       </div>
+
+      <PlanSelectionModal
+        open={planModalOpen}
+        onClose={() => setPlanModalOpen(false)}
+      />
     </div>
   )
 }
