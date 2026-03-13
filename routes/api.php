@@ -45,7 +45,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('chats')->group(function () {
-        Route::get('/{id}', [ChatController::class, 'index']);
+        Route::get('/', [ChatController::class, 'index']);
+        Route::get('/{id}', [ChatController::class, 'index2']);
         Route::post('/', [ChatController::class, 'generate']);
         Route::post('/upload', [ChatController::class, 'uploadFile']);
         Route::post('/delete', [ChatController::class, 'deleteFile']);

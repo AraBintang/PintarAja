@@ -15,7 +15,30 @@ use OpenAI;
 
 class ChatController extends Controller
 {
-    public function index(Request $request, $conversationId)
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User authentication failed.'
+            ],401);
+        }
+
+        $aiProviders = DB::table('m_plansetting as ps')
+            ->join('m_setting as s','s.M_SettingID','=','ps.M_PlanSettingM_SettingID')
+            ->where('ps.M_PlanSettingM_PlanID',$user->M_UserPlan)
+            ->where('s.M_SettingIsActive','Y')
+            ->select(
+                's.M_SettingID as id',
+                's.M_SettingCode as code',
+                's.M_SettingModel as model'
+            )
+            ->get();
+
+        return response()->json($aiProviders);
+    }
+    public function index2(Request $request, $conversationId)
     {
         $cursor = $request->input('cursor');
         $limit = 20;
@@ -97,12 +120,6 @@ class ChatController extends Controller
         $conversationId = $request->conversationId;
         $message = $request->message;
         $messages = $request->messageToAi ?? [];
-
-        Chat::create([
-            'T_ChatT_ConversationID' => $conversationId,
-            'T_ChatRole' => 'user',
-            'T_ChatContent' => $message
-        ]);
 
         $providerMap = [
             'SETTING-GPT' => 'openai',

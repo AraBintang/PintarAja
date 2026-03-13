@@ -13,73 +13,9 @@ import {
 import { useRightSidebar } from '@/context/RightSidebarContext'
 import { request } from '@/utils/Http'
 
-const MOCK_HISTORY = {
-  '/chat': {
-    title: 'Riwayat Chat',
-    icon: MessagesSquare,
-    items: [
-      { id: 99, name: 'Pesan Test (Skeleton Demo)', time: 'Baru saja', data: 'halo' },
-      {
-        id: 1,
-        name: 'Cara membuat proposal skripsi',
-        time: '2 menit lalu',
-        data: 'Membuat proposal skripsi yang baik...',
-      },
-      {
-        id: 2,
-        name: 'Analisis data kualitatif',
-        time: '1 jam lalu',
-        data: 'Metode analisis data kualitatif...',
-      },
-      {
-        id: 3,
-        name: 'Review jurnal internasional',
-        time: '3 jam lalu',
-        data: 'Membahas cara review jurnal...',
-      },
-      {
-        id: 4,
-        name: 'Teknik penulisan abstrak',
-        time: 'Kemarin',
-        data: 'Tips menulis abstrak yang efektif...',
-      },
-      {
-        id: 5,
-        name: 'Referensi APA Style',
-        time: 'Kemarin',
-        data: 'Format penulisan referensi APA...',
-      },
-    ],
-  },
-  '/new': {
-    title: 'Riwayat Chat',
-    icon: MessagesSquare,
-    items: [
-      {
-        id: 1,
-        name: 'Cara membuat proposal skripsi',
-        time: '2 menit lalu',
-        data: 'Membuat proposal skripsi yang baik...',
-      },
-      {
-        id: 2,
-        name: 'Analisis data kualitatif',
-        time: '1 jam lalu',
-        data: 'Metode analisis data kualitatif...',
-      },
-      {
-        id: 3,
-        name: 'Review jurnal internasional',
-        time: '3 jam lalu',
-        data: 'Membahas cara review jurnal...',
-      },
-    ],
-  },
-}
-
 const PAGE_CONFIG = {
-  '/chat': { title: 'Riwayat Chat', icon: MessagesSquare, apiPath: null },
-  '/new': { title: 'Riwayat Chat', icon: MessagesSquare, apiPath: null },
+  '/chat': { title: 'Riwayat Chat', icon: MessagesSquare, apiPath: '/convers' },
+  '/new': { title: 'Riwayat Chat', icon: MessagesSquare, apiPath: '/convers' },
   '/writer': { title: 'Saved Document', icon: FileText, apiPath: '/writers' },
   '/humanizer': { title: 'Riwayat Humanizer AI', icon: Wand2, apiPath: null },
   '/paraphrase': { title: 'Riwayat Parafrase AI', icon: Hash, apiPath: '/paraps' },
@@ -100,7 +36,6 @@ export default function RightSidebar() {
 
   useEffect(() => {
     if (!isOpen) return
-
     setSearchQuery('')
 
     if (location.pathname === '/writer') {
@@ -117,21 +52,41 @@ export default function RightSidebar() {
     }
 
     if (!current.apiPath) {
-      const mock = MOCK_HISTORY[location.pathname]
-      setHistoryItems(mock?.items || [])
+      setHistoryItems([])
       setIsLoading(false)
       return
     }
 
     setIsLoading(true)
     setHistoryItems([])
-
     request(current.apiPath)
-      .then((res) => setHistoryItems(Array.isArray(res) ? res : []))
+      .then((res) => {
+        const items = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : []
+        setHistoryItems(items)
+      })
       .catch(() => setHistoryItems([]))
       .finally(() => setIsLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, location.pathname])
+
+  useEffect(() => {
+    const handler = (e) => {
+      setHistoryItems((prev) => [
+        {
+          id: e.detail.id,
+          title: e.detail.title || 'New Conversation',
+          lastUpdated: e.detail.lastUpdated || 'Baru saja',
+          chats: [],
+          nextCursor: null,
+          hasMoreChats: false,
+          ai: [],
+        },
+        ...prev,
+      ])
+    }
+    window.addEventListener('conversationCreated', handler)
+    return () => window.removeEventListener('conversationCreated', handler)
+  }, [])
 
   const filteredItems = useMemo(() => {
     let items = historyItems
@@ -150,7 +105,19 @@ export default function RightSidebar() {
 
   const handleItemClick = (item) => {
     if (location.pathname === '/chat' || location.pathname === '/new') {
-      window.dispatchEvent(new CustomEvent('loadHistoryChat', { detail: { id: item.id } }))
+      window.dispatchEvent(
+        new CustomEvent('loadHistoryChat', {
+          detail: {
+            id: item.id,
+            title: item.title,
+            chats: item.chats ?? [],
+            nextCursor: item.nextCursor ?? null,
+            hasMoreChats: item.hasMoreChats ?? false,
+          },
+        }),
+      )
+
+      console.log(item)
       close()
       return
     }
@@ -290,29 +257,34 @@ export default function RightSidebar() {
               </p>
             </div>
           ) : (
-            filteredItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleItemClick(item)}
-                className="w-full text-left px-4 py-3 hover:bg-[#f7f7f5] dark:hover:bg-gray-800 transition-colors group border-b border-gray-50 dark:border-gray-800 last:border-0"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-[13px] font-medium text-gray-800 dark:text-gray-200 group-hover:text-[#4A90D9] transition-colors truncate flex-1">
-                    <p className="text-gray-400">{item.workbook || ''}</p>
+            filteredItems.map((item) => {
+              const lastChat = item.chats?.at(-1)
+              const chatPreview = lastChat?.content?.slice(0, 70) ?? ''
 
-                    {item.name || item.title}
-                  </h3>
-                  {item.time && (
-                    <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap flex-shrink-0 mt-0.5">
-                      {item.time}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                  {typeof item.data === 'string' ? item.data.slice(0, 80) : item.preview || ''}
-                </p>
-              </button>
-            ))
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleItemClick(item)}
+                  className="w-full text-left px-4 py-3 hover:bg-[#f7f7f5] dark:hover:bg-gray-800 transition-colors group border-b border-gray-50 dark:border-gray-800 last:border-0"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-[13px] font-medium text-gray-800 dark:text-gray-200 group-hover:text-[#4A90D9] transition-colors truncate flex-1">
+                      <p className="text-gray-400">{item.workbook || ''}</p>
+                      {item.title || item.name || 'New Conversation'}
+                    </h3>
+                    {(item.time || item.lastUpdated) && (
+                      <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap flex-shrink-0 mt-0.5">
+                        {item.lastUpdated || item.time}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                    {chatPreview ||
+                      (typeof item.data === 'string' ? item.data.slice(0, 80) : item.preview || '')}
+                  </p>
+                </button>
+              )
+            })
           )}
         </div>
       </aside>

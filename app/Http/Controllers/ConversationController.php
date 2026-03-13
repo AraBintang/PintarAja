@@ -78,6 +78,7 @@ class ConversationController extends Controller
 
         $chat = Chat::create([
             'T_ChatT_ConversationID' => $conversation->T_ConversationID,
+            'T_ChatRole' => 'user',
             'T_ChatContent' => $request->content
         ]);
 
