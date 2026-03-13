@@ -14,10 +14,14 @@ export default function Register() {
   const { showSnackbar } = useSnackbar()
   const navigate = useNavigate()
 
+<<<<<<< HEAD
   /* ─── Step: 'register' | 'otp' ─── */
   const [step, setStep] = useState('register')
 
   /* ─── Registration form ─── */
+=======
+  const [loading, setLoading] = useState(false)
+>>>>>>> 83f4bd70e6823c1cca6b317587a1f9a4c0df7214
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -70,6 +74,7 @@ export default function Register() {
       await request('/register', {
         method: 'POST',
         body: {
+<<<<<<< HEAD
           name: formData.name,
           email: formData.email,
           password: formData.password,
@@ -80,6 +85,15 @@ export default function Register() {
       showSnackbar('success', 'Kode OTP telah dikirim ke email Anda')
       setStep('otp')
       setResendCooldown(60)
+=======
+          userName: formData.name,
+          email: formData.email,
+          password: formData.password,
+        },
+      })
+
+      navigate('/verify-otp', { replace: true })
+>>>>>>> 83f4bd70e6823c1cca6b317587a1f9a4c0df7214
     } catch (err) {
       showSnackbar('error', err.message || 'Registrasi gagal')
     } finally {

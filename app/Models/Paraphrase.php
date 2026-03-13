@@ -17,6 +17,7 @@ class Paraphrase extends Model
     protected $fillable = [
         'M_ParaphraseM_UserID',
         'M_ParaphraseName',
+        'M_ParaphraseOrigin',
         'M_ParaphraseData',
         'M_ParaphraseCreated',
         'M_ParaphraseLastUpdated',

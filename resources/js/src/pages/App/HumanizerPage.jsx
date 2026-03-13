@@ -38,7 +38,7 @@ export default function HumanizerPage() {
         />
       </div>
 
-      <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-12 z-10 max-w-6xl mx-auto w-full relative">
+      <div className="flex-1 flex flex-col mt-36 md:mt-0 md:flex-row items-center justify-center gap-12 z-10 max-w-6xl mx-auto w-full relative">
         {/* Text Content */}
         <div className="flex-1 text-center md:text-left animate-in fade-in slide-in-from-left duration-700">
           <h1 className="text-6xl md:text-8xl font-black mb-4 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500 dark:from-orange-400 dark:to-yellow-400 transition-colors duration-300 pb-2">

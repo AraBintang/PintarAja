@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use App\Models\Document;
+use Illuminate\Http\Request;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Shared\Html;
 
@@ -66,6 +67,33 @@ class DocumentController extends Controller
         ], 201);
     }
 
+    public function download(Request $request)
+    {
+        $content = $request->input('content');
+
+        if (empty($content)) {
+            return response()->json(['error' => 'Content is empty'], 400);
+        }
+    
+        $phpWord = new PhpWord();
+        $section = $phpWord->addSection();
+        Html::addHtml($section, $content);
+    
+        $fileName = 'GeneratedDocument_' . time() . '.docx';
+        $headers = [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ];
+    
+        $tempFile = tempnam(sys_get_temp_dir(), 'phpword');
+        $phpWord->save($tempFile, 'Word2007');
+    
+        return response()->streamDownload(function () use ($tempFile) {
+            readfile($tempFile);
+            unlink($tempFile);
+        }, $fileName, $headers);
+    }
+
     public function update(Request $request, $id)
     {
         $document = Document::findOrFail($id);
@@ -91,33 +119,6 @@ class DocumentController extends Controller
             'message' => 'Document updated',
             'data' => $document
         ]);
-    }
-
-    public function download(Request $request)
-    {
-        $content = $request->input('content');
-    
-        if (empty($content)) {
-            return response()->json(['error' => 'Content is empty'], 400);
-        }
-    
-        $phpWord = new PhpWord();
-        $section = $phpWord->addSection();
-        Html::addHtml($section, $content);
-    
-        $fileName = 'GeneratedDocument_' . time() . '.docx';
-        $headers = [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-        ];
-    
-        $tempFile = tempnam(sys_get_temp_dir(), 'phpword');
-        $phpWord->save($tempFile, 'Word2007');
-    
-        return response()->streamDownload(function () use ($tempFile) {
-            readfile($tempFile);
-            unlink($tempFile);
-        }, $fileName, $headers);
     }
 
     public function destroy($id)

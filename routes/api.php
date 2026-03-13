@@ -4,7 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\CouponController;
-// use App\Http\Controllers\HumanizerController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\PaperController;
 use App\Http\Controllers\ParaphraseController;
 use App\Http\Controllers\PlanController;
@@ -64,14 +64,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('documents')->group(function () {
-        Route::get('/', [WorkbookController::class, 'index']);
-        Route::post('/', [WorkbookController::class, 'store']);
-        Route::put('/{id}', [WorkbookController::class, 'update']);
-        Route::post('/', [WorkbookController::class, 'download']);
-        Route::delete('/{id}', [WorkbookController::class, 'destroy']);
+        Route::get('/', [DocumentController::class, 'index']);
+        Route::post('/', [DocumentController::class, 'store']);
+        Route::post('/download', [DocumentController::class, 'download']);
+        Route::put('/{id}', [DocumentController::class, 'update']);
+        Route::delete('/{id}', [DocumentController::class, 'destroy']);
     });
-
-    // ============================================================ //
 
     Route::prefix('paraps')->group(function () {
         Route::get('/', [ParaphraseController::class, 'index']);
@@ -91,8 +89,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', [TranscribeController::class, 'update']);
         Route::delete('/{id}', [TranscribeController::class, 'destroy']);
     });
-
-    // ============================================================ //
 
     // Route Admin Only
     Route::middleware('role:A')->group(function () {

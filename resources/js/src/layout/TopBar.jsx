@@ -29,7 +29,7 @@ export default function TopBar() {
       </div>
 
       <div className="fixed top-3 right-3 z-40 flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 py-1.5 pl-2 !pr-2.5 rounded-full shadow">
-        <button className="flex items-center gap-1 px-2.5 py-1.5 bg-[#4A90D9]/10 dark:bg-[#8C4B00]/10 text-[#4A90D9] dark:text-[#F2901E] rounded-full text-[10px] font-bold border border-[#4A90D9]/20 dark:border-[#8C4B00]/20">
+        <button className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold border border-blue-200 bg-blue-50 text-blue-600 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400">
           {user?.plan_id !== 1 ? (
             <Crown className="w-3 h-3 fill-current" />
           ) : (

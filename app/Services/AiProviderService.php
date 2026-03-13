@@ -29,6 +29,7 @@ class AiProviderService
                     $chunk = $response['choices'][0]['delta']['content'];
                     $formattedChunk = $format ? $this->formatMessage($chunk) : $chunk;
                     $output .= $formattedChunk;
+                    \Log::info($formattedChunk);
                     echo $formattedChunk;
                     ob_flush();
                     flush();

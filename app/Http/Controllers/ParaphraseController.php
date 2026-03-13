@@ -16,6 +16,7 @@ class ParaphraseController extends Controller
         $results = Paraphrase::select([
                 'M_ParaphraseID as id',
                 'M_ParaphraseName as name',
+                'M_ParaphraseOrigin as origin',
                 'M_ParaphraseData as data'
             ])
             ->where('M_ParaphraseM_UserID', $user->M_UserID)
@@ -91,6 +92,7 @@ Rules:
         Paraphrase::create([
             'M_ParaphraseM_UserID' => $user->M_UserID,
             'M_ParaphraseName' => 'Paraphrase ' . now()->format('Y-m-d H:i'),
+            'M_ParaphraseOrigin' => $text,
             'M_ParaphraseData' => $paraphrase,
         ]);
 

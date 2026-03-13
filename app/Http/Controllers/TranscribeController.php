@@ -97,12 +97,10 @@ class TranscribeController extends Controller
         $request->validate([
             'source' => 'required',
             'video_url' => 'nullable|url',
-            'file' => 'nullable|file'
         ]);
 
         $source = $request->input('source');
         $audioPath = null;
-
 
         if ($source === 'youtube') {
             $youtubeUrl = $request->video_url;
@@ -110,7 +108,7 @@ class TranscribeController extends Controller
             $filename = uniqid();
             $audioTemplate = storage_path("app/audio/{$filename}.%(ext)s");
 
-            $ytDlp = "/home/baid/.local/bin/yt-dlp";
+            $ytDlp = "yt-dlp";
 
             $command = $ytDlp .
                 " -f bestaudio --extract-audio --audio-format mp3 -o " .
@@ -140,14 +138,22 @@ class TranscribeController extends Controller
         if ($source === 'upload') {
             $file = $request->file('file');
 
-            $filename = uniqid() . "." . $file->getClientOriginalExtension();
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('uploads', $filename);
-            $fullPath = storage_path("app/$path");
-            $audioPath = storage_path("app/audio/" . uniqid() . ".mp3");
+            $fullPath = storage_path('app/private/' . $path);
+
+            if (!file_exists($fullPath)) {
+                return response()->json([
+                    'error' => 'Uploaded file not found',
+                    'path' => $fullPath
+                ], 500);
+            }
+
+            $audioPath = storage_path('app/audio/' . uniqid() . '.mp3');
 
             $command = "ffmpeg -i " .
                 escapeshellarg($fullPath) .
-                " -vn -acodec mp3 " .
+                " -vn -acodec libmp3lame " .
                 escapeshellarg($audioPath) .
                 " 2>&1";
 
@@ -166,7 +172,7 @@ class TranscribeController extends Controller
 
             $filename = uniqid() . ".webm";
             $path = $file->storeAs('record', $filename);
-            $fullPath = storage_path("app/$path");
+            $fullPath = storage_path('app/private/' . $path);
             $audioPath = storage_path("app/audio/" . uniqid() . ".mp3");
 
             $command = "ffmpeg -i " .
