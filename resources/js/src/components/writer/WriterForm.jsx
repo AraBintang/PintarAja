@@ -1,6 +1,7 @@
 import { BookOpen, ChevronDown, ChevronUp, Loader2, Sparkles } from 'lucide-react'
 import { memo } from 'react'
 
+import { LANGUAGES } from '@/assets/languages'
 import {
   Select,
   SelectContent,
@@ -10,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { LANGUAGES } from '@/data/languages'
 
 import WriterToolbar from './WriterToolbar'
 

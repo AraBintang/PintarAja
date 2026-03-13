@@ -17,11 +17,12 @@ import ForgotPassword from '@/pages/Auth/ForgotPassword'
 import GoogleAuth from '@/pages/Auth/GoogleAuth'
 import Login from '@/pages/Auth/Login'
 import Register from '@/pages/Auth/Register'
+import ResetPassword from '@/pages/Auth/ResetPassword'
 import Landing from '@/pages/Landing'
+import NotFoundPage from '@/pages/NotFoundPage'
 import AdminRoute from '@/routes/AdminRoute'
 import GuestRoute from '@/routes/GuestRoute'
 import ProtectedRoute from '@/routes/ProtectedRoute'
-import NotFoundPage from '@/pages/NotFoundPage'
 
 export const router = createBrowserRouter([
   {
@@ -31,6 +32,8 @@ export const router = createBrowserRouter([
       { path: '/login', element: <Login /> },
       { path: '/register', element: <Register /> },
       { path: '/forgot-password', element: <ForgotPassword /> },
+      // /reset-password?token=xxx&email=user@example.com
+      { path: '/new-password', element: <ResetPassword /> },
       { path: '/google-auth', element: <GoogleAuth /> },
     ],
   },

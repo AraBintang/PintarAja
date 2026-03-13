@@ -18,14 +18,15 @@ class ResetController extends Controller
         $request->validate([
             'email' => 'required|email',
         ]);
-    
-        $user = DB::table('m_user')->where('M_UserEmail', $request->email)->first();
-    
-        if (!$user) {
+
+        $user = User::where('M_UserEmail', $request->email)->first();
+
+        if (!$user || $user->M_UserEmailVerifiedAt == null) {
             return response()->json([
-                'error' => 'Email unregistered.'
-            ], 404);
+                'message' => 'Email unregistered or email not yet verified.'
+            ], 400);
         }
+        
     
         $token = Str::random(64);
     
@@ -48,7 +49,7 @@ class ResetController extends Controller
         $request->validate([
             'email' => 'required|email',
             'token' => 'required',
-            'password' => 'required|min:6',
+            'password' => 'required|min:8',
         ]);
     
         $user = User::where('M_UserEmail', $request->email)

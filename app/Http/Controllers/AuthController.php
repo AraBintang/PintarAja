@@ -29,7 +29,7 @@ class AuthController extends Controller
         }
 
         if (!$user->M_UserEmailVerifiedAt) {
-            return response()->json(['error' => 'Email not yet verified'], 400);
+            return response()->json(['error' => 'Email not yet verified, complete register first'], 400);
         }
 
         if ($user->M_UserIsActive !== 'Y') {
@@ -60,24 +60,26 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $credentials = $request->validate([
-            'userName' => 'required|string',
+            'name' => 'required|string',
             'email' => 'required|email',
             'password' => 'required|min:8',
         ]);
 
         $user = User::where('M_UserEmail', $credentials['email'])->first();
 
-        if ($user) {
+        if ($user && $user->M_UserEmailVerifiedAt !== null) {
             return response()->json([
-                'message' => 'User already registered'
+                'message' => 'Email already registered.'
             ], 400);
         }
 
-        User::create([
-            'M_UserEmail' => $credentials['email'],
-            'M_UserPassword' => Hash::make($credentials['password']),
-            'M_UserFullName' => $credentials['userName'],
-        ]);
+        if (empty($user)) {
+              User::create([
+                'M_UserEmail' => $credentials['email'],
+                'M_UserPassword' => Hash::make($credentials['password']),
+                'M_UserFullName' => $credentials['name'],
+            ]);
+        }
 
         $otp = random_int(100000, 999999);
 
@@ -112,13 +114,49 @@ class AuthController extends Controller
             return response()->json(['message' => 'OTP invalid or expired'], 400);
         }
 
-        User::where('M_UserEmail', $request->email)
-            ->update(['M_UserEmailVerifiedAt' => now()]);
-
         $otpData->delete();
 
+        $user = User::where('M_UserEmail', $request->email)->first();
+
+        $user->update([
+            'M_UserEmailVerifiedAt' => now()
+        ]);
+
+        $token = $user->createToken('auth')->plainTextToken;
+
         return response()->json([
-            'status' => 'Email Verified'
+            'token' => $token,
+            'user' => [
+                'email' => $user->M_UserEmail,
+                'full_name' => $user->M_UserFullName,
+                'image' => $user->M_UserImage,
+                'phone' => $user->M_UserPhone,
+            ],
+        ]);
+    }
+
+    public function resendOtp(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('M_UserEmail', $credentials['email'])->first();
+
+        $otp = random_int(100000, 999999);
+
+        Otp::updateOrCreate(
+            ['T_OtpM_UserEmail' => $credentials['email']],
+            [
+                'T_OtpValue' => $otp,
+                'T_OtpExpired' => Carbon::now()->addMinutes(5)
+            ]
+        );
+
+        Mail::to($credentials['email'])->send(new OtpMail($otp));
+
+        return response()->json([
+            'status' => 'OTP Send to email',
         ]);
     }
 

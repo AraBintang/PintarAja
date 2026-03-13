@@ -22,8 +22,9 @@ Route::middleware('guest:sanctum')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
 
-    Route::post('/send-email', [ResetController::class, 'sendEmail']);
+    Route::post('/forgot-password', [ResetController::class, 'sendEmail']);
     Route::post('/new-password', [ResetController::class, 'newPassword']);
 });
 

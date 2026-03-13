@@ -6,7 +6,6 @@ import {
   ClipboardList,
   Copy,
   CreditCard,
-  Download,
   Receipt,
   ShieldCheck,
   Store,
@@ -28,9 +27,7 @@ const PAYMENT_METHODS = [
   {
     category: 'QRIS',
     icon: <CreditCard className="w-4 h-4" />,
-    methods: [
-      { id: 'qris', name: 'QRIS', image: '/assets/images/qris.png' },
-    ],
+    methods: [{ id: 'qris', name: 'QRIS', image: '/assets/images/qris.png' }],
   },
   {
     category: 'E-WALLET',
@@ -84,7 +81,7 @@ export default function PaymentPage() {
   const [step, setStep] = useState('checkout') // 'checkout' | 'confirmation'
   const [transactionId, setTransactionId] = useState('')
   const [paymentCode, setPaymentCode] = useState('')
-  
+
   const [plan, setPlan] = useState(location.state?.plan ?? null)
   const [phone, setPhone] = useState('')
   const [selectedMethod, setSelectedMethod] = useState(null)
@@ -100,7 +97,7 @@ export default function PaymentPage() {
 
   if (!plan) return null
 
-  const price = plan.price?.discounted > 0 ? plan.price.discounted : plan.price?.monthly ?? 0
+  const price = plan.price?.discounted > 0 ? plan.price.discounted : (plan.price?.monthly ?? 0)
 
   const handleProceed = () => {
     if (!phone.trim()) {
@@ -113,9 +110,8 @@ export default function PaymentPage() {
     }
 
     // Generate dummy transaction processing details
-    const methodObj = PAYMENT_METHODS.flatMap(g => g.methods).find(m => m.id === selectedMethod)
     const txId = `INV-${Math.floor(Date.now() / 1000)}-${Math.floor(Math.random() * 9000 + 1000)}`
-    
+
     // Generate dummy code based on method
     let code = ''
     if (selectedMethod === 'qris') {
@@ -131,8 +127,6 @@ export default function PaymentPage() {
     setStep('confirmation')
     showSnackbar('success', 'Pesanan berhasil dibuat')
   }
-
-
 
   const handleChangePlan = (newPlan) => {
     setPlan(newPlan)
@@ -166,10 +160,9 @@ export default function PaymentPage() {
               {step === 'checkout' ? 'Pembayaran' : 'Detail Pesanan'}
             </h1>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {step === 'checkout' 
-                ? 'Pilih metode pembayaran yang Anda inginkan' 
-                : 'Selesaikan pembayaran Anda segera'
-              }
+              {step === 'checkout'
+                ? 'Pilih metode pembayaran yang Anda inginkan'
+                : 'Selesaikan pembayaran Anda segera'}
             </p>
           </div>
         </div>
@@ -202,9 +195,9 @@ export default function PaymentPage() {
                         >
                           {/* Logo image */}
                           <div className="w-12 h-8 rounded shrink-0 flex items-center justify-center bg-white p-1 shadow-sm">
-                            <img 
-                              src={method.image} 
-                              alt={method.name} 
+                            <img
+                              src={method.image}
+                              alt={method.name}
                               className="max-w-full max-h-full object-contain"
                             />
                           </div>
@@ -271,7 +264,9 @@ export default function PaymentPage() {
               <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
                 {/* Plan header card */}
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-6 text-gray-900 border-b border-gray-200 dark:border-gray-700 dark:text-white">
-                  <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">{plan.tagLine || 'A simple start for everyone'}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-300 mb-1">
+                    {plan.tagLine || 'A simple start for everyone'}
+                  </p>
                   <div className="flex items-end gap-1 mb-4">
                     <span className="text-3xl font-extrabold text-[#4A90D9] dark:text-white">
                       Rp {formatPrice(price)}
@@ -290,9 +285,7 @@ export default function PaymentPage() {
                 {/* Price breakdown */}
                 <div className="bg-white dark:bg-gray-800/60 p-6 space-y-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      {plan.name} — Monthly
-                    </span>
+                    <span className="text-gray-600 dark:text-gray-400">{plan.name} — Monthly</span>
                     <span className="font-bold text-gray-900 dark:text-white">
                       Rp. {formatPrice(price)}
                     </span>
@@ -318,7 +311,8 @@ export default function PaymentPage() {
 
                   {/* Disclaimer */}
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed text-center mt-3">
-                    By continuing, you accept to our Terms of Services and Privacy Policy. Please note that payments are non-refundable.
+                    By continuing, you accept to our Terms of Services and Privacy Policy. Please
+                    note that payments are non-refundable.
                   </p>
                 </div>
               </div>
@@ -345,7 +339,8 @@ export default function PaymentPage() {
                   Menunggu Pembayaran
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
-                  Silakan selesaikan pembayaran Anda sebelum batas waktu berakhir agar pesanan dapat segera diproses.
+                  Silakan selesaikan pembayaran Anda sebelum batas waktu berakhir agar pesanan dapat
+                  segera diproses.
                 </p>
               </div>
 
@@ -367,16 +362,19 @@ export default function PaymentPage() {
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">
                       {selectedMethod === 'qris' ? 'Scan & Pay' : 'Kode Pembayaran / VA'}
                     </p>
-                    
+
                     {selectedMethod === 'qris' ? (
                       <div className="flex flex-col items-center md:items-start gap-2">
                         <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-200 inline-block">
                           {/* Dummy QR Code UI */}
                           <div className="w-32 h-32 bg-gray-100 flex flex-wrap gap-1 p-1 rounded-lg relative overflow-hidden">
                             <div className="absolute inset-0 grid grid-cols-4 grid-rows-4 gap-1 p-1 opacity-50">
-                               {[...Array(16)].map((_, i) => (
-                                 <div key={i} className={`bg-gray-800 rounded-sm ${Math.random() > 0.5 ? 'opacity-100' : 'opacity-0'}`} />
-                               ))}
+                              {[...Array(16)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className={`bg-gray-800 rounded-sm ${Math.random() > 0.5 ? 'opacity-100' : 'opacity-0'}`}
+                                />
+                              ))}
                             </div>
                             <div className="absolute inset-4 bg-white flex items-center justify-center rounded shadow">
                               <span className="text-xs font-bold text-gray-400">QRIS</span>
@@ -384,7 +382,7 @@ export default function PaymentPage() {
                           </div>
                         </div>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                           Simpan gambar atau scan secara langsung
+                          Simpan gambar atau scan secara langsung
                         </p>
                       </div>
                     ) : (
@@ -392,7 +390,7 @@ export default function PaymentPage() {
                         <span className="text-xl font-mono font-bold tracking-widest text-gray-900 dark:text-white">
                           {paymentCode}
                         </span>
-                        <button 
+                        <button
                           onClick={handleCopyCode}
                           className="p-2 text-gray-400 hover:text-[#4A90D9] transition-colors"
                           title="Salin Kode"
@@ -414,21 +412,35 @@ export default function PaymentPage() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center py-3 border-b border-gray-100 dark:border-gray-800">
                       <span className="text-sm text-gray-500 dark:text-gray-400">Order ID</span>
-                      <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">{transactionId}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-3 border-b border-gray-100 dark:border-gray-800">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Paket Layanan</span>
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">{plan.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-3 border-b border-gray-100 dark:border-gray-800">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Metode Pembayaran</span>
-                      <span className="text-sm font-bold text-gray-900 dark:text-white uppercase">
-                        {PAYMENT_METHODS.flatMap(g => g.methods).find(m => m.id === selectedMethod)?.name || selectedMethod}
+                      <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">
+                        {transactionId}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-3 border-b border-gray-100 dark:border-gray-800">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Email Pemesan</span>
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">{user?.email || '-'}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Paket Layanan
+                      </span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">
+                        {plan.name}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 border-b border-gray-100 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Metode Pembayaran
+                      </span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white uppercase">
+                        {PAYMENT_METHODS.flatMap((g) => g.methods).find(
+                          (m) => m.id === selectedMethod,
+                        )?.name || selectedMethod}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 border-b border-gray-100 dark:border-gray-800">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Email Pemesan
+                      </span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">
+                        {user?.email || '-'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -453,7 +465,7 @@ export default function PaymentPage() {
                       }`}
                     />
                   </button>
-                  
+
                   <div
                     className={`transition-all duration-300 ease-in-out ${
                       isInstructionsOpen
@@ -465,35 +477,166 @@ export default function PaymentPage() {
                       <div className="space-y-4">
                         {selectedMethod === 'qris' ? (
                           <>
-                            <StepItem number="1" text="Buka aplikasi m-banking atau e-wallet (OVO, GoPay, Dana, dll) di smartphone Anda." />
-                            <StepItem number="2" text={<>Pilih menu <strong>Scan QRIS</strong> pada halaman utama aplikasi.</>} />
-                            <StepItem number="3" text="Arahkan kamera ke QR Code di atas, atau pilih ikon galeri untuk mengunggah screenshot QR Code." />
-                            <StepItem number="4" text={<>Pastikan nama merchant penerima dan total nominal <strong>Rp {formatPrice(price)}</strong> sudah sesuai.</>} />
-                            <StepItem number="5" text="Klik Konfirmasi/Bayar dan masukkan PIN aplikasi Anda untuk menyelesaikan transaksi." />
+                            <StepItem
+                              number="1"
+                              text="Buka aplikasi m-banking atau e-wallet (OVO, GoPay, Dana, dll) di smartphone Anda."
+                            />
+                            <StepItem
+                              number="2"
+                              text={
+                                <>
+                                  Pilih menu <strong>Scan QRIS</strong> pada halaman utama aplikasi.
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="3"
+                              text="Arahkan kamera ke QR Code di atas, atau pilih ikon galeri untuk mengunggah screenshot QR Code."
+                            />
+                            <StepItem
+                              number="4"
+                              text={
+                                <>
+                                  Pastikan nama merchant penerima dan total nominal{' '}
+                                  <strong>Rp {formatPrice(price)}</strong> sudah sesuai.
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="5"
+                              text="Klik Konfirmasi/Bayar dan masukkan PIN aplikasi Anda untuk menyelesaikan transaksi."
+                            />
                           </>
                         ) : selectedMethod?.includes('va') ? (
                           <>
-                            <StepItem number="1" text="Buka aplikasi Mobile Banking, Internet Banking, atau kunjungi ATM terdekat sesuai bank yang dipilih." />
-                            <StepItem number="2" text={<>Pilih menu Pembayaran, lalu pilih <strong>Transfer ke Virtual Account (VA)</strong>.</>} />
-                            <StepItem number="3" text={<>Masukkan nomor VA Anda: <strong className="text-gray-900 dark:text-white bg-white dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">{paymentCode}</strong></>} />
-                            <StepItem number="4" text={<>Pastikan nama pelanggan adalah <strong>{user?.name || 'Pintaraja Customer'}</strong> dengan nominal tagihan tepat <strong>Rp {formatPrice(price)}</strong>.</>} />
-                            <StepItem number="5" text="Masukkan PIN/Password untuk mengonfirmasi pembayaran." />
+                            <StepItem
+                              number="1"
+                              text="Buka aplikasi Mobile Banking, Internet Banking, atau kunjungi ATM terdekat sesuai bank yang dipilih."
+                            />
+                            <StepItem
+                              number="2"
+                              text={
+                                <>
+                                  Pilih menu Pembayaran, lalu pilih{' '}
+                                  <strong>Transfer ke Virtual Account (VA)</strong>.
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="3"
+                              text={
+                                <>
+                                  Masukkan nomor VA Anda:{' '}
+                                  <strong className="text-gray-900 dark:text-white bg-white dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700">
+                                    {paymentCode}
+                                  </strong>
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="4"
+                              text={
+                                <>
+                                  Pastikan nama pelanggan adalah{' '}
+                                  <strong>{user?.name || 'Pintaraja Customer'}</strong> dengan
+                                  nominal tagihan tepat <strong>Rp {formatPrice(price)}</strong>.
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="5"
+                              text="Masukkan PIN/Password untuk mengonfirmasi pembayaran."
+                            />
                           </>
                         ) : selectedMethod === 'alfamart' || selectedMethod === 'indomaret' ? (
                           <>
-                            <StepItem number="1" text={<>Kunjungi gerai <strong>{selectedMethod === 'alfamart' ? 'Alfamart / Alfamidi' : 'Indomaret'}</strong> terdekat sebelum batas waktu berakhir.</>} />
-                            <StepItem number="2" text={<>Sampaikan kepada kasir bahwa Anda ingin melakukan pembayaran merchant <strong>Pintaraja</strong> via {selectedMethod === 'alfamart' ? 'Alfamart' : 'Indomaret'}.</>} />
-                            <StepItem number="3" text={<>Tunjukkan detail kode pembayaran Anda: <strong className="text-xl inline-block mt-2 text-gray-900 dark:text-white bg-white dark:bg-gray-800 px-3 py-1 rounded border border-gray-200 dark:border-gray-700 tracking-wider shadow-sm">{paymentCode}</strong></>} />
-                            <StepItem number="4" text={<>Lakukan pembayaran tunai atau non-tunai sebesar <strong>Rp {formatPrice(price)}</strong> sesuai tagihan (kasir mungkin membebankan biaya admin tambahan).</>} />
-                            <StepItem number="5" text="Simpan struk pembayaran fisik yang diberikan kasir sebagai bukti transaksi yang sah." />
+                            <StepItem
+                              number="1"
+                              text={
+                                <>
+                                  Kunjungi gerai{' '}
+                                  <strong>
+                                    {selectedMethod === 'alfamart'
+                                      ? 'Alfamart / Alfamidi'
+                                      : 'Indomaret'}
+                                  </strong>{' '}
+                                  terdekat sebelum batas waktu berakhir.
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="2"
+                              text={
+                                <>
+                                  Sampaikan kepada kasir bahwa Anda ingin melakukan pembayaran
+                                  merchant <strong>Pintaraja</strong> via{' '}
+                                  {selectedMethod === 'alfamart' ? 'Alfamart' : 'Indomaret'}.
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="3"
+                              text={
+                                <>
+                                  Tunjukkan detail kode pembayaran Anda:{' '}
+                                  <strong className="text-xl inline-block mt-2 text-gray-900 dark:text-white bg-white dark:bg-gray-800 px-3 py-1 rounded border border-gray-200 dark:border-gray-700 tracking-wider shadow-sm">
+                                    {paymentCode}
+                                  </strong>
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="4"
+                              text={
+                                <>
+                                  Lakukan pembayaran tunai atau non-tunai sebesar{' '}
+                                  <strong>Rp {formatPrice(price)}</strong> sesuai tagihan (kasir
+                                  mungkin membebankan biaya admin tambahan).
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="5"
+                              text="Simpan struk pembayaran fisik yang diberikan kasir sebagai bukti transaksi yang sah."
+                            />
                           </>
                         ) : (
                           <>
-                            <StepItem number="1" text={<>Buka aplikasi <strong>{PAYMENT_METHODS.flatMap(g => g.methods).find(m => m.id === selectedMethod)?.name || 'E-Wallet'}</strong> di smartphone Anda.</>} />
-                            <StepItem number="2" text="Pilih ikon notifikasi (lonceng) atau cek halaman utama aplikasi untuk mencari tagihan masuk dari Pintaraja." />
-                            <StepItem number="3" text={<>Pastikan nominal pembayaran <strong>Rp {formatPrice(price)}</strong> sudah benar.</>} />
-                            <StepItem number="4" text="Pilih Konfirmasi Pembayaran dan ketikkan PIN keamanan akun Anda." />
-                            <StepItem number="5" text="Tunggu beberapa saat sampai status pembayaran di aplikasi berubah menjadi 'Berhasil'." />
+                            <StepItem
+                              number="1"
+                              text={
+                                <>
+                                  Buka aplikasi{' '}
+                                  <strong>
+                                    {PAYMENT_METHODS.flatMap((g) => g.methods).find(
+                                      (m) => m.id === selectedMethod,
+                                    )?.name || 'E-Wallet'}
+                                  </strong>{' '}
+                                  di smartphone Anda.
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="2"
+                              text="Pilih ikon notifikasi (lonceng) atau cek halaman utama aplikasi untuk mencari tagihan masuk dari Pintaraja."
+                            />
+                            <StepItem
+                              number="3"
+                              text={
+                                <>
+                                  Pastikan nominal pembayaran{' '}
+                                  <strong>Rp {formatPrice(price)}</strong> sudah benar.
+                                </>
+                              }
+                            />
+                            <StepItem
+                              number="4"
+                              text="Pilih Konfirmasi Pembayaran dan ketikkan PIN keamanan akun Anda."
+                            />
+                            <StepItem
+                              number="5"
+                              text="Tunggu beberapa saat sampai status pembayaran di aplikasi berubah menjadi 'Berhasil'."
+                            />
                           </>
                         )}
                       </div>
@@ -510,14 +653,10 @@ export default function PaymentPage() {
                     Kembali ke Dashboard
                   </button>
                 </div>
-
-
-
               </div>
             </div>
           </div>
         )}
-
       </div>
 
       {/* Change Plan Modal (reuses PlanSelectionModal) */}
