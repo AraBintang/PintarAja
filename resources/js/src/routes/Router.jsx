@@ -11,7 +11,6 @@ import AIWriterPage from '@/pages/App/AIWriterPage'
 import ChatPage from '@/pages/App/ChatPage'
 import HumanizerPage from '@/pages/App/HumanizerPage'
 import ParafrasePage from '@/pages/App/ParafrasePage'
-import PaymentPage from '@/pages/App/PaymentPage'
 import TranscribePage from '@/pages/App/TranscribePage'
 import ForgotPassword from '@/pages/Auth/ForgotPassword'
 import GoogleAuth from '@/pages/Auth/GoogleAuth'
@@ -20,6 +19,8 @@ import Register from '@/pages/Auth/Register'
 import ResetPassword from '@/pages/Auth/ResetPassword'
 import Landing from '@/pages/Landing'
 import NotFoundPage from '@/pages/NotFoundPage'
+import CheckoutPage from '@/pages/Payment/CheckoutPage'
+import PaymentPage from '@/pages/Payment/PaymentPage'
 import AdminRoute from '@/routes/AdminRoute'
 import GuestRoute from '@/routes/GuestRoute'
 import ProtectedRoute from '@/routes/ProtectedRoute'
@@ -28,19 +29,20 @@ export const router = createBrowserRouter([
   {
     element: <GuestRoute />,
     children: [
-      { path: '/home', element: <Landing /> },
-      { path: '/login', element: <Login /> },
-      { path: '/register', element: <Register /> },
-      { path: '/forgot-password', element: <ForgotPassword /> },
-      // /reset-password?token=xxx&email=user@example.com
-      { path: '/new-password', element: <ResetPassword /> },
-      { path: '/google-auth', element: <GoogleAuth /> },
+      { path: 'home', element: <Landing /> },
+      { path: 'login', element: <Login /> },
+      { path: 'register', element: <Register /> },
+      { path: 'forgot-password', element: <ForgotPassword /> },
+      // /new-password?email=user@example.com&token=xxx
+      { path: 'new-password', element: <ResetPassword /> },
+      { path: 'google-auth', element: <GoogleAuth /> },
     ],
   },
 
   {
     element: <ProtectedRoute />,
     children: [
+      { path: 'checkout', element: <CheckoutPage /> },
       { path: 'payment', element: <PaymentPage /> },
       {
         element: <SidebarLayout />,

@@ -121,6 +121,12 @@ class ChatController extends Controller
         $message = $request->message;
         $messages = $request->messageToAi ?? [];
 
+        $chat = Chat::create([
+            'T_ChatT_ConversationID' => $conversationId,
+            'T_ChatRole' => 'user',
+            'T_ChatContent' => $message
+        ]);
+
         $providerMap = [
             'SETTING-GPT' => 'openai',
             'SETTING-GMN' => 'gemini',

@@ -58,7 +58,7 @@ export default function ForgotPassword() {
         <>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Reset password</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-7">
-            Masukkan email kamu untuk menerima link reset password.
+            Enter your email to receive a password reset link.
           </p>
 
           <form onSubmit={handleSendLink} className="space-y-4">
@@ -75,7 +75,7 @@ export default function ForgotPassword() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nama@email.com"
+                  placeholder="name@email.com"
                   className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl pl-9 pr-3.5 py-2.5 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 dark:focus:border-blue-500 transition-all"
                   required
                 />
@@ -88,14 +88,14 @@ export default function ForgotPassword() {
               className="w-full bg-[#4A90D9] hover:bg-[#3A7BC8] disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl text-sm transition-all active:scale-[0.99] flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 mt-6"
             >
               {loading && <Loader2 size={15} className="animate-spin" />}
-              {loading ? 'Mengirim…' : 'Kirim link reset'}
+              {loading ? 'Sending...' : 'Send reset link'}
             </button>
           </form>
 
           <p className="mt-6 text-center text-[13px] text-gray-400 dark:text-gray-500">
-            Ingat password?{' '}
+            Remember password?{' '}
             <Link to="/login" className="text-[#4A90D9] font-semibold hover:underline">
-              Kembali ke login
+              Back to login
             </Link>
           </p>
         </>
@@ -107,25 +107,27 @@ export default function ForgotPassword() {
             <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mx-auto mb-4">
               <Mail size={26} className="text-[#4A90D9]" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Cek emailmu</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              Check your email
+            </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-              Kami telah mengirimkan link reset ke{' '}
+              We have sent a reset link to{' '}
               <span className="font-semibold text-gray-700 dark:text-gray-300">{email}</span>
             </p>
           </div>
 
           <div className="space-y-3 text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/5 rounded-xl p-4 mb-6">
             <p>
-              • Cek folder <span className="font-medium">Spam</span> atau{' '}
-              <span className="font-medium">Junk</span> jika tidak ada di inbox
+              • Check folders <span className="font-medium">Spam</span> or{' '}
+              <span className="font-medium">Junk</span> if it's not in the inbox
             </p>
             <p>
-              • Link berlaku selama <span className="font-medium">60 menit</span>
+              • Link valid for <span className="font-medium">60 minutes</span>
             </p>
             <p>
-              • Pastikan email{' '}
-              <span className="font-medium text-gray-600 dark:text-gray-400">{email}</span> sudah
-              benar
+              • Make sure the email{' '}
+              <span className="font-medium text-gray-600 dark:text-gray-400">{email}</span> is
+              correct
             </p>
           </div>
 
@@ -133,7 +135,7 @@ export default function ForgotPassword() {
             onClick={handleResend}
             className="w-full border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300 font-semibold py-2.5 rounded-xl text-sm transition-all"
           >
-            Kirim ulang email
+            Re send Email
           </button>
 
           <button
@@ -141,7 +143,7 @@ export default function ForgotPassword() {
             className="mt-3 w-full flex items-center justify-center gap-1.5 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <ArrowLeft size={14} />
-            Gunakan email lain
+            Use other email
           </button>
         </>
       )}

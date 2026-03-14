@@ -1,4 +1,4 @@
-import { ArrowUp, FileText, Image, Paperclip, Plus, X as XIcon } from 'lucide-react'
+import { ArrowUp, FileText, Image, Lock, Paperclip, Plus, X as XIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 
 import { AI_CODE_MAP, AutoIcon } from './ChatConstants'
@@ -9,19 +9,18 @@ function ModelSelect({ value, onChange, aiProviders }) {
   const selected = aiProviders.find((a) => String(a.id) === String(value))
   const mapped = selected
     ? (AI_CODE_MAP[selected.code] ?? { label: selected.code, icon: <AutoIcon /> })
-    : { label: 'Pilih AI', icon: <AutoIcon /> }
-
-  if (!aiProviders.length) return null
+    : { label: 'Select AI', icon: <AutoIcon /> }
 
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-full text-[13px] font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-all"
+        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700 rounded-xl text-[13px] transition-all shadow-sm whitespace-nowrap"
       >
         <span className="flex-shrink-0">{mapped.icon}</span>
-        <span>{mapped.label}</span>
+        <span className="text-[12px] text-gray-400 dark:text-gray-500 font-medium">Model:</span>
+        <span className="font-semibold text-gray-800 dark:text-gray-200">{mapped.label}</span>
         {selected?.model && (
           <span className="text-[10px] text-gray-400 font-mono hidden sm:inline truncate max-w-[90px]">
             {selected.model}
@@ -33,8 +32,8 @@ function ModelSelect({ value, onChange, aiProviders }) {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
-          className="text-gray-400 flex-shrink-0"
+          strokeWidth="2.5"
+          className="text-gray-400 flex-shrink-0 ml-0.5"
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
@@ -43,42 +42,75 @@ function ModelSelect({ value, onChange, aiProviders }) {
       {open && (
         <>
           <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl z-[70] min-w-[210px] py-2 overflow-hidden">
-            <p className="text-[11px] font-bold text-gray-400 uppercase px-4 py-1.5 tracking-wider">
-              Pilih Model AI
+          <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl z-[70] min-w-[230px] p-1.5 overflow-hidden">
+            <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase px-3 pt-2 pb-1.5 tracking-widest">
+              Select AI Model
             </p>
-            {aiProviders.map((ai) => {
-              const m = AI_CODE_MAP[ai.code] ?? { label: ai.code, icon: <AutoIcon /> }
-              const isSelected = String(ai.id) === String(value)
-              return (
-                <button
-                  key={ai.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(String(ai.id))
-                    setOpen(false)
-                  }}
-                  className={`w-full text-left px-4 py-2.5 text-[13px] hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 ${
-                    isSelected
-                      ? 'text-blue-500 font-bold bg-blue-50/50 dark:bg-blue-500/10'
-                      : 'text-gray-600 dark:text-gray-300'
-                  }`}
-                >
-                  <span className="flex-shrink-0">{m.icon}</span>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span>{m.label}</span>
-                    {ai.model && (
-                      <span className="text-[10px] text-gray-400 font-mono truncate">
-                        {ai.model}
+            {aiProviders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 px-4 text-center">
+                <span className="text-2xl mb-2">
+                  <Lock />
+                </span>
+                <p className="text-[13px] font-semibold text-gray-500 dark:text-gray-400">
+                  No models available
+                </p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                  Upgrade your plan to unlock AI models
+                </p>
+              </div>
+            ) : (
+              aiProviders.map((ai) => {
+                const m = AI_CODE_MAP[ai.code] ?? { label: ai.code, icon: <AutoIcon /> }
+                const isSelected = String(ai.id) === String(value)
+                return (
+                  <button
+                    key={ai.id}
+                    type="button"
+                    onClick={() => {
+                      onChange(String(ai.id))
+                      setOpen(false)
+                    }}
+                    className={`cursor-pointer w-full text-left px-3 py-2.5 rounded-xl transition-colors flex items-center gap-2.5 my-0.5 ${
+                      isSelected
+                        ? 'bg-[#4A90D9]/8 dark:bg-[#4A90D9]/15'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'
+                    }`}
+                  >
+                    <div
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-[#4A90D9]/10 dark:bg-[#4A90D9]/20' : 'bg-gray-100 dark:bg-gray-700'}`}
+                    >
+                      <span className="text-[15px]">{m.icon}</span>
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span
+                        className={`text-[13px] font-semibold leading-tight ${isSelected ? 'text-[#4A90D9]' : 'text-gray-700 dark:text-gray-200'}`}
+                      >
+                        {m.label}
                       </span>
+                      {ai.model && (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono truncate leading-tight mt-0.5">
+                          {ai.model}
+                        </span>
+                      )}
+                    </div>
+                    {isSelected && (
+                      <div className="w-5 h-5 rounded-full bg-[#4A90D9] flex items-center justify-center flex-shrink-0">
+                        <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="3"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
                     )}
-                  </div>
-                  {isSelected && (
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
-                  )}
-                </button>
-              )
-            })}
+                  </button>
+                )
+              })
+            )}
           </div>
         </>
       )}

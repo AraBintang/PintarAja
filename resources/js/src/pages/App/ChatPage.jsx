@@ -183,7 +183,7 @@ export default function ChatPage() {
     let convId = conversationId
     if (!convId) {
       try {
-        const res = await request('/convers', { method: 'POST', body: { content: text } })
+        const res = await request('/convers', { method: 'POST' })
         convId = res.conversation.id
         setConversationId(convId)
         window.dispatchEvent(new CustomEvent('conversationCreated', { detail: res.conversation }))

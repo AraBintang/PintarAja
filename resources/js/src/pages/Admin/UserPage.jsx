@@ -100,7 +100,7 @@ export default function AdminUserPage() {
       textColor: 'text-blue-600 dark:text-orange-400',
     },
     {
-      label: 'Premium',
+      label: 'Paid User',
       value: summary.premium,
       icon: Crown,
       bgLight: 'bg-blue-50 dark:bg-orange-900/20',
@@ -435,12 +435,12 @@ export default function AdminUserPage() {
           {/* Pagination */}
           <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between flex-wrap gap-3">
             <p className="text-[13px] text-gray-500 dark:text-gray-400">
-              Menampilkan{' '}
+              Viewing{' '}
               <span className="font-semibold text-gray-800 dark:text-gray-100">
                 {pagination ? (currentPage - 1) * PAGE_SIZE + 1 : 0}–
                 {pagination ? Math.min(currentPage * PAGE_SIZE, pagination.total) : 0}
               </span>{' '}
-              dari{' '}
+              from{' '}
               <span className="font-semibold text-gray-800 dark:text-gray-100">
                 {pagination?.total ?? 0}
               </span>{' '}

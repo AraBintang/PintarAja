@@ -30,7 +30,7 @@ export const AI_CODE_MAP = {
 
 export const CHAT_FEATURES = [
   { label: 'AI Writer', iconColor: 'text-blue-500', to: '/writer', icon: <FileText /> },
-  { label: 'Parafrase AI', iconColor: 'text-green-500', to: '/paraphrase', icon: <Hash /> },
+  { label: 'Paraphrase AI', iconColor: 'text-green-500', to: '/paraphrase', icon: <Hash /> },
   { label: 'Humanizer AI', iconColor: 'text-orange-500', to: '/humanize', icon: <Speech /> },
   { label: 'Transcribe AI', iconColor: 'text-purple-500', to: '/transcribe', icon: <Mic /> },
 ]

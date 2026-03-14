@@ -47,7 +47,7 @@ export default function HumanizerPage() {
             Soon!
           </h1>
           <p className="text-xl md:text-2xl font-medium mb-8 text-gray-600 dark:text-gray-400 max-w-md mx-auto md:mx-0 transition-colors duration-300">
-            Halaman ini masih dalam tahap pengembangan. Fitur unggulan kami akan segera hadir!
+            This page is still under development. Our next feature will be coming soon!
           </p>
           <Link
             to="/chat"

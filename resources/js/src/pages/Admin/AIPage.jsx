@@ -140,9 +140,9 @@ export default function AIPage() {
         {/* Stats & Search */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-1 shadow-sm w-full md:w-max">
-            <div className="px-5 py-2.5 rounded-xl bg-blue-50/50 dark:bg-orange-900/20 flex items-center gap-3 flex-1 md:flex-none">
-              <div className="w-8 h-8 rounded-lg bg-blue-100/50 dark:bg-orange-800/30 flex items-center justify-center">
-                <Key className="w-4 h-4 text-blue-600 dark:text-orange-400" />
+            <div className="px-5 py-2.5 rounded-xl  flex items-center gap-3 flex-1 md:flex-none">
+              <div className="w-12 h-12 rounded-lg bg-blue-100/50 dark:bg-orange-800/30 flex items-center justify-center">
+                <Key className="w-8 h-8 text-blue-600 dark:text-orange-400" />
               </div>
               <div>
                 <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">
@@ -154,8 +154,8 @@ export default function AIPage() {
               </div>
             </div>
             <div className="px-5 py-2.5 rounded-xl flex items-center gap-3 flex-1 md:flex-none">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+              <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
               </div>
               <div>
                 <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest leading-none mb-1">
@@ -174,7 +174,7 @@ export default function AIPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari AI Key..."
+              placeholder="Search AI Key..."
               className="w-full h-full min-h-[52px] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl pl-11 pr-4 text-[14px] text-gray-800 dark:text-gray-100 shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 dark:focus:border-orange-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-orange-900/30 focus:outline-none transition-all"
             />
           </div>

@@ -1,9 +1,11 @@
 import Lottie from 'lottie-react'
 import { Monitor, Moon, Sun } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import { useTheme } from '@/context/ThemeContext'
 
 export default function AuthLayout({ lottieData, lottieText, lottieSub, children }) {
+  const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
 
   return (
@@ -24,12 +26,15 @@ export default function AuthLayout({ lottieData, lottieText, lottieSub, children
       </button>
 
       <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center px-12 py-16 relative z-10">
-        <div className="absolute top-6 left-8 flex items-center gap-1">
+        <button
+          onClick={() => navigate('/home')}
+          className="absolute top-6 left-8 flex items-center gap-1 cursor-pointer"
+        >
           <img src="/p doank.png" alt="Pintaraja" className="w-7 h-7 object-contain" />
           <span className="text-base font-bold text-gray-900 dark:text-white -ml-1.5 -mb-1.5">
             intaraja
           </span>
-        </div>
+        </button>
 
         <div className="w-full max-w-[380px] ml-30">
           {lottieData ? (
@@ -41,7 +46,7 @@ export default function AuthLayout({ lottieData, lottieText, lottieSub, children
           )}
         </div>
 
-        <div className="mt-6 text-center max-w-sm ml-30">
+        <div className="mt-6 text-center max-w-sm lg:ml-30">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
             {lottieText ?? 'Selamat datang di Pintaraja AI'}
           </h2>
@@ -51,13 +56,16 @@ export default function AuthLayout({ lottieData, lottieText, lottieSub, children
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative z-10 mr-45">
-        <div className="md:hidden flex items-center gap-1 mb-8">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative z-10 lg:mr-45">
+        <button
+          onClick={() => navigate('/home')}
+          className="md:hidden flex items-center gap-1 mb-8 cursor-pointer"
+        >
           <img src="/p doank.png" alt="Pintaraja" className="w-8 h-8 object-contain" />
           <span className="text-lg font-bold text-gray-900 dark:text-white -ml-1.5 -mb-1.5">
             intaraja
           </span>
-        </div>
+        </button>
 
         <div className="w-full max-w-[400px]">
           <div className="bg-white/70 dark:bg-[#161b22]/80 backdrop-blur-xl rounded-2xl p-8 border border-white/80 dark:border-white/8 shadow-xl shadow-black/5 dark:shadow-black/30">

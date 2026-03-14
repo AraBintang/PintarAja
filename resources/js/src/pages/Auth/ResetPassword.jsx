@@ -8,10 +8,10 @@ import AuthLayout from '@/layout/AuthLayout'
 import { request } from '@/utils/Http'
 
 const requirements = [
-  { id: 'length', text: 'Minimal 8 karakter', check: (p) => p.length >= 8 },
-  { id: 'uppercase', text: 'Mengandung huruf besar', check: (p) => /[A-Z]/.test(p) },
-  { id: 'lowercase', text: 'Mengandung huruf kecil', check: (p) => /[a-z]/.test(p) },
-  { id: 'number', text: 'Mengandung angka', check: (p) => /[0-9]/.test(p) },
+  { id: 'length', text: 'At least 8 characters', check: (p) => p.length >= 8 },
+  { id: 'uppercase', text: 'Contains uppercase letter', check: (p) => /[A-Z]/.test(p) },
+  { id: 'lowercase', text: 'Contains lowercase letter', check: (p) => /[a-z]/.test(p) },
+  { id: 'number', text: 'Contains a number', check: (p) => /[0-9]/.test(p) },
 ]
 
 export default function ResetPassword() {
@@ -32,15 +32,15 @@ export default function ResetPassword() {
 
   const handleSubmit = async () => {
     if (!allMet) {
-      showSnackbar('error', 'Password baru tidak memenuhi syarat')
+      showSnackbar('error', 'New password does not meet the requirements')
       return
     }
     if (!passwordMatch) {
-      showSnackbar('error', 'Konfirmasi password tidak cocok')
+      showSnackbar('error', 'Passwords do not match')
       return
     }
     if (!token || !email) {
-      showSnackbar('error', 'Link reset tidak valid atau sudah kadaluarsa')
+      showSnackbar('error', 'Reset link is invalid or has expired')
       return
     }
     if (loading) return
@@ -56,10 +56,10 @@ export default function ResetPassword() {
           password_confirmation: passwords.confirm,
         },
       })
-      showSnackbar('success', 'Password berhasil diubah! Silakan login.')
+      showSnackbar('success', 'Password changed successfully! Please log in.')
       navigate('/login', { replace: true })
     } catch (err) {
-      showSnackbar('error', err.message || 'Gagal mereset password')
+      showSnackbar('error', err.message || 'Failed to reset password')
     } finally {
       setLoading(false)
     }
@@ -70,22 +70,22 @@ export default function ResetPassword() {
     return (
       <AuthLayout
         lottieData={lottieReset}
-        lottieText="Link tidak valid"
-        lottieSub="Link reset password yang kamu gunakan tidak valid atau sudah kadaluarsa."
+        lottieText="Invalid link"
+        lottieSub="Link reset password yang kamu gunakan invalid atau sudah kadaluarsa."
       >
         <div className="text-center py-4">
           <div className="w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-4">
             <Lock size={24} className="text-red-400" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Link tidak valid</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Invalid link</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Link reset password tidak valid atau sudah kadaluarsa. Silakan minta link baru.
+            The reset password link is invalid or has expired. Please request a new one.
           </p>
           <Link
             to="/forgot-password"
             className="inline-block bg-[#4A90D9] hover:bg-[#3A7BC8] text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-blue-500/20"
           >
-            Minta link baru
+            Request new link
           </Link>
         </div>
       </AuthLayout>
@@ -95,26 +95,26 @@ export default function ResetPassword() {
   return (
     <AuthLayout
       lottieData={lottieReset}
-      lottieText="Buat password baru"
-      lottieSub="Pilih password yang kuat dan mudah kamu ingat."
+      lottieText="Buat kata password baru"
+      lottieSub="Pilihlah kata sandi yang kuat dan mudah diingat."
     >
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Password baru</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">New password</h1>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-7">
-        Untuk akun <span className="font-semibold text-[#4A90D9]">{email}</span>
+        For account <span className="font-semibold text-[#4A90D9]">{email}</span>
       </p>
 
       <div className="space-y-4">
         {/* New password */}
         <div>
           <label className="block text-[13px] font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            Password baru
+            New password
           </label>
           <div className="relative">
             <input
               type={show.new ? 'text' : 'password'}
               value={passwords.new}
               onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-              placeholder="Minimal 8 karakter"
+              placeholder="At least 8 characters"
               className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-3.5 py-2.5 pr-10 text-sm font-mono placeholder:text-gray-400 dark:placeholder:text-gray-600 placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 dark:focus:border-blue-500 transition-all"
             />
             <button
@@ -156,7 +156,7 @@ export default function ResetPassword() {
         {/* Confirm password */}
         <div>
           <label className="block text-[13px] font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-            Konfirmasi password
+            Confirm password
           </label>
           <div className="relative">
             <input
@@ -182,11 +182,11 @@ export default function ResetPassword() {
             </button>
           </div>
           {passwords.confirm && !passwordMatch && (
-            <p className="mt-1.5 text-[12px] text-red-500 font-medium">Password tidak cocok</p>
+            <p className="mt-1.5 text-[12px] text-red-500 font-medium">Passwords do not match</p>
           )}
           {passwordMatch && (
             <p className="mt-1.5 text-[12px] text-emerald-500 font-medium flex items-center gap-1">
-              <Check size={11} strokeWidth={3} /> Password cocok
+              <Check size={11} strokeWidth={3} /> Passwords match
             </p>
           )}
         </div>
@@ -198,13 +198,13 @@ export default function ResetPassword() {
           className="w-full bg-[#4A90D9] hover:bg-[#3A7BC8] disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl text-sm transition-all active:scale-[0.99] flex items-center justify-center gap-2 shadow-sm shadow-blue-500/20 mt-2"
         >
           {loading && <Loader2 size={15} className="animate-spin" />}
-          {loading ? 'Menyimpan…' : 'Simpan password baru'}
+          {loading ? 'Saving…' : 'Save new password'}
         </button>
 
         <p className="text-center text-[13px] text-gray-400 dark:text-gray-500">
-          Ingat password lama?{' '}
+          Remember your old password?{' '}
           <Link to="/login" className="text-[#4A90D9] font-semibold hover:underline">
-            Kembali ke login
+            Back to login
           </Link>
         </p>
       </div>

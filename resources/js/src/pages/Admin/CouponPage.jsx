@@ -130,28 +130,28 @@ export default function CouponPage() {
 
   const stats = [
     {
-      label: 'Total Kupon',
+      label: 'Total Coupon',
       value: summary.total,
       icon: Ticket,
       bgLight: 'bg-blue-50 dark:bg-orange-900/20',
       textColor: 'text-blue-600 dark:text-orange-400',
     },
     {
-      label: 'Aktif',
+      label: 'Active',
       value: summary.active,
       icon: CheckCircle2,
       bgLight: 'bg-emerald-50 dark:bg-emerald-900/20',
       textColor: 'text-emerald-600 dark:text-emerald-400',
     },
     {
-      label: 'Digunakan',
+      label: 'Used',
       value: summary.used,
       icon: Tag,
       bgLight: 'bg-blue-50 dark:bg-orange-900/20',
       textColor: 'text-blue-600 dark:text-orange-400',
     },
     {
-      label: 'Kadaluarsa',
+      label: 'Expired',
       value: summary.expired,
       icon: XCircle,
       bgLight: 'bg-gray-100 dark:bg-gray-700/50',
@@ -269,7 +269,7 @@ export default function CouponPage() {
                   setSearchQuery(e.target.value)
                   setPage(1)
                 }}
-                placeholder="Cari kode atau email..."
+                placeholder="Search code or email..."
                 className="w-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl pl-11 pr-4 py-3.5 text-[14px] text-gray-800 dark:text-gray-100 shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 dark:focus:border-orange-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-orange-900/30 focus:outline-none transition-all"
               />
             </div>
@@ -430,16 +430,16 @@ export default function CouponPage() {
           {/* Pagination */}
           <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between flex-wrap gap-3">
             <p className="text-[13px] text-gray-500 dark:text-gray-400">
-              Menampilkan{' '}
+              Viewing{' '}
               <span className="font-semibold text-gray-800 dark:text-gray-100">
                 {pagination ? (currentPage - 1) * PAGE_SIZE + 1 : 0}–
                 {pagination ? Math.min(currentPage * PAGE_SIZE, pagination.total) : 0}
               </span>{' '}
-              dari{' '}
+              from{' '}
               <span className="font-semibold text-gray-800 dark:text-gray-100">
                 {pagination?.total ?? 0}
               </span>{' '}
-              kupon
+              coupon
             </p>
             <div className="flex items-center gap-1.5">
               <button

@@ -14,12 +14,12 @@ import { useRightSidebar } from '@/context/RightSidebarContext'
 import { request } from '@/utils/Http'
 
 const PAGE_CONFIG = {
-  '/chat': { title: 'Riwayat Chat', icon: MessagesSquare, apiPath: '/convers' },
-  '/new': { title: 'Riwayat Chat', icon: MessagesSquare, apiPath: '/convers' },
+  '/chat': { title: 'History Chat', icon: MessagesSquare, apiPath: '/convers' },
+  '/new': { title: 'History Chat', icon: MessagesSquare, apiPath: '/convers' },
   '/writer': { title: 'Saved Document', icon: FileText, apiPath: '/writers' },
-  '/humanizer': { title: 'Riwayat Humanizer AI', icon: Wand2, apiPath: null },
-  '/paraphrase': { title: 'Riwayat Parafrase AI', icon: Hash, apiPath: '/paraps' },
-  '/transcribe': { title: 'Riwayat Transcribe AI', icon: Mic, apiPath: '/transcribes' },
+  '/humanizer': { title: 'History Humanizer AI', icon: Wand2, apiPath: null },
+  '/paraphrase': { title: 'History Paraphrase AI', icon: Hash, apiPath: '/paraps' },
+  '/transcribe': { title: 'History Transcribe AI', icon: Mic, apiPath: '/transcribes' },
 }
 
 export default function RightSidebar() {
@@ -35,8 +35,11 @@ export default function RightSidebar() {
   const IconComponent = current.icon
 
   useEffect(() => {
-    if (!isOpen) return
-    setSearchQuery('')
+    if (!isOpen) {
+      setSearchQuery('')
+      setActiveWorkbook('all')
+      return
+    }
 
     if (location.pathname === '/writer') {
       setIsLoading(true)
@@ -92,7 +95,24 @@ export default function RightSidebar() {
     let items = historyItems
 
     if (activeWorkbook !== 'all') {
-      items = items.filter((doc) => doc.workbook === activeWorkbook)
+      items = items.filter((doc) => {
+        const docWorkbookName =
+          doc.workbook_name ??
+          (typeof doc.workbook === 'string' ? doc.workbook : doc.workbook?.name) ??
+          null
+
+        const matchedWorkbook = workbooks.find((wb) => wb.name === activeWorkbook)
+
+        if (docWorkbookName !== null) {
+          return docWorkbookName === activeWorkbook
+        }
+
+        if (matchedWorkbook && doc.workbook_id !== undefined) {
+          return String(doc.workbook_id) === String(matchedWorkbook.id)
+        }
+
+        return false
+      })
     }
 
     if (!searchQuery.trim()) return items
@@ -100,8 +120,7 @@ export default function RightSidebar() {
     return items.filter((item) =>
       (item.name || item.title || '').toLowerCase().includes(searchQuery.toLowerCase()),
     )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [historyItems, searchQuery])
+  }, [historyItems, searchQuery, activeWorkbook, workbooks])
 
   const handleItemClick = (item) => {
     if (location.pathname === '/chat' || location.pathname === '/new') {
@@ -154,7 +173,7 @@ export default function RightSidebar() {
       >
         <div className="flex items-center justify-between h-14 px-5 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-2.5">
-            <IconComponent className="w-[18px] h-[18px] text-[#4A90D9]" />
+            <IconComponent className="w-[18px] h-[18px] text-[#2686D4] dark:text-[#F2901E]" />
             <h2 className="text-[15px] font-semibold text-gray-800 dark:text-gray-200">
               {current.title}
             </h2>
@@ -171,7 +190,7 @@ export default function RightSidebar() {
           {location.pathname === '/writer' && (
             <div className="px-4 pt-4 pb-1">
               <label className="text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
-                Workbook Aktif
+                Active Workbook
               </label>
               <Select value={activeWorkbook} onValueChange={setActiveWorkbook}>
                 <SelectTrigger className="w-full bg-[#f7f7f5] dark:bg-gray-800 border-transparent focus:border-[#4A90D9]/30 h-[42px] text-[13px] rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium">
@@ -179,7 +198,7 @@ export default function RightSidebar() {
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-gray-100 dark:border-gray-700 shadow-xl bg-white dark:bg-gray-800">
                   <SelectGroup className="max-h-[190px] overflow-y-auto pr-1">
-                    <SelectItem value="all">Semua Workbook</SelectItem>
+                    <SelectItem value="all">All Workbook</SelectItem>
                     {workbooks.map((wb) => (
                       <SelectItem
                         key={wb.id}
@@ -212,7 +231,7 @@ export default function RightSidebar() {
                       }}
                     >
                       <Plus className="w-4 h-4 text-blue-500 group-hover:text-blue-600 transition-colors" />
-                      Tambah Workbook Baru
+                      Add New Workbook
                     </button>
                   </div>
                 </SelectContent>
@@ -225,7 +244,9 @@ export default function RightSidebar() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={location.pathname === '/writer' ? 'Cari dokumen...' : 'Cari riwayat...'}
+              placeholder={
+                location.pathname === '/writer' ? 'Search Document...' : 'Search History...'
+              }
               className="w-full bg-[#f7f7f5] dark:bg-gray-800 text-[13px] text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#4A90D9]/20 focus:bg-white dark:focus:bg-gray-700 border border-transparent focus:border-[#4A90D9]/30 transition-all font-medium"
             />
           </div>
@@ -248,12 +269,12 @@ export default function RightSidebar() {
             <div className="flex flex-col items-center justify-center h-full text-gray-400 px-6">
               <Clock className="w-10 h-10 mb-3 text-gray-300 dark:text-gray-600" />
               <p className="text-[14px] font-medium text-gray-500 dark:text-gray-400">
-                {searchQuery ? 'Tidak ditemukan' : 'Belum ada riwayat'}
+                {searchQuery ? 'Not found' : 'No history yet'}
               </p>
               <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-1 text-center">
                 {searchQuery
-                  ? 'Coba kata kunci lain'
-                  : 'Riwayat akan muncul setelah Anda mulai menggunakan fitur ini'}
+                  ? 'Try other keywords'
+                  : 'History will appear once you start using this feature.'}
               </p>
             </div>
           ) : (
@@ -262,27 +283,36 @@ export default function RightSidebar() {
               const chatPreview = lastChat?.content?.slice(0, 70) ?? ''
 
               return (
-                <button
-                  key={item.id}
-                  onClick={() => handleItemClick(item)}
-                  className="w-full text-left px-4 py-3 hover:bg-[#f7f7f5] dark:hover:bg-gray-800 transition-colors group border-b border-gray-50 dark:border-gray-800 last:border-0"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-[13px] font-medium text-gray-800 dark:text-gray-200 group-hover:text-[#4A90D9] transition-colors truncate flex-1">
-                      <p className="text-gray-400">{item.workbook || ''}</p>
-                      {item.title || item.name || 'New Conversation'}
-                    </h3>
-                    {(item.time || item.lastUpdated) && (
-                      <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap flex-shrink-0 mt-0.5">
-                        {item.lastUpdated || item.time}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                    {chatPreview ||
-                      (typeof item.data === 'string' ? item.data.slice(0, 80) : item.preview || '')}
-                  </p>
-                </button>
+                <div className="px-2" key={item.id}>
+                  <button
+                    onClick={() => handleItemClick(item)}
+                    className="w-full text-left px-3 py-2.5 hover:bg-[#eeedeb] dark:hover:bg-gray-900 rounded-xl transition-colors group border-b border-gray-50 dark:border-gray-800 last:border-0"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-[13px] font-medium text-gray-800 dark:text-gray-200 group-hover:text-[#4A90D9] transition-colors truncate flex-1">
+                        <p className="text-gray-400">
+                          {item.workbook_name ??
+                            (typeof item.workbook === 'string'
+                              ? item.workbook
+                              : item.workbook?.name) ??
+                            ''}
+                        </p>
+                        {item.title || item.name || 'New Conversation'}
+                      </h3>
+                      {(item.time || item.lastUpdated) && (
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap flex-shrink-0 mt-0.5">
+                          {item.lastUpdated || item.time}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                      {chatPreview ||
+                        (typeof item.data === 'string'
+                          ? item.data.slice(0, 80)
+                          : item.preview || '')}
+                    </p>
+                  </button>
+                </div>
               )
             })
           )}

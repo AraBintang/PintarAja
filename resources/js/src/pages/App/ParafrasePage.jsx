@@ -153,7 +153,7 @@ export default function ParafrasePage() {
             <Hash className="w-6 h-6 text-gray-500 dark:text-gray-400" />
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-2">
-            Parafrase AI
+            Paraphrase AI
           </h1>
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-[16px] leading-relaxed max-w-xl mx-auto px-4">
@@ -227,7 +227,7 @@ export default function ParafrasePage() {
               <textarea
                 value={inputText}
                 onChange={handleInputText}
-                placeholder="Masukkan atau tempel teks Anda di sini dan klik Parafrase untuk menyusun ulang kalimat."
+                placeholder="Enter or paste your text here and click Paraphrase to rephrase the sentence."
                 className="w-full h-full bg-transparent text-[15px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed min-h-[250px] md:min-h-0"
               />
 
@@ -235,14 +235,14 @@ export default function ParafrasePage() {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3">
                   <button
                     onClick={handleTrySample}
-                    className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-blue-600 bg-blue-50 dark:bg-orange-900/30 dark:text-orange-400 border border-blue-200 dark:border-orange-800 rounded-full hover:bg-blue-100 dark:hover:bg-orange-900/50 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-[#2686D4] dark:text-[#F2901E] bg-blue-50 dark:bg-orange-900/30 border border-blue-200 dark:border-orange-800 rounded-full hover:bg-blue-100 dark:hover:bg-orange-900/50 transition-colors whitespace-nowrap"
                   >
                     <Hash className="w-4 h-4" />
                     Try Sample Text
                   </button>
                   <button
                     onClick={handlePaste}
-                    className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-blue-600 bg-blue-50 dark:bg-orange-900/30 dark:text-orange-400 border border-blue-200 dark:border-orange-800 rounded-full hover:bg-blue-100 dark:hover:bg-orange-900/50 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-[#2686D4] dark:text-[#F2901E] bg-blue-50 dark:bg-orange-900/30 border border-blue-200 dark:border-orange-800 rounded-full hover:bg-blue-100 dark:hover:bg-orange-900/50 transition-colors whitespace-nowrap"
                   >
                     <Copy className="w-4 h-4" />
                     Paste Text
@@ -255,12 +255,12 @@ export default function ParafrasePage() {
               <span
                 className={`text-[12px] ${wordCount >= 125 ? 'text-red-500 font-medium' : 'text-gray-400'}`}
               >
-                {wordCount} / 125 kata
+                {wordCount} / 125 Words
               </span>
               {inputText && (
                 <button
                   onClick={() => setInputText('')}
-                  className="text-[12px] font-medium text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1.5"
+                  className="text-[12px] font-medium text-[#2686D4] dark:text-[#F2901E] hover:text-blue-600 dark:hover:text-orange-300 transition-colors flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Clear
@@ -275,7 +275,7 @@ export default function ParafrasePage() {
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-8 h-8 border-2 border-blue-600 dark:border-orange-500 border-t-transparent rounded-full animate-spin" />
                     <span className="text-[13px] font-medium text-gray-500 dark:text-gray-400">
-                      Memparafrase teks...
+                      Paraphrasing text...
                     </span>
                   </div>
                 </div>
@@ -286,7 +286,7 @@ export default function ParafrasePage() {
               ) : (
                 <div className="flex items-center justify-center h-full min-h-[250px] md:min-h-0">
                   <p className="text-[14px] text-gray-700 text-center max-w-xs leading-relaxed">
-                    Hasil teks yang telah diparafrase akan muncul di sini
+                    The resulting paraphrased text will appear here
                   </p>
                 </div>
               )}
@@ -294,13 +294,13 @@ export default function ParafrasePage() {
 
             {outputText && (
               <div className="px-6 py-3 flex items-center justify-between bg-transparent text-gray-700 dark:text-gray-400">
-                <span className="text-[12px]">{countWords(outputText)} kata</span>
+                <span className="text-[12px]">{countWords(outputText)} Words</span>
                 <button
                   onClick={handleCopy}
-                  className="text-[12px] text-blue-600 dark:text-orange-400 hover:text-blue-500 dark:hover:text-orange-300 font-medium transition-colors flex items-center gap-1.5"
+                  className="text-[12px] text-[#2686D4] dark:text-[#F2901E] hover:text-blue-600 dark:hover:text-orange-300 font-medium transition-colors flex items-center gap-1.5"
                 >
                   {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  {isCopied ? 'Tersalin' : 'Copy Result'}
+                  {isCopied ? 'Copied' : 'Copy Result'}
                 </button>
               </div>
             )}
@@ -317,7 +317,7 @@ export default function ParafrasePage() {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 text-[14px] font-medium text-gray-600 hover:text-gray-800 transition-colors px-4 py-2.5 rounded-xl hover:bg-gray-50 dark:bg-gray-700 border border-transparent hover:border-gray-200 dark:border-gray-700 w-full sm:w-auto justify-center"
+            className="flex items-center gap-2 text-[14px] font-medium bg-black dark:bg-white text-white dark:text-black hover:scale-105 transition-colors px-4 py-2.5 rounded-xl border border-transparent w-full sm:w-auto justify-center"
           >
             <Upload className="w-4 h-4" />
             Upload Doc
@@ -332,7 +332,7 @@ export default function ParafrasePage() {
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
             }`}
           >
-            {isProcessing ? 'Processing...' : 'Parafrase Teks'}
+            {isProcessing ? 'Paraphrasing...' : 'Paraphrase Text'}
           </button>
 
           <div className="hidden sm:block w-[130px]" />

@@ -24,36 +24,17 @@ class PlanController extends Controller
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
-        $data = $paginated->getCollection()->map(function ($plan) {
-            return [
-                'id' => $plan->M_PlanID,
-                'name' => $plan->M_PlanName,
-                'tagLine' => $plan->M_PlanTagLine,
-                'price' => json_decode($plan->M_PlanPrice, true),
-                'features' => json_decode($plan->M_PlanFeature, true),
-                'isPopular' => $plan->M_PlanIsPopular,
-                'createdAt' => $plan->M_PlanCreated,
-                'updatedAt' => $plan->M_PlanLastUpdated,
-                'aiSettings' => $plan->aiSettings->map(function ($ai) {
-                    return [
-                        'id' => $ai->M_SettingID,
-                        'name' => $ai->M_SettingName,
-                    ];
-                }),
-            ];
-        });
+        $data = $paginated->getCollection()->map(fn($plan) => $this->formatPlan($plan));
 
         $ai = SettingAI::select('M_SettingID as id', 'M_SettingName as name')->get();
-
-        $summary = [
-            'total' => Plan::count(),
-            'popular' => Plan::where('M_PlanIsPopular', 'Y')->count(),
-        ];
 
         return response()->json([
             'data' => $data,
             'ai' => $ai,
-            'summary' => $summary,
+            'summary' => [
+                'total' => Plan::count(),
+                'popular' => Plan::where('M_PlanIsPopular', 'Y')->count(),
+            ],
             'pagination' => [
                 'current_page' => $paginated->currentPage(),
                 'per_page' => $paginated->perPage(),
@@ -69,6 +50,12 @@ class PlanController extends Controller
             'name' => 'required|string',
             'tagLine' => 'required|string',
             'price' => 'required|array',
+            'price.weekly' => 'required|numeric|min:0',
+            'price.weekly_discount' => 'required|numeric|min:0|max:100',
+            'price.monthly' => 'required|numeric|min:0',
+            'price.monthly_discount' => 'required|numeric|min:0|max:100',
+            'price.yearly' => 'required|numeric|min:0',
+            'price.yearly_discount' => 'required|numeric|min:0|max:100',
             'features' => 'required|array',
             'isPopular' => 'required|in:Y,N',
             'aiSettings' => 'nullable|array',
@@ -106,6 +93,12 @@ class PlanController extends Controller
             'name' => 'required|string',
             'tagLine' => 'required|string',
             'price' => 'required|array',
+            'price.weekly' => 'required|numeric|min:0',
+            'price.weekly_discount' => 'required|numeric|min:0|max:100',
+            'price.monthly' => 'required|numeric|min:0',
+            'price.monthly_discount' => 'required|numeric|min:0|max:100',
+            'price.yearly' => 'required|numeric|min:0',
+            'price.yearly_discount' => 'required|numeric|min:0|max:100',
             'features' => 'required|array',
             'isPopular' => 'required|in:Y,N',
             'aiSettings' => 'nullable|array',
@@ -141,13 +134,38 @@ class PlanController extends Controller
     public function destroy($id)
     {
         DB::transaction(function () use ($id) {
-            DB::table('m_plansetting')
-                ->where('M_PlanSettingM_PlanID', $id)
-                ->delete();
-
+            DB::table('m_plansetting')->where('M_PlanSettingM_PlanID', $id)->delete();
             Plan::where('M_PlanID', $id)->delete();
         });
 
         return response()->json(['message' => 'Plan deleted']);
+    }
+
+    private function formatPlan(Plan $plan): array
+    {
+        $raw = json_decode($plan->M_PlanPrice, true) ?? [];
+
+        foreach (['weekly', 'monthly', 'yearly'] as $p) {
+            $base = $raw[$p] ?? 0;
+            $disc = $raw["{$p}_discount"] ?? 0;
+            $raw["{$p}_final"] = $disc > 0
+                ? (int) round($base * (1 - $disc / 100))
+                : $base;
+        }
+
+        return [
+            'id' => $plan->M_PlanID,
+            'name' => $plan->M_PlanName,
+            'tagLine' => $plan->M_PlanTagLine,
+            'price' => $raw,
+            'features' => json_decode($plan->M_PlanFeature, true),
+            'isPopular' => $plan->M_PlanIsPopular,
+            'createdAt' => $plan->M_PlanCreated,
+            'updatedAt' => $plan->M_PlanLastUpdated,
+            'aiSettings' => $plan->aiSettings->map(fn($ai) => [
+                'id' => $ai->M_SettingID,
+                'name' => $ai->M_SettingName,
+            ]),
+        ];
     }
 }
