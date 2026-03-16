@@ -4,6 +4,7 @@
 
 /* Dark mode smooth transition */
 html {
+    scroll-behavior: smooth;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -94,6 +95,10 @@ html.dark {
 
 .skeleton {
     @apply bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md;
+}
+
+section[id] {
+    scroll-margin-top: 80px;
 }
 
 .skeleton-shimmer {

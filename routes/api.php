@@ -20,6 +20,7 @@ use App\Http\Controllers\WriterController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/payments/notify', [PaymentController::class, 'notify']);
+Route::get('/plans', [PlanController::class, 'index']);
 
 Route::middleware('guest:sanctum')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -95,7 +96,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [TranscribeController::class, 'destroy']);
     });
 
-    Route::get('/plans', [PlanController::class, 'index']);
 
     Route::prefix('payments')->group(function () {
         Route::get('/', [PaymentController::class, 'index']);

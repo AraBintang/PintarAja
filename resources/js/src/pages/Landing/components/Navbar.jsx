@@ -17,8 +17,7 @@ export default function Navbar() {
 
   const navLinks = [
     { label: 'Layanan', href: '#layanan' },
-    { label: 'Afiliasi', href: '#afiliasi' },
-    { label: 'Artikel', href: '#artikel' },
+    { label: 'Paket AI', href: '#pricing' },
     { label: 'Tentang Kami', href: '#tentang' },
   ]
 
