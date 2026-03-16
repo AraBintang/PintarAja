@@ -293,7 +293,7 @@ export default function Register() {
               ))}
             </div>
 
-            <div className="mt-6 flex flex-col items-center">
+            <div className="mt-6 flex flex-col items-center text-center">
               <div className="relative w-[300px] h-[65px]">
                 <div className="absolute inset-0 flex items-center gap-3 px-3.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <div className="w-7 h-7 rounded-full skeleton flex-shrink-0" />
