@@ -73,7 +73,7 @@ export default function Testimonials() {
         <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-12 items-start">
           {/* Left - Title */}
           <div
-            className={`sticky top-32 pt-8 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}
+            className={`relative z-20 lg:sticky lg:top-32 pt-8 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}
             style={{ transition: 'opacity 0.8s ease, transform 0.8s ease' }}
           >
             <span className="inline-block px-5 py-2 text-[13px] font-medium text-[#4A90D9] bg-white dark:bg-gray-800 border border-[#4A90D9]/20 shadow-sm rounded-full mb-6">
@@ -104,7 +104,7 @@ export default function Testimonials() {
             {reviews.map((review, i) => (
               <div
                 key={i}
-                className={`group bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-7 hover:border-[#4A90D9]/20 hover:shadow-lg transition-all duration-300 relative overflow-hidden ${
+                className={`group bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 sm:p-7 hover:border-[#4A90D9]/20 hover:shadow-lg transition-all duration-300 relative overflow-hidden flex flex-col ${
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
                 style={{ transition: 'opacity 0.6s ease, transform 0.6s ease', transitionDelay: `${0.2 + i * 0.1}s` }}

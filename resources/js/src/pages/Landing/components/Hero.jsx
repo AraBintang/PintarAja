@@ -115,7 +115,7 @@ export default function Hero() {
         ))}
       </div>
 
-      <div ref={heroRef} className="relative z-10 max-w-5xl mx-auto px-6 text-center w-full">
+      <div ref={heroRef} className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center w-full">
         {/* Badge pills */}
         <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
           {badges.map((badge, i) => (
@@ -134,7 +134,7 @@ export default function Hero() {
 
         {/* Headline with smooth typewriter */}
         <h1
-          className={`text-4xl sm:text-5xl md:text-[64px] font-extrabold text-[#0a192f] dark:text-white leading-[1.2] tracking-tight mb-8 ${
+          className={`text-[32px] leading-tight sm:text-5xl md:text-[64px] font-extrabold text-[#0a192f] dark:text-white md:leading-[1.2] tracking-tight mb-6 sm:mb-8 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ transition: 'opacity 0.8s ease 0.3s, transform 0.8s ease 0.3s' }}
@@ -163,7 +163,7 @@ export default function Hero() {
 
         {/* CTAs */}
         <div
-          className={`flex flex-col sm:flex-row items-center justify-center gap-4 ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ transition: 'opacity 0.8s ease 0.7s, transform 0.8s ease 0.7s' }}

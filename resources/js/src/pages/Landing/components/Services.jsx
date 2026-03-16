@@ -67,7 +67,7 @@ export default function Services() {
       className="py-24 bg-[#f4f7fb] dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
           {/* Left - Lottie Animation */}
           <div
             className={`relative group lg:sticky lg:top-24 ${
@@ -162,39 +162,39 @@ export default function Services() {
                 >
                   <button
                     onClick={() => setOpenIndex(openIndex === index ? -1 : index)}
-                    className="w-full flex items-center justify-between p-5 text-left group"
+                    className="w-full flex items-center justify-between p-4 sm:p-5 text-left group gap-3"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                       <span
                         className={`text-[17px] font-bold transition-colors ${openIndex === index ? 'text-[#4A90D9]' : 'text-[#1a2d4a] dark:text-gray-100 group-hover:text-[#4A90D9]'}`}
                       >
                         {service.title}
                       </span>
                       {service.badge && (
-                        <span className="px-3 py-1 text-[10px] font-bold text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] rounded-full uppercase tracking-wider shadow-sm">
-                          {service.badge}
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-300 ${openIndex === index ? 'border-[#4A90D9] bg-[#4A90D9]/10 rotate-180' : 'border-gray-200 dark:border-gray-700 bg-gray-50 group-hover:border-[#4A90D9]/50'}`}
-                    >
+                        <span className="px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[10px] font-bold text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap">
+                        {service.badge}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-300 ${openIndex === index ? 'border-[#4A90D9] bg-[#4A90D9]/10 rotate-180' : 'border-gray-200 dark:border-gray-700 bg-gray-50 group-hover:border-[#4A90D9]/50'}`}
+                  >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" className={openIndex === index ? 'text-[#4A90D9]' : 'text-gray-400 group-hover:text-[#4A90D9]'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                     </div>
                   </button>
 
-                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openIndex === index ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
-                    <div className="p-5 pt-0 pr-12">
-                      <p className="text-gray-600 dark:text-gray-400 text-[15px] leading-relaxed mb-4">
+                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openIndex === index ? 'max-h-56 opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="p-4 sm:p-5 pt-0 pr-8 sm:pr-12">
+                      <p className="text-gray-600 dark:text-gray-400 text-[14px] sm:text-[15px] leading-relaxed mb-4">
                         {service.desc}
                       </p>
-                      <div className="flex gap-3">
-                        <a href="#" className="px-5 py-2 text-[13px] font-semibold text-[#4A90D9] bg-[#4A90D9]/10 rounded-full hover:bg-[#4A90D9]/20 transition-colors">
+                      <div className="flex flex-wrap gap-2 sm:gap-3">
+                        <a href="#" className="px-4 py-2 sm:px-5 text-[12px] sm:text-[13px] font-semibold text-[#4A90D9] bg-[#4A90D9]/10 rounded-full hover:bg-[#4A90D9]/20 transition-colors">
                           Lihat Selengkapnya
                         </a>
-                        <a href="#kontak" className="px-5 py-2 text-[13px] font-semibold text-white bg-[#4A90D9] rounded-full hover:bg-[#3A7BC8] transition-colors shadow-sm hover:shadow-md">
+                        <a href="#kontak" className="px-4 py-2 sm:px-5 text-[12px] sm:text-[13px] font-semibold text-white bg-[#4A90D9] rounded-full hover:bg-[#3A7BC8] transition-colors shadow-sm hover:shadow-md">
                           Pesan Sekarang
                         </a>
                       </div>

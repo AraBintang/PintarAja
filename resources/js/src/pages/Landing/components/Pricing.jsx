@@ -12,7 +12,13 @@ function formatPrice(price) {
 function parseFeatures(features) {
   if (!features) return []
   if (Array.isArray(features)) {
-    return features.map((f) => (typeof f === 'string' ? { title: f, isIncluded: true } : f))
+    return features.map((f) => {
+      // Handle the case where the backend returns an array of objects {title, desc, isIncluded}
+      if (f && typeof f === 'object' && 'title' in f) {
+        return { title: f.title, isIncluded: f.isIncluded !== false }
+      }
+      return typeof f === 'string' ? { title: f, isIncluded: true } : { title: String(f), isIncluded: true }
+    })
   }
   if (typeof features === 'string') {
     return features
@@ -109,23 +115,23 @@ export default function Pricing() {
           }`}
           style={{ transition: 'opacity 0.6s ease 0.15s, transform 0.6s ease 0.15s' }}
         >
-          <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-2xl p-1.5 shadow-inner">
+          <div className="flex w-full sm:w-auto sm:inline-flex items-stretch justify-between sm:justify-center gap-1 sm:gap-1.5 bg-gray-100 dark:bg-gray-800 rounded-2xl p-1 sm:p-1.5 shadow-inner mx-auto">
             {PERIOD_OPTIONS.map((opt) => {
               const hasDiscount = periodHasDiscount(opt.key)
               return (
                 <button
                   key={opt.key}
                   onClick={() => setPeriod(opt.key)}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+                  className={`py-2 px-1 sm:px-6 sm:py-2.5 rounded-xl text-[12px] sm:text-sm font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 flex-1 sm:flex-none leading-tight ${
                     period === opt.key
                       ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
-                  {opt.label}
+                  <span className="truncate">{opt.label}</span>
                   {hasDiscount && (
                     <span
-                      className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                      className={`text-[9px] sm:text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
                         period === opt.key
                           ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
                           : 'text-emerald-500 dark:text-emerald-400'
@@ -142,7 +148,7 @@ export default function Pricing() {
 
         {/* Pricing Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto w-full">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-80 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
             ))}
@@ -153,7 +159,7 @@ export default function Pricing() {
             <p className="text-sm font-medium">Belum ada paket tersedia</p>
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row justify-center items-center lg:items-stretch gap-6 max-w-[1200px] mx-auto w-full">
+          <div className="flex flex-col md:flex-row flex-wrap justify-center items-center md:items-stretch gap-6 lg:gap-8 max-w-[1200px] mx-auto w-full">
             {plans.map((plan, i) => {
               const isPopular = plan.isPopular === 'Y'
               const { base, disc, final, hasDiscount } = getPriceInfo(plan)
@@ -161,7 +167,7 @@ export default function Pricing() {
               return (
                 <div
                   key={plan.id}
-                  className={`relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[24px] p-8 px-6 lg:px-8 border flex flex-col ${
+                  className={`relative w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)] max-w-sm bg-white dark:bg-gray-800 rounded-[24px] p-6 sm:p-8 xl:px-8 border flex flex-col ${
                     isPopular
                       ? 'border-blue-500 dark:border-orange-500 border-2 shadow-xl shadow-blue-100/50 dark:shadow-orange-900/10 scale-[1.02]'
                       : 'border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md'
