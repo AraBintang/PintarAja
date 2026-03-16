@@ -1,6 +1,7 @@
 import { FileText, Lock, Ruler } from 'lucide-react'
 import { memo } from 'react'
 
+import { AI_CODE_MAP, AutoIcon } from '@/assets/ai'
 import {
   Select,
   SelectContent,
@@ -9,8 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
-import { AI_CODE_MAP, AutoIcon } from './WriterConstants'
 
 // memo agar tidak re-render saat parent update editorContent
 const WriterToolbar = memo(function WriterToolbar({

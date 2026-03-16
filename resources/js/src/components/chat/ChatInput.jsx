@@ -1,10 +1,10 @@
 import { ArrowUp, FileText, Image, Lock, Paperclip, Plus, X as XIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 
-import { AI_CODE_MAP, AutoIcon } from './ChatConstants'
+import { AI_CODE_MAP, AutoIcon } from '@/assets/ai'
 
 /* ─── ModelSelect ─── */
-function ModelSelect({ value, onChange, aiProviders }) {
+function ModelSelect({ value, onChange, aiProviders, disabled }) {
   const [open, setOpen] = useState(false)
   const selected = aiProviders.find((a) => String(a.id) === String(value))
   const mapped = selected
@@ -15,8 +15,9 @@ function ModelSelect({ value, onChange, aiProviders }) {
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700 rounded-xl text-[13px] transition-all shadow-sm whitespace-nowrap"
+        onClick={() => !disabled && setOpen((v) => !v)}
+        disabled={disabled}
+        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700 rounded-xl text-[13px] transition-all shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span className="flex-shrink-0">{mapped.icon}</span>
         <span className="text-[12px] text-gray-400 dark:text-gray-500 font-medium">Model:</span>
@@ -39,7 +40,7 @@ function ModelSelect({ value, onChange, aiProviders }) {
         </svg>
       </button>
 
-      {open && (
+      {open && !disabled && (
         <>
           <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
           <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl z-[70] min-w-[230px] p-1.5 overflow-hidden">
@@ -118,6 +119,22 @@ function ModelSelect({ value, onChange, aiProviders }) {
   )
 }
 
+/* ─── Spinner SVG ─── */
+function Spinner() {
+  return (
+    <svg
+      className="animate-spin w-[18px] h-[18px]"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+    >
+      <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+      <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export default function ChatInput({
   inputValue,
   onInputChange,
@@ -131,6 +148,7 @@ export default function ChatInput({
   onAiChange,
   canSend,
   onSubmit,
+  isStreaming,
 }) {
   const textareaRef = useRef(null)
   const imageRef = useRef(null)
@@ -146,7 +164,7 @@ export default function ChatInput({
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      onSubmit()
+      if (!isStreaming) onSubmit()
     }
   }
 
@@ -155,12 +173,17 @@ export default function ChatInput({
     e.target.value = ''
   }
 
+  // Hanya OpenAI dan Gemini yang support upload file
+  const FILE_SUPPORTED_CODES = ['SETTING-GPT', 'SETTING-GMN']
+  const selectedProvider = aiProviders.find((a) => String(a.id) === String(selectedAiId))
+  const canAttach = !isStreaming && FILE_SUPPORTED_CODES.includes(selectedProvider?.code)
+
   return (
     <div className="sticky bottom-0 pt-2 bg-[#f7f7f5] dark:bg-[#0f141e] px-4">
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          onSubmit()
+          if (!isStreaming) onSubmit()
         }}
         className="max-w-3xl mx-auto w-full bg-white dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50 shadow-sm"
       >
@@ -175,7 +198,12 @@ export default function ChatInput({
                 >
                   <Paperclip className="w-3.5 h-3.5" />
                   <span className="truncate max-w-[150px]">{f.name}</span>
-                  <button type="button" onClick={() => onRemoveFile(i)}>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveFile(i)}
+                    disabled={isStreaming}
+                    className="disabled:opacity-40"
+                  >
                     <XIcon className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -189,8 +217,9 @@ export default function ChatInput({
             value={inputValue}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything"
-            className="w-full px-5 my-4 text-[15px] text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 outline-none bg-transparent resize-none min-h-[35px] max-h-[312px]"
+            disabled={isStreaming}
+            placeholder={isStreaming ? 'AI sedang menjawab...' : 'Ask anything'}
+            className="w-full px-5 my-4 text-[15px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none bg-transparent resize-none min-h-[35px] max-h-[312px] disabled:cursor-not-allowed transition-colors"
           />
 
           <div className="flex items-center justify-between px-3 pb-3">
@@ -216,30 +245,36 @@ export default function ChatInput({
               <button
                 type="button"
                 onClick={onToggleAttachMenu}
-                className="w-9 h-9 rounded-full border bg-[#eeedeb] dark:bg-black/20 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 transition-colors relative z-30 flex-shrink-0"
+                disabled={!canAttach}
+                title={
+                  !canAttach && !isStreaming
+                    ? 'Upload file hanya tersedia untuk model OpenAI dan Gemini'
+                    : undefined
+                }
+                className="w-9 h-9 rounded-full border bg-[#eeedeb] dark:bg-black/20 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 transition-colors relative z-30 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus
                   className={`w-4 h-4 transition-transform ${showAttachMenu ? 'rotate-45' : ''}`}
                 />
               </button>
 
-              {showAttachMenu && (
+              {showAttachMenu && canAttach && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={onToggleAttachMenu} />
-                  <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-20 py-2 w-48">
+                  <div className="absolute bottom-full mb-2 p-1 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-20 w-48">
                     <button
                       type="button"
                       onClick={() => {
                         imageRef.current?.click()
                         onToggleAttachMenu()
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 rounded-xl transition-colors"
                     >
                       <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shrink-0">
                         <Image className="w-4 h-4" />
                       </div>
                       <div className="text-left">
-                        <p className="font-semibold leading-tight">Gambar</p>
+                        <p className="font-semibold leading-tight">Image</p>
                         <p className="text-[11px] text-gray-400 mt-0.5">JPG, PNG, GIF</p>
                       </div>
                     </button>
@@ -249,13 +284,13 @@ export default function ChatInput({
                         docRef.current?.click()
                         onToggleAttachMenu()
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#252525] transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 rounded-xl transition-colors"
                     >
                       <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 shrink-0">
                         <FileText className="w-4 h-4" />
                       </div>
                       <div className="text-left">
-                        <p className="font-semibold leading-tight">Dokumen</p>
+                        <p className="font-semibold leading-tight">File</p>
                         <p className="text-[11px] text-gray-400 mt-0.5">PDF, DOC, TXT</p>
                       </div>
                     </button>
@@ -264,7 +299,12 @@ export default function ChatInput({
               )}
 
               <div className="flex items-center ml-1 bg-[#eeedeb] dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full">
-                <ModelSelect value={selectedAiId} onChange={onAiChange} aiProviders={aiProviders} />
+                <ModelSelect
+                  value={selectedAiId}
+                  onChange={onAiChange}
+                  aiProviders={aiProviders}
+                  disabled={isStreaming}
+                />
               </div>
             </div>
 
@@ -273,12 +313,14 @@ export default function ChatInput({
                 type="submit"
                 disabled={!canSend}
                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-                  canSend
-                    ? 'bg-black dark:bg-white text-white dark:text-black hover:scale-105'
-                    : 'bg-[#eeedeb] dark:bg-black/20 text-gray-400 dark:text-[#555]'
+                  isStreaming
+                    ? 'bg-black dark:bg-white text-white dark:text-black cursor-not-allowed'
+                    : canSend
+                      ? 'bg-black dark:bg-white text-white dark:text-black hover:scale-105'
+                      : 'bg-[#eeedeb] dark:bg-black/20 text-gray-400 dark:text-[#555]'
                 }`}
               >
-                <ArrowUp className="w-[18px] h-[18px]" />
+                {isStreaming ? <Spinner /> : <ArrowUp className="w-[18px] h-[18px]" />}
               </button>
             </div>
           </div>

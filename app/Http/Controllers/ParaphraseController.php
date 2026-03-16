@@ -102,6 +102,24 @@ Rules:
         ]);
     }
 
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+    
+        $paraphrase = Paraphrase::findOrFail($id);
+    
+        $paraphrase->update([
+            'M_ParaphraseName' => $request->name,
+        ]);
+    
+        return response()->json([
+            'message' => 'Updated successfully',
+            'data'    => $paraphrase,
+        ]);
+    }
+
     public function destroy($id)
     {
         $paraphrase = Paraphrase::findOrFail($id);

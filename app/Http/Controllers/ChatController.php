@@ -4,14 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chat;
-use App\Models\SettingAI;
 use App\Services\AiProviderService;
-use App\Services\AiUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use OpenAI;
 
 class ChatController extends Controller
 {
@@ -161,103 +158,21 @@ class ChatController extends Controller
         }
     }
 
-    public function uploadFile(Request $request, AiUploadService $service)
-    {
-        if (!$request->hasFile('files')) {
-            return response()->json(['message' => 'No files uploaded'], 400);
-        }
-
-        $request->validate([
-            'providerId' => 'required|integer'
-        ]);
-
-        $user = $request->user();
-
-        $provider = DB::table('m_plansetting as ps')
-            ->join('m_setting as s', 's.M_SettingID', '=', 'ps.M_PlanSettingM_SettingID')
-            ->where('ps.M_PlanSettingM_PlanID', $user->M_UserPlan)
-            ->where('s.M_SettingID', $request->providerId)
-            ->where('s.M_SettingIsActive', 'Y')
-            ->select('s.M_SettingCode', 's.M_SettingKey', 's.M_SettingModel')
-            ->first();
-
-        if (!$provider) {
-            return response()->json([
-                'message' => 'You are not allowed to use this AI provider.'
-            ], 403);
-        }
-
-        $files = $request->file('files');
-
-        try {
-            if ($provider->M_SettingCode === 'SETTING-GPT') {
-                return $service->uploadOpenAI($provider->M_SettingKey, $files);
-            }
-
-            if ($provider->M_SettingCode === 'SETTING-GMN') {
-                return $service->uploadGemini($provider->M_SettingKey, $files);
-            }
-
-            return response()->json(['message' => 'Provider not supported'], 400);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Upload failed',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function deleteFile(Request $request)
-    {
-        $request->validate([
-            'providerId' => 'required|integer',
-            'fileId' => 'required|string'
-        ]);
-
-        $user = $request->user();
-
-        $provider = SettingAI::where('M_SettingID', $request->providerId)
-            ->where('M_SettingIsActive', 'Y')
-            ->first();
-
-        if (!$provider) {
-            return response()->json(['message' => 'Provider not found'], 404);
-        }
-
-        try {
-            if ($provider->M_SettingCode === 'SETTING-GPT') {
-                OpenAI::client($provider->M_SettingKey)
-                    ->files()
-                    ->delete($request->fileId);
-            }
-
-            if ($provider->M_SettingCode === 'SETTING-GMN') {
-                Http::delete(
-                    "https://generativelanguage.googleapis.com/v1beta/files/{$request->fileId}?key={$provider->M_SettingKey}"
-                );
-            }
-
-            return response()->json(['message' => 'File deleted']);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Failed to delete file',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function generateFromFile(Request $request)
+    public function generateFromFile(Request $request, AiProviderService $aiService)
     {
         $request->validate([
             'providerId' => 'required|integer',
             'conversationId' => 'required|integer',
             'message' => 'required|string',
-            'files'=> 'array',
-            'fileData'=> 'array' // name sama type
+            'files' => 'array|max:3',
+            'files.*' => 'file|max:10240',
         ]);
-
+    
         $user = $request->user();
-
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+    
         $provider = DB::table('m_plansetting as ps')
             ->join('m_setting as s', 's.M_SettingID', '=', 'ps.M_PlanSettingM_SettingID')
             ->where('ps.M_PlanSettingM_PlanID', $user->M_UserPlan)
@@ -265,140 +180,189 @@ class ChatController extends Controller
             ->where('s.M_SettingIsActive', 'Y')
             ->select('s.M_SettingCode', 's.M_SettingKey', 's.M_SettingModel')
             ->first();
-
+    
         if (!$provider) {
             return response()->json([
                 'message' => 'You are not allowed to use this AI provider.'
             ], 403);
         }
-
+    
         $message = $request->message;
-
-        $chatContent = [
-            [
-                "type" => "text",
-                "text" => $message
-            ]
-        ];
-
-        foreach ($fileData as $file) {
+        $convId  = $request->conversationId;
+        $files = $request->file('files', []);
+    
+        $chatContent = [['type' => 'text', 'text' => $message]];
+        foreach ($files as $file) {
             $chatContent[] = [
-                "type" => "file",
-                "name" => $file['name'],
-                "filetype" => $file['type']
+                'type' => str_starts_with($file->getMimeType(), 'image/') ? 'image' : 'file',
+                'name' => $file->getClientOriginalName(),
             ];
         }
-
         Chat::create([
-            'T_ChatT_ConversationID' => $request->conversationId,
+            'T_ChatT_ConversationID' => $convId,
             'T_ChatRole' => 'user',
-            'T_ChatContent' => json_encode($chatContent)
+            'T_ChatContent' => json_encode($chatContent),
         ]);
-
-        try {
-            if ($provider->M_SettingCode === 'SETTING-GPT') {
-                return response()->stream(function () use ($provider, $message, $request) {
-                    $content = [];
-                    $fileIds = $request->input('files', []);
-
-                    foreach ($fileIds as $fileId) {
+    
+        $fileData = array_map(function ($file) {
+            return [
+                'name'    => $file->getClientOriginalName(),
+                'type'    => $file->getMimeType(),
+                'base64'  => base64_encode(file_get_contents($file->getRealPath())),
+                'isImage' => str_starts_with($file->getMimeType(), 'image/'),
+            ];
+        }, $files);
+    
+        if ($provider->M_SettingCode === 'SETTING-GPT') {
+            return response()->stream(function () use ($provider, $message, $fileData, $convId) {
+    
+                $content = [];
+    
+                foreach ($fileData as $f) {
+                    if ($f['isImage']) {
                         $content[] = [
-                            'type' => 'input_file',
-                            'file_id' => $fileId,
+                            'type'      => 'image_url',
+                            'image_url' => [
+                                'url'    => "data:{$f['type']};base64,{$f['base64']}",
+                                'detail' => 'auto',
+                            ],
+                        ];
+                    } else {
+                        $text = $this->extractTextFromFile($f['base64'], $f['type'], $f['name']);
+                        $content[] = [
+                            'type' => 'text',
+                            'text' => "[File: {$f['name']}]\n{$text}",
                         ];
                     }
-
-                    $content[] = [
-                        'type' => 'input_text',
-                        'text' => $message,
-                    ];
-
-                    $response = Http::withToken($provider->M_SettingKey)
-                        ->withOptions([
-                            'stream' => true
-                        ])
-                        ->post('https://api.openai.com/v1/responses', [
-                            'model' => $provider->M_SettingModel ?? 'gpt-4o',
-                            'stream' => true,
-                            'input' => [
-                                [
-                                    'role' => 'user',
-                                    'content' => $content,
-                                ]
-                            ],
-                        ]);
-
-                    $body = $response->getBody();
-
-                    $output = '';
-
-                    while (!$body->eof()) {
-                        $chunk = $body->read(1024);
-                        $output .= $chunk;
-                        echo $chunk;
-                        ob_flush();
-                        flush();
-                    }
-
-                    foreach ($fileIds as $fileId) {
+                }
+    
+                $content[] = ['type' => 'text', 'text' => $message];
+    
+                $response = Http::withToken($provider->M_SettingKey)
+                    ->withOptions(['stream' => true])
+                    ->post('https://api.openai.com/v1/chat/completions', [
+                        'model'    => $provider->M_SettingModel ?? 'gpt-4o',
+                        'stream'   => true,
+                        'messages' => [
+                            ['role' => 'user', 'content' => $content],
+                        ],
+                    ]);
+    
+                $body  = $response->getBody();
+                $fullContent = '';
+    
+                while (!$body->eof()) {
+                    $chunk = $body->read(1024);
+    
+                    foreach (explode("\n", $chunk) as $line) {
+                        $line = trim($line);
+                        if (!str_starts_with($line, 'data: ') || $line === 'data: [DONE]') continue;
                         try {
-                            OpenAI::client($provider->M_SettingKey)
-                                ->files()
-                                ->delete($fileId);
-                        } catch (\Throwable $e) {
-                            // ignore
-                        }
+                            $json  = json_decode(substr($line, 6), true);
+                            $delta = $json['choices'][0]['delta']['content'] ?? '';
+                            if ($delta) $fullContent .= $delta;
+                        } catch (\Throwable $_) {}
                     }
-
-                    Chat::create([ 
-                      'T_ChatT_ConversationID' => $request->conversationId, 
-                      'T_ChatCode' => $provider->M_SettingCode, 
-                      'T_ChatRole' => 'assistant', 
-                      'T_ChatContent' => $output 
-                      ]);
-                }, 200, [
-                    'Content-Type' => 'text/event-stream',
-                    'Cache-Control' => 'no-cache',
-                    'Connection' => 'keep-alive',
-                    'X-Accel-Buffering' => 'no'
+    
+                    echo $chunk;
+                    ob_flush();
+                    flush();
+                }
+    
+                Chat::create([
+                    'T_ChatT_ConversationID' => $convId,
+                    'T_ChatCode' => $provider->M_SettingCode,
+                    'T_ChatRole' => 'assistant',
+                    'T_ChatContent' => $fullContent,
                 ]);
+    
+            }, 200, [
+                'Content-Type' => 'text/event-stream',
+                'Cache-Control' => 'no-cache',
+                'Connection' => 'keep-alive',
+                'X-Accel-Buffering' => 'no',
+            ]);
+        }
+    
+        if ($provider->M_SettingCode === 'SETTING-GMN') {
+            $parts = [];
+    
+            foreach ($fileData as $f) {
+                $parts[] = [
+                    'inline_data' => [
+                        'mime_type' => $f['type'],
+                        'data' => $f['base64'],
+                    ],
+                ];
             }
-
-            if ($provider->M_SettingCode === 'SETTING-GMN') {
-                $model = $provider->M_SettingModel ?? 'gemini-2.0-flash';
-
-                $response = Http::post(
-                    "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$provider->M_SettingKey}",
-                    [
-                        'contents' => [
-                            [
-                                'parts' => [
-                                    ['text' => $message]
-                                ]
-                            ]
-                        ]
-                    ]
-                );
-
-                $assistantReply = $response->json()['candidates'][0]['content']['parts'][0]['text']
-                    ?? '';
+            $parts[] = ['text' => $message];
+    
+            $model = $provider->M_SettingModel ?? 'gemini-2.0-flash';
+    
+            $response = Http::post(
+                "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$provider->M_SettingKey}",
+                ['contents' => [['role' => 'user', 'parts' => $parts]]]
+            );
+    
+            if (!$response->successful()) {
+                return response()->json([
+                    'message' => $response->json('error.message') ?? 'Gemini API error',
+                ], 502);
             }
-
+    
+            $assistantReply = $response->json('candidates.0.content.parts.0.text') ?? '';
+    
             Chat::create([
-                'T_ChatT_ConversationID' => $request->conversationId,
+                'T_ChatT_ConversationID' => $convId,
                 'T_ChatCode' => $provider->M_SettingCode,
                 'T_ChatRole' => 'assistant',
-                'T_ChatContent' => $assistantReply
+                'T_ChatContent' => $assistantReply,
             ]);
-
-            return response()->json([
-                'reply' => $assistantReply
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Failed generating response',
-                'error' => $e->getMessage()
-            ], 500);
+    
+            return response()->json(['reply' => $assistantReply]);
         }
+    
+        return response()->json(['message' => 'Provider not supported for file input.'], 400);
+    }
+    
+    private function extractTextFromFile(string $base64, string $mimeType, string $name): string
+    {
+        $raw = base64_decode($base64);
+    
+        try {
+            if (in_array($mimeType, ['text/plain', 'text/csv'])) {
+                return $raw;
+            }
+    
+            if ($mimeType === 'application/pdf') {
+                if (class_exists('\Smalot\PdfParser\Parser')) {
+                    $parser = new \Smalot\PdfParser\Parser();
+                    $pdf    = $parser->parseContent($raw);
+                    return $pdf->getText();
+                }
+                preg_match_all('/\(([^)]{1,200})\)\s*Tj/s', $raw, $m);
+                return implode(' ', $m[1] ?? []);
+            }
+    
+            if (in_array($mimeType, [
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/msword',
+            ])) {
+                $tmp = sys_get_temp_dir() . '/' . uniqid('docx_') . '.docx';
+                file_put_contents($tmp, $raw);
+                $zip = new \ZipArchive();
+                if ($zip->open($tmp) === true) {
+                    $xml = $zip->getFromName('word/document.xml');
+                    $zip->close();
+                    @unlink($tmp);
+                    return preg_replace('/\s+/', ' ', strip_tags($xml));
+                }
+                @unlink($tmp);
+            }
+        } catch (\Throwable $e) {
+            //
+        }
+    
+        return "(Konten file \"{$name}\" tidak dapat diekstrak)";
     }
 }

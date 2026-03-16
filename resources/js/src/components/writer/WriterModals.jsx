@@ -18,10 +18,10 @@ export function PromptLibraryModal({ open, onClose, onSelect, prompts }) {
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-5 border-b border-gray-100 dark:border-gray-700">
+        <div className="p-5">
           <h3 className="text-gray-800 dark:text-gray-100 font-bold text-lg flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-[#4A90D9]" /> Prompt Library
           </h3>
@@ -29,7 +29,7 @@ export function PromptLibraryModal({ open, onClose, onSelect, prompts }) {
             Pilih prompt untuk mengisi topik penelitian Anda.
           </p>
         </div>
-        <div className="p-3 max-h-[350px] overflow-y-auto space-y-1">
+        <div className="p-3 max-h-[350px] overflow-y-auto space-y-1 bg-[#f7f7f5] dark:bg-[#0f141e]">
           {prompts.length === 0 ? (
             <p className="text-center text-gray-400 py-8 text-[14px]">Belum ada prompt tersedia</p>
           ) : (
@@ -40,7 +40,7 @@ export function PromptLibraryModal({ open, onClose, onSelect, prompts }) {
                   onSelect(prompt.value)
                   onClose()
                 }}
-                className="w-full text-left p-4 rounded-xl text-[14px] text-gray-600 dark:text-gray-300 hover:bg-blue-50/80 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300 transition-all border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+                className="w-full border-gray-100 dark:border-gray-700 text-left p-4 rounded-xl text-[14px] text-gray-600 dark:text-gray-300 hover:bg-blue-50/80 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300 transition-all border hover:border-blue-200 dark:hover:border-blue-800"
               >
                 <span className="font-semibold block text-[12px] text-gray-400 mb-1">
                   {prompt.name}

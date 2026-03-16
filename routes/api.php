@@ -79,12 +79,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('paraps')->group(function () {
         Route::get('/', [ParaphraseController::class, 'index']);
         Route::post('/', [ParaphraseController::class, 'paraphrase']);
+        Route::put('/{id}', [ParaphraseController::class, 'update']);
         Route::delete('/{id}', [ParaphraseController::class, 'destroy']);
     });
 
     // Route::prefix('humans')->group(function () {
     //     Route::get('/', [HumanizerController::class, 'index']);
     //     Route::post('/', [HumanizerController::class, 'humanize']);
+    //     Route::put('/{id}', [HumanizerController::class, 'update']);
     //     Route::delete('/{id}', [HumanizerController::class, 'destroy']);  // Coming Soon
     // });
 

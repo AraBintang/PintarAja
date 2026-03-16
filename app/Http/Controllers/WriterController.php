@@ -64,6 +64,7 @@ class WriterController extends Controller
             ->leftJoin('m_workbook','m_workbook.M_WorkbookID','=','m_document.M_DocumentM_WorkbookID')
             ->select(
                 'm_document.M_DocumentID as id',
+                'm_document.M_DocumentM_WorkbookID as workbook_id',
                 'm_document.M_DocumentName as title',
                 'm_document.M_DocumentResult as result',
                 'm_workbook.M_WorkbookName as workbook',

@@ -1,6 +1,7 @@
 import { Check, ExternalLink, Shield, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
+import { AI_DOC_CONFIG, AI_MODELS } from '@/assets/ai'
 import {
   Select,
   SelectContent,
@@ -13,62 +14,18 @@ import {
 const OpenAILogo = () => (
   <img src="/gpt-ai-icon.svg" alt="GPT" className="w-3.5 h-3.5 object-contain" />
 )
-
 const GeminiLogo = () => (
   <img src="/google-gemini-icon.svg" alt="Gemini" className="w-3.5 h-3.5 object-contain" />
 )
-
 const ClaudeLogo = () => (
   <img src="/claude-ai-icon.svg" alt="Claude" className="w-3.5 h-3.5 object-contain" />
 )
-
 const DeepSeekLogo = () => (
   <img src="/deepseek-ai-icon.svg" alt="DeepSeek" className="w-3.5 h-3.5 object-contain" />
 )
-
 const QwenLogo = () => (
   <img src="/qwen-ai-icon.svg" alt="Qwen" className="w-3.5 h-3.5 object-contain" />
 )
-
-// Konfigurasi dokumentasi per AI provider
-const AI_DOC_CONFIG = {
-  'SETTING-GPT': {
-    label: 'OpenAI Model Docs',
-    url: 'https://platform.openai.com/docs/models',
-    color:
-      'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300',
-    bgColor: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700/50',
-    iconColor: 'text-emerald-500',
-  },
-  'SETTING-GMN': {
-    label: 'Google Gemini Model Docs',
-    url: 'https://ai.google.dev/gemini-api/docs/models/gemini',
-    color: 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300',
-    bgColor: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700/50',
-    iconColor: 'text-blue-500',
-  },
-  'SETTING-CLD': {
-    label: 'Anthropic Claude Model Docs',
-    url: 'https://docs.anthropic.com/en/docs/about-claude/models/overview',
-    color: 'text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300',
-    bgColor: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700/50',
-    iconColor: 'text-orange-500',
-  },
-  'SETTING-DSK': {
-    label: 'DeepSeek Model Docs',
-    url: 'https://api-docs.deepseek.com/quick_start/pricing',
-    color: 'text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300',
-    bgColor: 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-700/50',
-    iconColor: 'text-sky-500',
-  },
-  'SETTING-QWN': {
-    label: 'Qwen Model Docs',
-    url: 'https://qwen.readthedocs.io/en/latest/',
-    color: 'text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300',
-    bgColor: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700/50',
-    iconColor: 'text-purple-500',
-  },
-}
 
 const EMPTY_FORM = {
   name: '',
@@ -113,6 +70,11 @@ export default function AIForm({
 
   const set = (key) => (e) => setFormData((prev) => ({ ...prev, [key]: e.target?.value ?? e }))
 
+  // When AI provider changes, reset model
+  const handleCodeChange = (value) => {
+    setFormData((prev) => ({ ...prev, code: value, model: '' }))
+  }
+
   const togglePlan = (id) =>
     setSelectedPlans((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
 
@@ -127,8 +89,9 @@ export default function AIForm({
     })
   }
 
-  // Ambil config dokumentasi berdasarkan AI yang dipilih
   const docConfig = formData.code ? AI_DOC_CONFIG[formData.code] : null
+  const modelList = formData.code ? (AI_MODELS[formData.code] ?? []) : []
+  const selectedModel = modelList.find((m) => m.value === formData.model) ?? null
 
   const inputClass =
     'w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 h-11 text-[14px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 dark:focus:border-orange-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-orange-900/30 focus:bg-white dark:focus:bg-gray-800 focus:outline-none transition-colors'
@@ -141,6 +104,7 @@ export default function AIForm({
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col">
+        {/* Header */}
         <div className="bg-blue-600 dark:bg-orange-500 px-6 py-4 flex items-center justify-between">
           <h3 className="text-white font-bold text-lg tracking-wide">
             {isEdit ? 'Edit AI Key' : 'Add New AI Key'}
@@ -152,6 +116,7 @@ export default function AIForm({
 
         <div className="p-6 overflow-y-auto max-h-[70vh]">
           <div className="space-y-5">
+            {/* Name */}
             <div className="space-y-2">
               <label className={labelClass}>AI Provider / Name</label>
               <input
@@ -163,10 +128,12 @@ export default function AIForm({
               />
             </div>
 
+            {/* AI + Model row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* AI selector */}
               <div className="space-y-2">
                 <label className={labelClass}>AI</label>
-                <Select value={formData.code} onValueChange={set('code')}>
+                <Select value={formData.code} onValueChange={handleCodeChange}>
                   <SelectTrigger className={triggerClass}>
                     <SelectValue placeholder="Select AI" />
                   </SelectTrigger>
@@ -174,27 +141,32 @@ export default function AIForm({
                     <SelectGroup>
                       <SelectItem value="SETTING-GPT">
                         <div className="flex flex-row items-center gap-2">
-                          <OpenAILogo /> <span>GPT</span>
+                          <OpenAILogo />
+                          <span>GPT</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="SETTING-GMN">
                         <div className="flex flex-row items-center gap-2">
-                          <GeminiLogo /> <span>Gemini</span>
+                          <GeminiLogo />
+                          <span>Gemini</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="SETTING-CLD">
                         <div className="flex flex-row items-center gap-2">
-                          <ClaudeLogo /> <span>Claude</span>
+                          <ClaudeLogo />
+                          <span>Claude</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="SETTING-DSK">
                         <div className="flex flex-row items-center gap-2">
-                          <DeepSeekLogo /> <span>Deepseek</span>
+                          <DeepSeekLogo />
+                          <span>Deepseek</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="SETTING-QWN">
                         <div className="flex flex-row items-center gap-2">
-                          <QwenLogo /> <span>Qwen</span>
+                          <QwenLogo />
+                          <span>Qwen</span>
                         </div>
                       </SelectItem>
                     </SelectGroup>
@@ -202,43 +174,76 @@ export default function AIForm({
                 </Select>
               </div>
 
+              {/* Model selector */}
               <div className="space-y-2">
                 <label className={labelClass}>Model</label>
-                <input
-                  type="text"
+                <Select
                   value={formData.model}
-                  onChange={set('model')}
-                  placeholder="e.g. gpt-4o"
-                  className={inputClass}
-                />
-                {/* Link dokumentasi model — muncul jika AI sudah dipilih */}
-                {docConfig && (
-                  <a
-                    href={docConfig.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold transition-all ${docConfig.bgColor} ${docConfig.color}`}
+                  onValueChange={set('model')}
+                  disabled={!formData.code}
+                >
+                  <SelectTrigger
+                    className={`${triggerClass} ${
+                      !formData.code ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   >
-                    <ExternalLink className={`w-3 h-3 ${docConfig.iconColor}`} />
-                    {docConfig.label}
-                  </a>
-                )}
+                    <SelectValue
+                      placeholder={formData.code ? 'Select model...' : 'Select AI first'}
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectGroup>
+                      {modelList.map((m) => (
+                        <SelectItem key={m.value} value={m.value}>
+                          <div className="flex flex-col py-0.5">
+                            <span className="text-[13px] font-semibold leading-tight">
+                              {m.label}
+                            </span>
+                            <span className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight mt-0.5">
+                              {m.desc}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+
+                {/* Selected model badge + doc link */}
+                <div className="flex flex-wrap items-center gap-2 min-h-[26px]">
+                  {selectedModel && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 text-[11px] text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600">
+                      {selectedModel.desc}
+                    </span>
+                  )}
+                  {docConfig && (
+                    <a
+                      href={docConfig.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-[11px] font-semibold transition-all ${docConfig.bgColor} ${docConfig.color}`}
+                    >
+                      <ExternalLink className={`w-3 h-3 ${docConfig.iconColor}`} />
+                      {docConfig.label}
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-2 md:col-span-2">
-                <label className={labelClass}>API Key</label>
-                <input
-                  type="text"
-                  value={formData.key}
-                  onChange={set('key')}
-                  placeholder="sk-..."
-                  className={inputClass}
-                />
-              </div>
+            {/* API Key */}
+            <div className="space-y-2">
+              <label className={labelClass}>API Key</label>
+              <input
+                type="text"
+                value={formData.key}
+                onChange={set('key')}
+                placeholder="sk-..."
+                className={inputClass}
+              />
             </div>
 
+            {/* Plans */}
             <div className="space-y-3">
               <label className={`${labelClass} flex items-center gap-2`}>
                 <Shield className="w-4 h-4 text-blue-500 dark:text-orange-400" />
@@ -285,6 +290,7 @@ export default function AIForm({
           </div>
         </div>
 
+        {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
           <button
             onClick={onClose}

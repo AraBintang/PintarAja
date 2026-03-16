@@ -24,6 +24,24 @@ class HumanizerController extends Controller
         return response()->json($results);
     }
 
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+    
+        $humanizer = Humanizer::findOrFail($id);
+    
+        $humanizer->update([
+            'M_HumanizerName' => $request->name,
+        ]);
+    
+        return response()->json([
+            'message' => 'Updated successfully',
+            'data'    => $humanizer,
+        ]);
+    }
+
     public function destroy($id)
     {
         $humanizer = Humanizer::findOrFail($id);

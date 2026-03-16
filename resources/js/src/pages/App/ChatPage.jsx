@@ -7,28 +7,90 @@ import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
 
+/* ─── Batas ukuran file ─── */
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB per file
+
+/* ─── Helper: ekstrak pesan error dari berbagai format JSON ─── */
+const extractErrorMessage = (raw) => {
+  try {
+    const json = JSON.parse(raw.trim())
+    if (json?.error?.message) return json.error.message // format OpenAI
+    if (json?.message) return json.message // format Laravel
+    // eslint-disable-next-line no-unused-vars, no-empty
+  } catch (_) {}
+  return null
+}
+
+/* ─── Helper: parse SSE stream jadi plain text ─── */
+const parseSseContent = (raw) => {
+  if (!raw.includes('data: ')) return raw
+
+  let result = ''
+  for (const line of raw.split('\n')) {
+    if (!line.startsWith('data: ') || line === 'data: [DONE]') continue
+    try {
+      const json = JSON.parse(line.slice(6))
+      const delta = json?.choices?.[0]?.delta?.content
+      if (delta) result += delta
+      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
+      if (text) result += text
+      // eslint-disable-next-line no-unused-vars, no-empty
+    } catch (_) {}
+  }
+  return result || raw
+}
+
+/* ─── Helper: baca stream, throw segera kalau dapat JSON error ─── */
+const readStream = async (response, onProgress) => {
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let fullRaw = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    const chunk = decoder.decode(value, { stream: true })
+    fullRaw += chunk
+
+    // Kalau akumulasi adalah JSON murni (bukan SSE), berarti error object
+    const trimmed = fullRaw.trim()
+    if (trimmed.startsWith('{') && !trimmed.includes('data: ')) {
+      const errMsg = extractErrorMessage(trimmed)
+      if (errMsg) throw new Error(errMsg)
+    }
+
+    onProgress(fullRaw)
+  }
+
+  // Final check setelah stream selesai
+  const trimmed = fullRaw.trim()
+  if (trimmed.startsWith('{') && !trimmed.includes('data: ')) {
+    const errMsg = extractErrorMessage(trimmed)
+    if (errMsg) throw new Error(errMsg)
+  }
+
+  return fullRaw
+}
+
 export default function ChatPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user } = useAuth()
   const { showSnackbar } = useSnackbar()
 
-  /* ── AI providers — diambil dari GET /convers ── */
   const [aiProviders, setAiProviders] = useState([])
   const [selectedAiId, setSelectedAiId] = useState('')
 
-  /* ── Conversation & messages ── */
   const [conversationId, setConversationId] = useState(null)
   const [messages, setMessages] = useState([])
   const [streamingContent, setStreamingContent] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
 
-  /* ── Pagination ── */
   const [nextCursor, setNextCursor] = useState(null)
   const [hasMoreChats, setHasMoreChats] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-  /* ── UI ── */
   const [inputValue, setInputValue] = useState('')
   const [attachedFiles, setAttachedFiles] = useState([])
   const [showAttachMenu, setShowAttachMenu] = useState(false)
@@ -52,7 +114,6 @@ export default function ChatPage() {
       .catch(() => {})
   }, [])
 
-  /* ── /new → reset ── */
   useEffect(() => {
     if (location.pathname === '/new') {
       if (abortRef.current) abortRef.current.abort()
@@ -67,7 +128,6 @@ export default function ChatPage() {
     return () => clearTimeout(t)
   }, [location.pathname, navigate])
 
-  /* ── Load isi conversation (cursor pagination) ── */
   const loadConversation = useCallback(async (convId, cursor = null, prepend = false) => {
     const url = cursor ? `/chats/${convId}?cursor=${cursor}` : `/chats/${convId}`
     const res = await request(url)
@@ -96,9 +156,6 @@ export default function ChatPage() {
     return res
   }, [])
 
-  /* ── Listener RightSidebar → load conversation ──
-     Data ai provider sudah ada di GET /convers,
-     jadi kita pakai aiProviders yang sudah di-set RightSidebar via event  ── */
   useEffect(() => {
     const handler = async (e) => {
       const conv = e.detail
@@ -108,7 +165,6 @@ export default function ChatPage() {
       setMessages([])
       setConversationId(conv.id)
 
-      // Set AI providers dari data conversation (sudah dipass dari sidebar)
       if (conv.ai?.length) {
         setAiProviders(conv.ai)
         setSelectedAiId(String(conv.ai[0].id))
@@ -139,14 +195,12 @@ export default function ChatPage() {
     return () => window.removeEventListener('loadHistoryChat', handler)
   }, [loadConversation])
 
-  /* ── Auto-scroll ── */
   useEffect(() => {
     if (!suppressScrollRef.current) {
       endRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages, streamingContent])
 
-  /* ── Infinite scroll ── */
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
@@ -165,7 +219,92 @@ export default function ChatPage() {
     return () => el.removeEventListener('scroll', onScroll)
   }, [hasMoreChats, isLoadingMore, conversationId, nextCursor, loadConversation])
 
-  /* ── Kirim pesan ── */
+  /* ─── Kirim pesan teks biasa via SSE ─── */
+  const sendTextMessage = async (convId, text, contextMessages) => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+    const response = await fetch('/api/chats', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        Accept: 'text/event-stream',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify({
+        providerId: parseInt(selectedAiId),
+        conversationId: convId,
+        message: text,
+        messageToAi: contextMessages,
+      }),
+      signal: abortRef.current.signal,
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.message || 'Generate gagal')
+    }
+
+    const fullRaw = await readStream(response, (raw) => {
+      setStreamingContent(parseSseContent(raw))
+    })
+
+    return parseSseContent(fullRaw)
+  }
+
+  /* ─── Kirim pesan dengan file via /gff (multipart/form-data) ─── */
+  const sendFileMessage = async (convId, text, files) => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+
+    // Validasi ukuran file sebelum kirim
+    const oversized = files.filter((f) => f.size > MAX_FILE_SIZE)
+    if (oversized.length) {
+      throw new Error(
+        `File "${oversized[0].name}" melebihi batas ukuran ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+      )
+    }
+
+    // Pakai FormData — tidak ada base64, tidak ada overhead encoding
+    const form = new FormData()
+    form.append('providerId', selectedAiId)
+    form.append('conversationId', convId)
+    form.append('message', text)
+    files.forEach((f) => form.append('files[]', f))
+
+    const response = await fetch('/api/chats/gff', {
+      method: 'POST',
+      headers: {
+        // Jangan set Content-Type manual — browser set otomatis + boundary
+        Authorization: `Bearer ${token}`,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: form,
+      signal: abortRef.current.signal,
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.message || 'Generate gagal')
+    }
+
+    const contentType = response.headers.get('Content-Type') ?? ''
+
+    if (contentType.includes('text/event-stream')) {
+      const fullRaw = await readStream(response, (raw) => {
+        setStreamingContent(parseSseContent(raw))
+      })
+      return parseSseContent(fullRaw)
+    }
+
+    // JSON response (Gemini non-streaming)
+    const json = await response.json()
+    if (json?.error) throw new Error(json.error.message || 'AI provider error')
+    if (!json?.reply && json?.message) throw new Error(json.message)
+    const reply = json.reply ?? ''
+    setStreamingContent(reply)
+    return reply
+  }
+
+  /* ─── Handler utama kirim pesan ─── */
   const handleSendMessage = async () => {
     const text = inputValue.trim()
     if (!text && !attachedFiles.length) return
@@ -179,7 +318,6 @@ export default function ChatPage() {
     setInputValue('')
     setAttachedFiles([])
 
-    /* Buat conversation baru jika belum ada */
     let convId = conversationId
     if (!convId) {
       try {
@@ -194,7 +332,6 @@ export default function ChatPage() {
       }
     }
 
-    /* Tambah pesan user ke UI */
     const tempId = `temp-${Date.now()}`
     const userMsg = {
       id: tempId,
@@ -205,57 +342,21 @@ export default function ChatPage() {
     }
     setMessages((prev) => [...prev, userMsg])
 
-    /* Konteks 10 pesan terakhir */
     const contextMessages = [...messages, userMsg]
       .slice(-10)
       .map((m) => ({ role: m.role, content: m.content }))
 
-    /* ── SSE Streaming ── */
     setIsStreaming(true)
     setStreamingContent('')
     if (abortRef.current) abortRef.current.abort()
     abortRef.current = new AbortController()
 
     try {
-      // console.log(userMsg)
-      // console.log(text)
-      // console.log(contextMessages)
+      const fullContent =
+        files.length > 0
+          ? await sendFileMessage(convId, text, files)
+          : await sendTextMessage(convId, text, contextMessages)
 
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-      const response = await fetch('/api/chats', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          Accept: 'text/event-stream',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify({
-          providerId: parseInt(selectedAiId),
-          conversationId: convId,
-          message: text,
-          messageToAi: contextMessages,
-        }),
-        signal: abortRef.current.signal,
-      })
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}))
-        throw new Error(err.message || 'Generate gagal')
-      }
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let fullContent = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        fullContent += decoder.decode(value, { stream: true })
-        setStreamingContent(fullContent)
-      }
-
-      /* Commit pesan assistant */
       const ai = aiProviders.find((a) => String(a.id) === selectedAiId)
       setMessages((prev) => [
         ...prev,
@@ -270,15 +371,16 @@ export default function ChatPage() {
       setStreamingContent('')
     } catch (err) {
       if (err.name === 'AbortError') return
-      showSnackbar('error', err.message || 'Gagal mengirim pesan')
+      setStreamingContent('')
       setMessages((prev) => prev.filter((m) => m.id !== tempId))
       setInputValue(text)
+      setAttachedFiles(files)
+      showSnackbar('error', err.message || 'Gagal mengirim pesan')
     } finally {
       setIsStreaming(false)
     }
   }
 
-  /* ── File helpers ── */
   const handleFileAdd = (files) => {
     setAttachedFiles((prev) => {
       const next = [...prev, ...files]
@@ -317,7 +419,6 @@ export default function ChatPage() {
               <div className="h-3.5 w-[55%] skeleton rounded-full" />
               <div className="h-3.5 w-[35%] skeleton rounded-full" />
             </div>
-
             <div className="flex items-center justify-between px-3 pb-3 pt-1">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-full skeleton" />
@@ -326,7 +427,6 @@ export default function ChatPage() {
               <div className="w-9 h-9 rounded-full skeleton" />
             </div>
           </div>
-
           <div className="max-w-3xl mx-auto my-2 flex justify-center">
             <div className="h-3 w-[280px] skeleton rounded-full" />
           </div>

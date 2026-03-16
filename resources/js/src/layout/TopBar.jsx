@@ -37,7 +37,7 @@ export default function TopBar() {
           )}
           {user?.plan_name}
         </button>
-          
+
         <button
           onClick={toggleTheme}
           className="p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-all"

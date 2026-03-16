@@ -1,4 +1,7 @@
+import Lottie from 'lottie-react'
 import { Link } from 'react-router-dom'
+
+import lottiePaperPlane from '@/assets/paperPlane.json'
 
 export default function HumanizerPage() {
   return (
@@ -58,19 +61,7 @@ export default function HumanizerPage() {
         </div>
 
         {/* Illustration */}
-        <div className="flex-1 relative animate-in fade-in slide-in-from-right duration-700 max-w-md mx-auto">
-          <div className="relative z-10 drop-shadow-2xl dark:drop-shadow-[0_20px_25px_rgba(0,0,0,0.5)] animate-float">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              height="240"
-              width="240"
-              viewBox="0 0 640 640"
-              fill="currentColor"
-            >
-              <path d="M568.4 37.7C578.2 34.2 589 36.7 596.4 44C603.8 51.3 606.2 62.2 602.7 72L424.7 568.9C419.7 582.8 406.6 592 391.9 592C377.7 592 364.9 583.4 359.6 570.3L295.4 412.3C290.9 401.3 292.9 388.7 300.6 379.7L395.1 267.3C400.2 261.2 399.8 252.3 394.2 246.7C388.6 241.1 379.6 240.7 373.6 245.8L261.2 340.1C252.1 347.7 239.6 349.7 228.6 345.3L70.1 280.8C57 275.5 48.4 262.7 48.4 248.5C48.4 233.8 57.6 220.7 71.5 215.7L568.4 37.7z" />
-            </svg>
-          </div>
-        </div>
+        <Lottie animationData={lottiePaperPlane} loop autoplay className="h-140 w-140" />
       </div>
     </div>
   )
