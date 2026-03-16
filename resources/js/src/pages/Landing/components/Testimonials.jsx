@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 
+import useScrollReveal from '@/hooks/useScrollReveal'
+
 const reviews = [
   {
     title: 'Bagus untuk Pemula',
@@ -56,19 +58,24 @@ const Stars = () => (
 )
 
 export default function Testimonials() {
+  const { ref: sectionRef, isVisible } = useScrollReveal({ threshold: 0.1 })
+
   return (
     <section
       id="testimoni"
+      ref={sectionRef}
       className="relative py-28 bg-[#f4f7fb] dark:bg-gray-900 overflow-hidden"
     >
-      {/* Ambient glows */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#4A90D9] opacity-[0.04] rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 left-0 w-[400px] h-[400px] bg-[#6AB0F3] opacity-[0.04] rounded-full blur-[100px] pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10">
         <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-12 items-start">
           {/* Left - Title */}
-          <div className="sticky top-32 pt-8">
+          <div
+            className={`relative z-20 lg:sticky lg:top-32 pt-8 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}
+            style={{ transition: 'opacity 0.8s ease, transform 0.8s ease' }}
+          >
             <span className="inline-block px-5 py-2 text-[13px] font-medium text-[#4A90D9] bg-white dark:bg-gray-800 border border-[#4A90D9]/20 shadow-sm rounded-full mb-6">
               Testimoni
             </span>
@@ -87,12 +94,7 @@ export default function Testimonials() {
             >
               Daftar Sekarang
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M14 5l7 7m0 0l-7 7m7-7H3"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </Link>
           </div>
@@ -102,7 +104,10 @@ export default function Testimonials() {
             {reviews.map((review, i) => (
               <div
                 key={i}
-                className="group bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-7 hover:border-[#4A90D9]/20 hover:shadow-lg transition-all duration-300 relative overflow-hidden"
+                className={`group bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 sm:p-7 hover:border-[#4A90D9]/20 hover:shadow-lg transition-all duration-300 relative overflow-hidden flex flex-col ${
+                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transition: 'opacity 0.6s ease, transform 0.6s ease', transitionDelay: `${0.2 + i * 0.1}s` }}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#4A90D9] to-[#6AB0F3] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
