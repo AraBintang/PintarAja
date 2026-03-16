@@ -61,13 +61,12 @@ export default function RightSidebar() {
   const [activeWorkbook, setActiveWorkbook] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Edit state
   const [editingId, setEditingId] = useState(null)
   const [editingValue, setEditingValue] = useState('')
-  const editInputRef = useRef(null)
-
-  // Delete confirm state
   const [deletingId, setDeletingId] = useState(null)
+  const [activeId, setActiveId] = useState(null)
+
+  const editInputRef = useRef(null)
 
   const current = PAGE_CONFIG[location.pathname] || { title: 'Riwayat', icon: Clock, apiPath: null }
   const IconComponent = current.icon
@@ -81,6 +80,7 @@ export default function RightSidebar() {
       setActiveWorkbook('all')
       setEditingId(null)
       setDeletingId(null)
+
       return
     }
 
@@ -114,6 +114,10 @@ export default function RightSidebar() {
       .finally(() => setIsLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, location.pathname])
+
+  useEffect(() => {
+    setActiveId(null)
+  }, [location.pathname])
 
   useEffect(() => {
     const handler = (e) => {
@@ -177,6 +181,8 @@ export default function RightSidebar() {
   const handleItemClick = (item) => {
     // Don't navigate if editing or showing delete confirm
     if (editingId === item.id || deletingId === item.id) return
+
+    setActiveId(item.id)
 
     if (location.pathname === '/chat' || location.pathname === '/new') {
       window.dispatchEvent(
@@ -526,7 +532,9 @@ export default function RightSidebar() {
                       ${
                         isDeleting
                           ? 'bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/30'
-                          : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'
+                          : activeId === item.id
+                            ? 'bg-[#dbeafe] dark:bg-blue-900/30'
+                            : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'
                       }`}
                   >
                     {/* Delete confirm banner */}
@@ -600,7 +608,14 @@ export default function RightSidebar() {
                                 </button>
                               </div>
                             ) : (
-                              <h3 className="text-[13px] font-medium text-gray-800 dark:text-gray-200 group-hover:text-[#4A90D9] transition-colors truncate">
+                              <h3
+                                className={`text-[13px] font-medium truncate transition-colors
+                                ${
+                                  activeId === item.id
+                                    ? 'text-[#4A90D9]'
+                                    : 'text-gray-800 dark:text-gray-200 group-hover:text-[#4A90D9]'
+                                }`}
+                              >
                                 {displayName}
                               </h3>
                             )}
