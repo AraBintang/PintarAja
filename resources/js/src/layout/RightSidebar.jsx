@@ -533,7 +533,7 @@ export default function RightSidebar() {
                         isDeleting
                           ? 'bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/30'
                           : activeId === item.id
-                            ? 'bg-[#dbeafe] dark:bg-blue-900/30'
+                            ? 'bg-[#eeedeb] dark:bg-gray-900'
                             : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'
                       }`}
                   >

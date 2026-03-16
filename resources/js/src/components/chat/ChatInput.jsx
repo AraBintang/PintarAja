@@ -179,7 +179,7 @@ export default function ChatInput({
   const canAttach = !isStreaming && FILE_SUPPORTED_CODES.includes(selectedProvider?.code)
 
   return (
-    <div className="sticky bottom-0 pt-2 bg-[#f7f7f5] dark:bg-[#0f141e] px-4">
+    <div className="sticky bottom-0 pt-2 px-4">
       <form
         onSubmit={(e) => {
           e.preventDefault()
