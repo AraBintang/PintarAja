@@ -47,6 +47,11 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'turnstile' => [
+        'key' => env('TURNSTILE_SITE_KEY'),
+        'secret' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
     ],

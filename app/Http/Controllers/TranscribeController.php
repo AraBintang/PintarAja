@@ -99,6 +99,12 @@ class TranscribeController extends Controller
             'video_url' => 'nullable|url',
         ]);
 
+        $user = $request->user();
+
+        if ($user->M_UserPlan === 1) {
+            return response()->json(['error' => 'Your current plan does not include access to this feature. Please upgrade to continue.'], 403);
+        }
+
         $source = $request->input('source');
         $audioPath = null;
 

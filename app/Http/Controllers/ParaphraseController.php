@@ -36,6 +36,10 @@ class ParaphraseController extends Controller
 
         $user = $request->user();
 
+        if ($user->M_UserPlan === 1) {
+            return response()->json(['error' => 'Your current plan does not include access to this feature. Please upgrade to continue.'], 403);
+        }
+        
         $text = $request->text;
         $mode = $request->mode;
         $language = $request->language;
@@ -116,7 +120,7 @@ Rules:
     
         return response()->json([
             'message' => 'Updated successfully',
-            'data'    => $paraphrase,
+            'data' => $paraphrase,
         ]);
     }
 

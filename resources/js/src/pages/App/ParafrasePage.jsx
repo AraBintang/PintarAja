@@ -273,7 +273,7 @@ export default function ParafrasePage() {
               {isProcessing ? (
                 <div className="flex items-center justify-center h-full min-h-[250px] md:min-h-0">
                   <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-2 border-blue-600 dark:border-orange-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-blue-600 dark:border-orange-500 border-t-black/20 dark:border-t-gray-900 rounded-full animate-spin" />
                     <span className="text-[13px] font-medium text-gray-500 dark:text-gray-400">
                       Paraphrasing text...
                     </span>

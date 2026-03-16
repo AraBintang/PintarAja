@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use RyanChandler\LaravelCloudflareTurnstile\Rules\Turnstile;
 
 class AuthController extends Controller
 {
@@ -60,9 +61,10 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $credentials = $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email',
-            'password' => 'required|min:8',
+            'name' => ['required', 'string'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'min:8'],
+            'cf-turnstile-response' => ['required', new Turnstile],
         ]);
 
         $user = User::where('M_UserEmail', $credentials['email'])->first();

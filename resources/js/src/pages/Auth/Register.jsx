@@ -27,6 +27,11 @@ export default function Register() {
     confirmPassword: '',
   })
 
+  const [turnstileToken, setTurnstileToken] = useState('')
+
+  const turnstileRef = useRef(null)
+  const turnstileWidgetId = useRef(null)
+
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''))
   const [otpLoading, setOtpLoading] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
@@ -37,6 +42,57 @@ export default function Register() {
     const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000)
     return () => clearTimeout(t)
   }, [resendCooldown])
+
+  useEffect(() => {
+    if (step !== 'register') return
+
+    const siteKey = window.APP?.TURNSTILE_SITE_KEY
+    if (!siteKey || !turnstileRef.current) return
+
+    const cleanupWidget = () => {
+      if (turnstileWidgetId.current === null) return
+      if (!window.turnstile) return
+
+      if (typeof window.turnstile.remove === 'function') {
+        window.turnstile.remove(turnstileWidgetId.current)
+      } else {
+        window.turnstile.reset(turnstileWidgetId.current)
+      }
+
+      turnstileWidgetId.current = null
+      if (turnstileRef.current) turnstileRef.current.innerHTML = ''
+    }
+
+    const renderWidget = () => {
+      if (!window.turnstile || !turnstileRef.current) return
+
+      cleanupWidget()
+
+      turnstileWidgetId.current = window.turnstile.render(turnstileRef.current, {
+        sitekey: siteKey,
+        callback: (token) => setTurnstileToken(token),
+        'expired-callback': () => setTurnstileToken(''),
+        'error-callback': () => setTurnstileToken(''),
+        theme: 'dark',
+      })
+    }
+
+    if (window.turnstile) {
+      renderWidget()
+      return
+    }
+
+    const interval = setInterval(() => {
+      if (!window.turnstile) return
+      renderWidget()
+      clearInterval(interval)
+    }, 250)
+
+    return () => {
+      clearInterval(interval)
+      cleanupWidget()
+    }
+  }, [step])
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
 
@@ -51,6 +107,12 @@ export default function Register() {
       showSnackbar('error', 'Password minimal 6 karakter')
       return
     }
+
+    if (!turnstileToken) {
+      showSnackbar('error', 'Silakan selesaikan verifikasi Turnstile')
+      return
+    }
+
     setLoading(true)
     try {
       await request('/register', {
@@ -59,6 +121,7 @@ export default function Register() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          'cf-turnstile-response': turnstileToken,
         },
       })
       showSnackbar('success', 'Kode OTP telah dikirim ke email Anda')
@@ -228,6 +291,29 @@ export default function Register() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-6 flex flex-col items-center">
+              <div className="relative w-[300px] h-[65px]">
+                <div className="absolute inset-0 flex items-center gap-3 px-3.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                  <div className="w-7 h-7 rounded-full skeleton flex-shrink-0" />
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <div className="skeleton h-2.5 w-[55%] rounded" />
+                    <div className="skeleton h-2 w-[75%] rounded" />
+                  </div>
+                  <div className="skeleton w-[70px] h-7 rounded flex-shrink-0" />
+                </div>
+
+                <div ref={turnstileRef} className="absolute inset-0 z-10" />
+              </div>
+
+              <input type="hidden" name="cf-turnstile-response" value={turnstileToken} readOnly />
+
+              {!turnstileToken && (
+                <p className="mt-2 text-xs text-red-500">
+                  Please complete the Turnstile verification before proceeding.
+                </p>
+              )}
             </div>
 
             <button
