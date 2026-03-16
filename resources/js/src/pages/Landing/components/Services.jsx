@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
 import Lottie from 'lottie-react'
+import { useEffect, useRef, useState } from 'react'
 
 import useScrollReveal from '@/hooks/useScrollReveal'
 
@@ -15,14 +15,14 @@ const services = [
     badge: null,
   },
   {
+    title: 'paraphrase AI',
+    desc: 'Parafrase dan tingkatkan kualitas tulisan Anda dengan struktur kalimat yang lebih baik, profesional, dan bebas plagiarisme.',
+    badge: 'BARU',
+  },
+  {
     title: 'Humanizer AI',
     desc: 'Ubah teks hasil AI menjadi tulisan yang natural dan tidak terdeteksi sebagai konten buatan mesin. Sempurna untuk lolos pengecekan plagiarisme.',
     badge: 'Coming Soon',
-  },
-  {
-    title: 'Parafrase AI',
-    desc: 'Parafrase dan tingkatkan kualitas tulisan Anda dengan struktur kalimat yang lebih baik, profesional, dan bebas plagiarisme.',
-    badge: 'BARU',
   },
   {
     title: 'Transcribe AI',
@@ -48,7 +48,9 @@ export default function Services() {
       .catch(() => {
         if (isMounted) setLottieData(null)
       })
-    return () => { isMounted = false }
+    return () => {
+      isMounted = false
+    }
   }, [isVisible, lottieData])
 
   useEffect(() => {
@@ -88,8 +90,20 @@ export default function Services() {
                 <div className="w-full h-[420px] lg:h-[520px] flex items-center justify-center text-gray-400">
                   <div className="text-center">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#4A90D9]/10 flex items-center justify-center">
-                      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-[#4A90D9]">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <svg
+                        width="32"
+                        height="32"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="text-[#4A90D9]"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
                       </svg>
                     </div>
                     <p className="text-sm font-medium">AI Tools Dashboard</p>
@@ -99,27 +113,54 @@ export default function Services() {
             </div>
             {/* Relocated AI Tools */}
             <div className="mt-8 lg:mt-12">
-              <p className="text-[#0a192f] dark:text-white font-bold text-lg">Didukung AI Terpopuler</p>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">Solusi pintar untuk produktivitas Anda.</p>
+              <p className="text-[#0a192f] dark:text-white font-bold text-lg">
+                Didukung AI Terpopuler
+              </p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                Solusi pintar untuk produktivitas Anda.
+              </p>
               <div className="flex flex-wrap items-center gap-3">
                 {[
-                  { name: 'Google OAuth', icon: (
-                    <svg width="24" height="24" viewBox="0 0 48 48">
-                      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-                      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-                      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-                      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-                    </svg>
-                  )},
+                  {
+                    name: 'Google OAuth',
+                    icon: (
+                      <svg width="24" height="24" viewBox="0 0 48 48">
+                        <path
+                          fill="#EA4335"
+                          d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                        />
+                        <path
+                          fill="#4285F4"
+                          d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                        />
+                      </svg>
+                    ),
+                  },
                   { name: 'OpenAI', logo: '/gpt-ai-icon.svg', darkInvert: true },
                   { name: 'Gemini', logo: '/google-gemini-icon.svg' },
                   { name: 'DeepSeek', logo: '/deepseek-ai-icon.svg' },
                   { name: 'Claude', logo: '/claude-ai-icon.svg' },
-                  { name: 'Qwen', logo: '/qwen-ai-icon.svg' }
+                  { name: 'Qwen', logo: '/qwen-ai-icon.svg' },
                 ].map((tool, i) => (
-                  <div key={i} title={tool.name} className="w-12 h-12 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-center relative hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                  <div
+                    key={i}
+                    title={tool.name}
+                    className="w-12 h-12 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-center relative hover:-translate-y-1 hover:shadow-md transition-all duration-300"
+                  >
                     {tool.logo ? (
-                      <img src={tool.logo} alt={tool.name} className={`w-6 h-6 object-contain${tool.darkInvert ? ' dark:invert' : ''}`} />
+                      <img
+                        src={tool.logo}
+                        alt={tool.name}
+                        className={`w-6 h-6 object-contain${tool.darkInvert ? ' dark:invert' : ''}`}
+                      />
                     ) : (
                       tool.icon
                     )}
@@ -158,7 +199,10 @@ export default function Services() {
                   className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all overflow-hidden ${
                     isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
                   }`}
-                  style={{ transition: 'opacity 0.6s ease, transform 0.6s ease', transitionDelay: `${0.4 + index * 0.1}s` }}
+                  style={{
+                    transition: 'opacity 0.6s ease, transform 0.6s ease',
+                    transitionDelay: `${0.4 + index * 0.1}s`,
+                  }}
                 >
                   <button
                     onClick={() => setOpenIndex(openIndex === index ? -1 : index)}
@@ -172,30 +216,46 @@ export default function Services() {
                       </span>
                       {service.badge && (
                         <span className="px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[10px] font-bold text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap">
-                        {service.badge}
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-300 ${openIndex === index ? 'border-[#4A90D9] bg-[#4A90D9]/10 rotate-180' : 'border-gray-200 dark:border-gray-700 bg-gray-50 group-hover:border-[#4A90D9]/50'}`}
-                  >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" className={openIndex === index ? 'text-[#4A90D9]' : 'text-gray-400 group-hover:text-[#4A90D9]'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          {service.badge}
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-300 ${openIndex === index ? 'border-[#4A90D9] bg-[#4A90D9]/10 rotate-180' : 'border-gray-200 dark:border-gray-700 bg-gray-50 group-hover:border-[#4A90D9]/50'}`}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        className={
+                          openIndex === index
+                            ? 'text-[#4A90D9]'
+                            : 'text-gray-400 group-hover:text-[#4A90D9]'
+                        }
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                     </div>
                   </button>
 
-                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openIndex === index ? 'max-h-56 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${openIndex === index ? 'max-h-56 opacity-100' : 'max-h-0 opacity-0'}`}
+                  >
                     <div className="p-4 sm:p-5 pt-0 pr-8 sm:pr-12">
                       <p className="text-gray-600 dark:text-gray-400 text-[14px] sm:text-[15px] leading-relaxed mb-4">
                         {service.desc}
                       </p>
                       <div className="flex flex-wrap gap-2 sm:gap-3">
-                        <a href="#" className="px-4 py-2 sm:px-5 text-[12px] sm:text-[13px] font-semibold text-[#4A90D9] bg-[#4A90D9]/10 rounded-full hover:bg-[#4A90D9]/20 transition-colors">
-                          Lihat Selengkapnya
-                        </a>
-                        <a href="#kontak" className="px-4 py-2 sm:px-5 text-[12px] sm:text-[13px] font-semibold text-white bg-[#4A90D9] rounded-full hover:bg-[#3A7BC8] transition-colors shadow-sm hover:shadow-md">
-                          Pesan Sekarang
+                        <a
+                          href="#kontak"
+                          className="px-4 py-2 sm:px-5 text-[12px] sm:text-[13px] font-semibold text-white bg-[#4A90D9] rounded-full hover:bg-[#3A7BC8] transition-colors shadow-sm hover:shadow-md"
+                        >
+                          Coba Sekarang
                         </a>
                       </div>
                     </div>

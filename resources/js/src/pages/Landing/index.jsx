@@ -39,7 +39,11 @@ function WaveDivider({ from = 'light', to = 'dark', flip = false }) {
   return (
     <div
       className={`relative w-full overflow-hidden leading-[0] ${bgClass[from] || bgClass.dark}`}
-      style={{ marginTop: '-1px', marginBottom: '-1px', transform: flip ? 'rotate(180deg)' : undefined }}
+      style={{
+        marginTop: '-1px',
+        marginBottom: '-1px',
+        transform: flip ? 'rotate(180deg)' : undefined,
+      }}
     >
       <svg
         className="relative block w-full"

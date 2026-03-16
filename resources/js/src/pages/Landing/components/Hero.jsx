@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import useScrollReveal from '@/hooks/useScrollReveal'
 
 const words = ['Skripsi', 'Tesis', 'Jurnal', 'Bisnis', 'AI Pintar']
-const badges = ['AI Chat', 'AI Writer', 'Humanizer AI', 'Parafrase AI', 'Transcribe AI']
+const badges = ['AI Chat', 'AI Writer', 'Paraphrase AI', 'Humanizer AI', 'Transcribe AI']
 
 export default function Hero() {
   const [wordIndex, setWordIndex] = useState(0)
@@ -40,9 +40,12 @@ export default function Hero() {
     if (!isDeleting) {
       // Typing
       if (displayText.length < currentWord.length) {
-        timeoutRef.current = setTimeout(() => {
-          setDisplayText(currentWord.substring(0, displayText.length + 1))
-        }, 80 + Math.random() * 40) // slight randomness for natural feel
+        timeoutRef.current = setTimeout(
+          () => {
+            setDisplayText(currentWord.substring(0, displayText.length + 1))
+          },
+          80 + Math.random() * 40,
+        ) // slight randomness for natural feel
       } else {
         // Pause at the end before deleting
         timeoutRef.current = setTimeout(() => setIsDeleting(true), 2200)
@@ -50,9 +53,12 @@ export default function Hero() {
     } else {
       // Deleting (faster)
       if (displayText.length > 0) {
-        timeoutRef.current = setTimeout(() => {
-          setDisplayText(currentWord.substring(0, displayText.length - 1))
-        }, 35 + Math.random() * 20)
+        timeoutRef.current = setTimeout(
+          () => {
+            setDisplayText(currentWord.substring(0, displayText.length - 1))
+          },
+          35 + Math.random() * 20,
+        )
       } else {
         setIsDeleting(false)
         setWordIndex((prev) => (prev + 1) % words.length)
@@ -83,9 +89,18 @@ export default function Hero() {
       `}</style>
 
       {/* Animated Gradient Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#4A90D9] rounded-full filter blur-[120px] opacity-[0.12] animate-pulse" style={{ animationDuration: '4s' }} />
-      <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#a78bfa] rounded-full filter blur-[120px] opacity-[0.08] animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
-      <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-[#6AB0F3] rounded-full filter blur-[120px] opacity-[0.1] animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+      <div
+        className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#4A90D9] rounded-full filter blur-[120px] opacity-[0.12] animate-pulse"
+        style={{ animationDuration: '4s' }}
+      />
+      <div
+        className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#a78bfa] rounded-full filter blur-[120px] opacity-[0.08] animate-pulse"
+        style={{ animationDuration: '5s', animationDelay: '1s' }}
+      />
+      <div
+        className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-[#6AB0F3] rounded-full filter blur-[120px] opacity-[0.1] animate-pulse"
+        style={{ animationDuration: '6s', animationDelay: '2s' }}
+      />
 
       {/* Grid overlay */}
       <div
@@ -115,7 +130,10 @@ export default function Hero() {
         ))}
       </div>
 
-      <div ref={heroRef} className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center w-full">
+      <div
+        ref={heroRef}
+        className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center w-full"
+      >
         {/* Badge pills */}
         <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
           {badges.map((badge, i) => (
@@ -124,7 +142,10 @@ export default function Hero() {
               className={`px-5 py-2 text-[13px] font-medium text-[#4A90D9] bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border border-[#4A90D9]/15 rounded-full shadow-sm hover:bg-white dark:hover:bg-gray-700 hover:border-[#4A90D9]/30 transition-all cursor-default ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
-              style={{ transition: 'opacity 0.6s ease, transform 0.6s ease', transitionDelay: `${i * 80}ms` }}
+              style={{
+                transition: 'opacity 0.6s ease, transform 0.6s ease',
+                transitionDelay: `${i * 80}ms`,
+              }}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#4A90D9] inline-block mr-2 shadow-[0_0_8px_rgba(74,144,217,0.5)] animate-pulse" />
               {badge}
@@ -184,8 +205,18 @@ export default function Hero() {
             <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
             <span className="relative z-10 flex items-center justify-center gap-2">
               Mulai Sekarang
-              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              <svg
+                className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
               </svg>
             </span>
           </Link>
@@ -193,9 +224,23 @@ export default function Hero() {
       </div>
 
       {/* Scroll Indicator */}
-      <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 transition-opacity duration-500 ${scrolled ? 'opacity-0' : 'opacity-100 flex flex-col items-center gap-2 animate-bounce'}`}>
-        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Scroll</span>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-gray-400 dark:text-gray-500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div
+        className={`absolute bottom-8 left-1/2 -translate-x-1/2 transition-opacity duration-500 ${scrolled ? 'opacity-0' : 'opacity-100 flex flex-col items-center gap-2 animate-bounce'}`}
+      >
+        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
+          Scroll
+        </span>
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          className="text-gray-400 dark:text-gray-500"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M12 5v14M19 12l-7 7-7-7" />
         </svg>
       </div>

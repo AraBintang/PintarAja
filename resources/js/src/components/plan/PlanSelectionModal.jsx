@@ -131,7 +131,7 @@ export default function PlanSelectionModal({ open, onClose, onSelectPlan }) {
                           : 'text-emerald-500 dark:text-emerald-400'
                       }`}
                     >
-                      Offer
+                      Promo
                     </span>
                   )}
                 </button>

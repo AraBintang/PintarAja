@@ -1,10 +1,12 @@
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { useTheme } from '@/context/ThemeContext'
 
 export default function Navbar() {
+  const navigate = useNavigate()
+
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
@@ -23,25 +25,21 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg shadow-black/5 py-0' : 'bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm py-2'}`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg shadow-black/5 py-0' : 'bg-transparent'}`}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-[72px]">
         {/* Logo */}
-        <Link to="/" className="flex items-end gap-0 group">
-          <img
-            src="/p doank.png"
-            alt="Pintaraja"
-            className="w-9 h-9 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-sm"
-          />
-          <div className="leading-tight">
-            <span className="font-bold text-[15px] block transition-colors duration-300 pb-[1.5px] -ml-[3px] text-[#0a192f] dark:text-white">
+        <button onClick={() => navigate('/')} className="flex flex-col gap-1 cursor-pointer">
+          <div className="flex items-end">
+            <img src="/p doank.png" alt="Pintaraja" className="w-7 h-7 object-contain" />
+            <span className="text-base font-bold text-gray-900 dark:text-white -ml-1 -mb-1">
               intaraja
             </span>
-            <span className="text-[10px] block transition-colors duration-300 text-gray-400 dark:text-gray-500">
-              Guided Until Proficient
-            </span>
           </div>
-        </Link>
+          <span className="ml-1 text-[10px] block transition-colors duration-300 text-gray-400 dark:text-gray-500">
+            Guided Until Proficient
+          </span>
+        </button>
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-8">

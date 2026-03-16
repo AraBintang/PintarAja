@@ -9,7 +9,10 @@ import { useEffect, useRef, useState } from 'react'
  * @param {number} options.threshold - IntersectionObserver threshold (0–1), default 0.15
  * @param {string} options.rootMargin - margin around the root, default '0px 0px -40px 0px'
  */
-export default function useScrollReveal({ threshold = 0.15, rootMargin = '0px 0px -40px 0px' } = {}) {
+export default function useScrollReveal({
+  threshold = 0.15,
+  rootMargin = '0px 0px -40px 0px',
+} = {}) {
   const ref = useRef(null)
   const [isVisible, setIsVisible] = useState(false)
   const [inView, setInView] = useState(false)

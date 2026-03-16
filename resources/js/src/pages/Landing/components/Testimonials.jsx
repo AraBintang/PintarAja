@@ -94,7 +94,12 @@ export default function Testimonials() {
             >
               Daftar Sekarang
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
               </svg>
             </Link>
           </div>
@@ -107,7 +112,10 @@ export default function Testimonials() {
                 className={`group bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 sm:p-7 hover:border-[#4A90D9]/20 hover:shadow-lg transition-all duration-300 relative overflow-hidden flex flex-col ${
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
-                style={{ transition: 'opacity 0.6s ease, transform 0.6s ease', transitionDelay: `${0.2 + i * 0.1}s` }}
+                style={{
+                  transition: 'opacity 0.6s ease, transform 0.6s ease',
+                  transitionDelay: `${0.2 + i * 0.1}s`,
+                }}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#4A90D9] to-[#6AB0F3] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

@@ -1,6 +1,6 @@
+import { Check, Crown, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Crown, Sparkles } from 'lucide-react'
 
 import useScrollReveal from '@/hooks/useScrollReveal'
 import { request } from '@/utils/Http'
@@ -17,7 +17,9 @@ function parseFeatures(features) {
       if (f && typeof f === 'object' && 'title' in f) {
         return { title: f.title, isIncluded: f.isIncluded !== false }
       }
-      return typeof f === 'string' ? { title: f, isIncluded: true } : { title: String(f), isIncluded: true }
+      return typeof f === 'string'
+        ? { title: f, isIncluded: true }
+        : { title: String(f), isIncluded: true }
     })
   }
   if (typeof features === 'string') {
@@ -150,7 +152,10 @@ export default function Pricing() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto w-full">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-80 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div
+                key={i}
+                className="h-80 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse"
+              />
             ))}
           </div>
         ) : plans.length === 0 ? (
@@ -172,9 +177,14 @@ export default function Pricing() {
                       ? 'border-blue-500 dark:border-orange-500 border-2 shadow-xl shadow-blue-100/50 dark:shadow-orange-900/10 scale-[1.02]'
                       : 'border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md'
                   } ${
-                    isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
+                    isVisible
+                      ? 'opacity-100 translate-y-0 scale-100'
+                      : 'opacity-0 translate-y-8 scale-95'
                   } transition-all`}
-                  style={{ transition: 'opacity 0.6s ease, transform 0.6s ease', transitionDelay: `${0.2 + i * 0.15}s` }}
+                  style={{
+                    transition: 'opacity 0.6s ease, transform 0.6s ease',
+                    transitionDelay: `${0.2 + i * 0.15}s`,
+                  }}
                 >
                   {isPopular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
