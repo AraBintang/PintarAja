@@ -1,6 +1,6 @@
-import { Zap } from 'lucide-react'
+import { FileText, Hash, Mic, Speech, Zap } from 'lucide-react'
 
-export const AutoIcon = () => <Zap className="w-4 h-4 text-amber-500" />
+const AutoIcon = () => <Zap className="w-3.5 h-3.5 text-amber-500" />
 
 const OpenAILogo = () => (
   <img src="/gpt-ai-icon.svg" alt="GPT" className="w-3.5 h-3.5 object-contain" />
@@ -18,6 +18,8 @@ const QwenLogo = () => (
   <img src="/qwen-ai-icon.svg" alt="Qwen" className="w-3.5 h-3.5 object-contain" />
 )
 
+export { AutoIcon }
+
 export const AI_CODE_MAP = {
   'SETTING-GPT': { label: 'ChatGPT', icon: <OpenAILogo /> },
   'SETTING-GMN': { label: 'Gemini', icon: <GeminiLogo /> },
@@ -25,3 +27,10 @@ export const AI_CODE_MAP = {
   'SETTING-DSK': { label: 'DeepSeek', icon: <DeepSeekLogo /> },
   'SETTING-QWN': { label: 'Qwen', icon: <QwenLogo /> },
 }
+
+export const CHAT_FEATURES = [
+  { label: 'AI Writer', iconColor: 'text-blue-500', to: '/writer', icon: <FileText /> },
+  { label: 'Paraphrase AI', iconColor: 'text-green-500', to: '/paraphrase', icon: <Hash /> },
+  { label: 'Humanizer AI', iconColor: 'text-orange-500', to: '/humanize', icon: <Speech /> },
+  { label: 'Transcribe AI', iconColor: 'text-purple-500', to: '/transcribe', icon: <Mic /> },
+]

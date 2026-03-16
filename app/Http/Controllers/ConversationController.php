@@ -67,18 +67,9 @@ class ConversationController extends Controller
     {
         $user = $request->user();
 
-        $request->validate([
-            'content' => 'required|string'
-        ]);
-
         $conversation = Conver::create([
             'T_ConversationM_UserID' => $user->M_UserID,
             'T_ConversationTitle' => 'New Conversation'
-        ]);
-
-        $chat = Chat::create([
-            'T_ChatT_ConversationID' => $conversation->T_ConversationID,
-            'T_ChatContent' => $request->content
         ]);
 
         return response()->json([
@@ -87,12 +78,6 @@ class ConversationController extends Controller
                 'title' => $conversation->T_ConversationTitle,
                 'lastUpdated' => 'just now'
             ],
-            'chat' => [
-                'id' => $chat->T_ChatID,
-                'conversationId' => $chat->T_ChatT_ConversationID,
-                'content' => $chat->T_ChatContent,
-                'time' => Carbon::parse($chat->T_ChatCreated)->format('H:i')
-            ]
         ]);
     }
 

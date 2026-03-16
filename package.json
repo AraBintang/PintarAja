@@ -36,6 +36,7 @@
         "@tiptap/starter-kit": "^3.20.1",
         "clsx": "^2.1.1",
         "flag-icons": "^7.5.0",
+        "lottie-react": "^2.4.1",
         "lucide-react": "^0.576.0",
         "mammoth": "^1.11.0",
         "react": "^19.2.4",

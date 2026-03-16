@@ -1,6 +1,7 @@
 import { BookOpen, ChevronDown, ChevronUp, Loader2, Sparkles } from 'lucide-react'
 import { memo } from 'react'
 
+import { LANGUAGES } from '@/assets/languages'
 import {
   Select,
   SelectContent,
@@ -10,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { LANGUAGES } from '@/data/languages'
 
 import WriterToolbar from './WriterToolbar'
 
@@ -70,12 +70,12 @@ const WriterForm = memo(function WriterForm({
           <div className="p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <label className="text-[12px] md:text-[13px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                Topik Penelitian
+                Research Topics
               </label>
               <button
                 type="button"
                 onClick={onPromptLibraryOpen}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] md:text-[12px] font-semibold rounded-lg md:rounded-xl border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] md:text-[12px] font-semibold rounded-lg md:rounded-xl border border-blue-200 bg-blue-50 text-[#2686D4] dark:text-[#F2901E] hover:bg-blue-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:hover:bg-orange-500/20 transition-colors"
               >
                 <BookOpen className="w-3.5 h-3.5" />
                 Prompt Library
@@ -85,7 +85,7 @@ const WriterForm = memo(function WriterForm({
               value={topik}
               onChange={(e) => onTopikChange(e.target.value)}
               placeholder={
-                'Masukkan topik penelitian dan kebutuhan Anda.\n\nContoh:\nTulis esai akademik tentang "Dampak Jangka Panjang Perubahan Iklim terhadap Ekosistem Laut."'
+                'Enter your research topic and requirements.\n\nExample:\nWrite an academic essay on "Long-Term Impacts of Climate Change on Marine Ecosystems."'
               }
               rows={5}
               className="w-full bg-transparent text-[14px] md:text-[15px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed"
@@ -102,11 +102,11 @@ const WriterForm = memo(function WriterForm({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
           <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[20px] p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow">
             <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">
-              Jenis Karya
+              Paper Type
             </label>
             <Select value={selectedPaperId} onValueChange={onPaperChange}>
               <SelectTrigger className="w-full h-10 md:h-11 border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50">
-                <SelectValue placeholder="Pilih jenis" />
+                <SelectValue placeholder="Select Type" />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
                 <SelectGroup>
@@ -122,11 +122,11 @@ const WriterForm = memo(function WriterForm({
 
           <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[20px] p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow">
             <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">
-              Bagian Karya
+              Paper Section
             </label>
             <Select value={selectedSectionId} onValueChange={onSectionChange}>
               <SelectTrigger className="w-full h-10 md:h-11 border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50">
-                <SelectValue placeholder="Pilih bagian" />
+                <SelectValue placeholder="Select Section" />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
                 <SelectGroup>
@@ -142,7 +142,7 @@ const WriterForm = memo(function WriterForm({
 
           <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[20px] p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow">
             <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">
-              Bahasa
+              Language
             </label>
             <Select value={bahasa} onValueChange={onBahasaChange}>
               <SelectTrigger className="w-full h-10 md:h-11 border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50">
@@ -159,7 +159,7 @@ const WriterForm = memo(function WriterForm({
               </SelectTrigger>
               <SelectContent className="max-h-[300px] rounded-xl dark:bg-gray-800 dark:border-gray-700">
                 <SelectGroup>
-                  <SelectLabel>Bahasa</SelectLabel>
+                  <SelectLabel>Language</SelectLabel>
                   {LANGUAGES.map((lang) => (
                     <SelectItem
                       key={lang.text}
@@ -185,15 +185,15 @@ const WriterForm = memo(function WriterForm({
         {/* Instruksi Tambahan */}
         <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[24px] p-4 md:p-6 mb-4 md:mb-6 shadow-sm hover:shadow-md transition-shadow">
           <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">
-            Instruksi Tambahan{' '}
+            Additional Instructions{' '}
             <span className="text-gray-400 dark:text-gray-500 normal-case font-normal">
-              (opsional)
+              (optional)
             </span>
           </label>
           <textarea
             value={instruksi}
             onChange={(e) => onInstruksiChange(e.target.value)}
-            placeholder="Tambahkan instruksi khusus..."
+            placeholder="Add special instructions..."
             rows={2}
             className="w-full bg-transparent text-[13px] md:text-[14px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed"
           />
@@ -220,7 +220,7 @@ const WriterForm = memo(function WriterForm({
             <span className="relative z-10 flex items-center justify-center gap-2">
               {isGenerating ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" /> Menghasilkan...
+                  <Loader2 className="w-5 h-5 animate-spin" /> Generating...
                 </>
               ) : (
                 <>
@@ -234,7 +234,7 @@ const WriterForm = memo(function WriterForm({
                   >
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                   </svg>
-                  Generate Sekarang
+                  Generate Now
                 </>
               )}
             </span>

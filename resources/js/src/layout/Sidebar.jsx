@@ -21,10 +21,10 @@ import { useSettingsModal } from '@/context/SettingsModalContext'
 import { useSidebar } from '@/context/SidebarContext'
 
 const menuItems = [
-  { label: 'Baru', icon: Plus, to: '/new', isNew: true },
+  { label: 'New', icon: Plus, to: '/new', isNew: true },
   { label: 'AI Chat', icon: MessageSquare, to: '/chat' },
   { label: 'AI Writer', icon: FileText, to: '/writer' },
-  { label: 'Parafrase AI', icon: Hash, to: '/paraphrase' },
+  { label: 'Paraphrase AI', icon: Hash, to: '/paraphrase' },
   { label: 'Humanizer AI', icon: Speech, to: '/humanize' },
   { label: 'Transcribe AI', icon: Mic, to: '/transcribe' },
 ]
@@ -79,7 +79,7 @@ function UserProfileSection({ expanded }) {
       <div className="px-2">
         <button
           onClick={openSettings}
-          className={`w-full rounded-xl flex items-center gap-3 transition-colors hover:bg-[#eeedeb] dark:hover:bg-gray-900 ${expanded ? 'px-4 py-2 my-2' : ' my-2 px-0 justify-center'}`}
+          className={`w-full rounded-xl flex items-center gap-3 transition-colors hover:bg-[#eeedeb] dark:hover:bg-gray-900 ${expanded ? 'px-4 py-2 my-2' : ' my-4 px-0 justify-center'}`}
         >
           <div className="w-9 h-9 rounded-full bg-[#2686D4] dark:bg-[#F2901E] flex items-center justify-center flex-shrink-0">
             <span className="text-white text-[14px] font-semibold">{userInitial}</span>
@@ -142,7 +142,7 @@ export default function Sidebar() {
                     Admin
                   </p>
                 ) : (
-                  <div className="px-3">
+                  <div className="px-3 pt-2 pb-[3px]">
                     <div className="w-full border-t border-gray-100 dark:border-gray-800 my-2"></div>
                   </div>
                 )}

@@ -1,9 +1,158 @@
 import { ArrowLeft, Download, FileAudio, Loader2, Mic, Upload, X } from 'lucide-react'
-import { useRef, useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import RecordingPanel from '@/components/transcribe/RecordingPanel'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
+
+function useAnimatedHeight(dependency) {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const prev = el.style.height
+    el.style.height = 'auto'
+    const fullHeight = el.scrollHeight
+    el.style.height = prev || '0px'
+
+    el.getBoundingClientRect()
+    el.style.transition = 'height 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+    el.style.height = `${fullHeight}px`
+
+    const onEnd = () => {
+      el.style.height = 'auto'
+      el.style.transition = ''
+    }
+    el.addEventListener('transitionend', onEnd, { once: true })
+    return () => el.removeEventListener('transitionend', onEnd)
+  }, [dependency])
+
+  return ref
+}
+
+function TranscriptionResultView({ transcriptionResult, handleReset, handleExport }) {
+  const [animKey, setAnimKey] = useState(0)
+  const cardRef = useAnimatedHeight(transcriptionResult)
+  const summaryRef = useAnimatedHeight(transcriptionResult?.summary)
+  const transcriptRef = useAnimatedHeight(transcriptionResult?.transcript)
+
+  // Re-trigger slideUp setiap kali data berubah
+  useEffect(() => {
+    if (transcriptionResult) {
+      setAnimKey((k) => k + 1)
+    }
+  }, [transcriptionResult])
+
+  if (!transcriptionResult) return null
+
+  return (
+    <div className="flex flex-col items-center max-w-5xl w-full relative pt-12 md:pt-0">
+      <div
+        key={`back-${animKey}`}
+        className="absolute top-16 md:top-4 left-0 animate-[slideUp_0.3s_ease-out_both]"
+      >
+        <button
+          onClick={handleReset}
+          className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-[13px] font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-orange-400 transition-colors shadow-sm"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Transcribe
+        </button>
+      </div>
+
+      <div
+        key={`card-${animKey}`}
+        ref={cardRef}
+        className="w-full mt-18 mb-6 bg-white dark:bg-gray-800 rounded-[24px] shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row animate-[slideUp_0.45s_ease-out_both]"
+      >
+        {/* ── Left panel ── */}
+        <div className="w-full md:w-1/3 p-6 sm:p-8 bg-gray-50/50 dark:bg-gray-800/50 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700">
+          <h2
+            className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2 truncate"
+            title={transcriptionResult.title}
+          >
+            {transcriptionResult.title}
+          </h2>
+          <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">
+            <span className="flex items-center gap-1.5">
+              <Mic className="w-4 h-4" /> {transcriptionResult.speakers} Speaker
+              {transcriptionResult.speakers > 1 ? 's' : ''}
+            </span>
+            <span>•</span>
+            <span>{transcriptionResult.duration}</span>
+          </div>
+
+          {transcriptionResult.summary?.length > 0 && (
+            <>
+              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
+                Summary
+              </h3>
+              <ul ref={summaryRef} className="space-y-4 overflow-hidden">
+                {transcriptionResult.summary.map((point, idx) => (
+                  <li
+                    key={`${animKey}-summary-${idx}`}
+                    className="flex gap-3 text-[14px] text-gray-600 dark:text-gray-400 leading-relaxed bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
+                    style={{
+                      animation: 'slideUp 0.4s ease-out both',
+                      animationDelay: `${0.1 + idx * 0.06}s`,
+                    }}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-orange-400 mt-2 flex-shrink-0" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+
+        {/* ── Right panel ── */}
+        <div className="w-full md:w-2/3 p-6 sm:p-8 flex flex-col">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Transcript</h3>
+            <button
+              onClick={handleExport}
+              className="text-[13px] flex gap-2 items-center font-semibold text-blue-600 dark:text-orange-400 hover:text-blue-500 dark:hover:text-orange-300 transition-colors bg-blue-50 dark:bg-orange-900/20 hover:bg-blue-100 dark:hover:bg-orange-900/40 px-4 py-2 rounded-xl"
+            >
+              <Download size={18} /> Export
+            </button>
+          </div>
+
+          <div ref={transcriptRef} className="flex-1 overflow-hidden pr-2 space-y-6">
+            {transcriptionResult.transcript.map((item, idx) => (
+              <div
+                key={`${animKey}-transcript-${idx}`}
+                className="flex flex-col sm:flex-row gap-2 sm:gap-4 group"
+                style={{
+                  animation: 'slideUp 0.4s ease-out both',
+                  animationDelay: `${0.15 + idx * 0.04}s`,
+                }}
+              >
+                <div className="sm:w-20 flex-shrink-0 flex items-center gap-2 mr-2">
+                  <span className="text-[12px] font-mono text-gray-400 dark:text-gray-500 bg-black/10 dark:bg-black/20 px-2 py-1 rounded-md text-center">
+                    {item.time}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  {item.speaker && (
+                    <span className="text-[13px] font-bold mb-1 block text-blue-600 dark:text-orange-400">
+                      {item.speaker}
+                    </span>
+                  )}
+                  <p className="text-[15px] text-gray-700 dark:text-gray-300 leading-relaxed group-hover:bg-gray-50 dark:group-hover:bg-gray-700/50 rounded-xl sm:-mx-3 sm:px-3 py-1.5 transition-colors">
+                    {item.text}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const formatTime = (seconds) => {
   const hrs = Math.floor(seconds / 3600)
@@ -72,14 +221,14 @@ export default function TranscribePage() {
   }, [])
 
   const handleExport = () => {
-    const lines = result.transcript
+    const lines = transcriptionResult.transcript
       .map((item) => `[${item.time}] ${item.speaker}: ${item.text}`)
       .join('\n')
     const blob = new Blob([lines], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${result.title}.txt`
+    a.download = `${transcriptionResult.title}.txt`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -185,89 +334,11 @@ export default function TranscribePage() {
   return (
     <div className="min-h-screen bg-[#f7f7f5] dark:bg-[#0f141e] flex flex-col items-center justify-center px-4">
       {transcriptionResult ? (
-        <div className="flex flex-col items-center max-w-5xl w-full relative pt-12 md:pt-0">
-          <div className="absolute top-16 md:top-4 left-0">
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-[13px] font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-orange-400 transition-colors shadow-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Transcribe
-            </button>
-          </div>
-
-          <div className="w-full mt-18 mb-6 bg-white dark:bg-gray-800 rounded-[24px] shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row min-h-[500px]">
-            <div className="w-full md:w-1/3 p-6 sm:p-8 bg-gray-50/50 dark:bg-gray-800/50 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700">
-              <h2
-                className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2 truncate"
-                title={transcriptionResult.title}
-              >
-                {transcriptionResult.title}
-              </h2>
-              <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <Mic className="w-4 h-4" /> {transcriptionResult.speakers} Speaker
-                  {transcriptionResult.speakers > 1 ? 's' : ''}
-                </span>
-                <span>•</span>
-                <span>{transcriptionResult.duration}</span>
-              </div>
-
-              {transcriptionResult.summary?.length > 0 && (
-                <>
-                  <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
-                    Summary
-                  </h3>
-                  <ul className="space-y-4">
-                    {transcriptionResult.summary.map((point, idx) => (
-                      <li
-                        key={idx}
-                        className="flex gap-3 text-[14px] text-gray-600 dark:text-gray-400 leading-relaxed bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
-                      >
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-orange-400 mt-2 flex-shrink-0" />
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-
-            <div className="w-full md:w-2/3 p-6 sm:p-8 flex flex-col">
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Transcript</h3>
-                <button
-                  onClick={() => handleExport}
-                  className="text-[13px] flex gap-2 items-center font-semibold text-blue-600 dark:text-orange-400 hover:text-blue-500 dark:hover:text-orange-300 transition-colors bg-blue-50 dark:bg-orange-900/20 hover:bg-blue-100 dark:hover:bg-orange-900/40 px-4 py-2 rounded-xl"
-                >
-                  <Download size={18} /> Export Text
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto pr-2 space-y-6">
-                {transcriptionResult.transcript.map((item, idx) => (
-                  <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-4 group">
-                    <div className="sm:w-20 flex-shrink-0 flex items-center gap-2 mr-2">
-                      <span className="text-[12px] font-mono text-gray-400 dark:text-gray-500 bg-black/10 dark:bg-black/20 px-2 py-1 rounded-md text-center">
-                        {item.time}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      {item.speaker && (
-                        <span className="text-[13px] font-bold mb-1 block text-blue-600 dark:text-orange-400">
-                          {item.speaker}
-                        </span>
-                      )}
-                      <p className="text-[15px] text-gray-700 dark:text-gray-300 leading-relaxed group-hover:bg-gray-50 dark:group-hover:bg-gray-700/50 rounded-xl sm:-mx-3 sm:px-3 py-1.5 transition-colors">
-                        {item.text}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <TranscriptionResultView
+          transcriptionResult={transcriptionResult}
+          handleReset={handleReset}
+          handleExport={handleExport}
+        />
       ) : isProcessing ? (
         <div className="flex flex-col items-center justify-center max-w-md w-full py-12">
           <div className="relative mb-8">
@@ -410,7 +481,7 @@ export default function TranscribePage() {
                 onClick={() => fileInputRef.current?.click()}
                 className="group flex flex-col items-center gap-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700 border border-gray-200 dark:border-gray-700 hover:border-blue-400/40 dark:hover:border-orange-400/40 shadow-sm hover:shadow-md rounded-2xl p-6 sm:p-8 transition-all"
               >
-                <Upload className="w-6 h-6 text-blue-600 dark:text-orange-400" />
+                <Upload className="w-6 h-6 text-[#2686D4] dark:text-[#F2901E]" />
                 <span className="text-[14px] font-medium text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                   Upload File
                 </span>
@@ -432,7 +503,7 @@ export default function TranscribePage() {
                 onClick={() => setActiveTab('record')}
                 className="group flex flex-row sm:flex-col items-center justify-center gap-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700 border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-orange-400 shadow-sm hover:shadow-md rounded-2xl p-6 sm:p-8 transition-all col-span-2 sm:col-span-1"
               >
-                <Mic className="w-6 h-6 text-blue-600 dark:text-orange-400" />
+                <Mic className="w-6 h-6 text-[#2686D4] dark:text-[#F2901E]" />
                 <span className="text-[14px] font-medium text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                   Start Recording
                 </span>

@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   Select,
@@ -45,9 +45,19 @@ export default function PromptForm({
     }
   }, [open, initialData])
 
-  if (!open) return null
-
   const set = (key) => (e) => setFormData((prev) => ({ ...prev, [key]: e.target?.value ?? e }))
+
+  // Harus di atas early return agar tidak melanggar Rules of Hooks
+  const filteredSections = useMemo(() => {
+    if (!formData.paperId) return []
+    return sections.filter((s) => String(s.paper_id) === String(formData.paperId))
+  }, [sections, formData.paperId])
+
+  const handlePaperChange = (value) => {
+    setFormData((prev) => ({ ...prev, paperId: value, sectionId: '' }))
+  }
+
+  if (!open) return null
 
   const handleSubmit = () => {
     onSubmit({
@@ -68,7 +78,7 @@ export default function PromptForm({
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col">
         <div className="bg-blue-600 dark:bg-orange-500 px-6 py-4 flex items-center justify-between">
           <h3 className="text-white font-bold text-lg tracking-wide uppercase">
             {isEdit ? 'Edit Prompt' : 'Input Data Prompt'}
@@ -93,7 +103,7 @@ export default function PromptForm({
 
             <div className="space-y-2">
               <label className={labelClass}>Paper</label>
-              <Select value={formData.paperId} onValueChange={set('paperId')}>
+              <Select value={formData.paperId} onValueChange={handlePaperChange}>
                 <SelectTrigger className={triggerClass}>
                   <SelectValue placeholder="Pilih Paper" />
                 </SelectTrigger>
@@ -110,14 +120,35 @@ export default function PromptForm({
             </div>
 
             <div className="space-y-2">
-              <label className={labelClass}>Section Paper</label>
-              <Select value={formData.sectionId} onValueChange={set('sectionId')}>
-                <SelectTrigger className={triggerClass}>
-                  <SelectValue placeholder="Pilih Section Paper" />
+              <label className={labelClass}>
+                Section Paper
+                {formData.paperId && filteredSections.length === 0 && (
+                  <span className="ml-2 text-[11px] font-normal text-amber-500 dark:text-amber-400">
+                    No sections available for this paper
+                  </span>
+                )}
+              </label>
+              <Select
+                value={formData.sectionId}
+                onValueChange={set('sectionId')}
+                disabled={!formData.paperId || filteredSections.length === 0}
+              >
+                <SelectTrigger
+                  className={`${triggerClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <SelectValue
+                    placeholder={
+                      !formData.paperId
+                        ? 'Select a paper first'
+                        : filteredSections.length === 0
+                          ? 'No sections available'
+                          : 'Pilih Section Paper'
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectGroup>
-                    {sections.map((s) => (
+                    {filteredSections.map((s) => (
                       <SelectItem key={s.id} value={String(s.id)}>
                         {s.name}
                       </SelectItem>
@@ -145,14 +176,14 @@ export default function PromptForm({
             onClick={onClose}
             className="px-6 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors"
           >
-            Batal
+            Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
             className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 dark:bg-orange-500 hover:bg-blue-700 dark:hover:bg-orange-600 disabled:opacity-60 rounded-xl shadow-sm hover:shadow-md hover:shadow-blue-200 dark:hover:shadow-orange-900/30 transition-all uppercase tracking-wide"
           >
-            {loading ? 'Menyimpan...' : 'Simpan Prompt'}
+            {loading ? 'Saving...' : 'Save Prompt'}
           </button>
         </div>
       </div>

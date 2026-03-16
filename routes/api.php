@@ -7,6 +7,7 @@ use App\Http\Controllers\CouponController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\PaperController;
 use App\Http\Controllers\ParaphraseController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromptController;
@@ -18,12 +19,15 @@ use App\Http\Controllers\WorkbookController;
 use App\Http\Controllers\WriterController;
 use Illuminate\Support\Facades\Route;
 
+Route::post('/payments/notify', [PaymentController::class, 'notify']);
+
 Route::middleware('guest:sanctum')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
 
-    Route::post('/send-email', [ResetController::class, 'sendEmail']);
+    Route::post('/forgot-password', [ResetController::class, 'sendEmail']);
     Route::post('/new-password', [ResetController::class, 'newPassword']);
 });
 
@@ -45,7 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('chats')->group(function () {
-        Route::get('/{id}', [ChatController::class, 'index']);
+        Route::get('/', [ChatController::class, 'index']);
+        Route::get('/{id}', [ChatController::class, 'index2']);
         Route::post('/', [ChatController::class, 'generate']);
         Route::post('/upload', [ChatController::class, 'uploadFile']);
         Route::post('/delete', [ChatController::class, 'deleteFile']);
@@ -90,6 +95,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [TranscribeController::class, 'destroy']);
     });
 
+    Route::get('/plans', [PlanController::class, 'index']);
+
+    Route::prefix('payments')->group(function () {
+        Route::get('/', [PaymentController::class, 'index']);
+        Route::get('/{referenceId}', [PaymentController::class, 'indexByReferenceId']);
+        Route::post('/', [PaymentController::class, 'store']);
+    });
+
     // Route Admin Only
     Route::middleware('role:A')->group(function () {
         Route::prefix('papers')->group(function () {
@@ -116,7 +129,6 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         Route::prefix('plans')->group(function () {
-            Route::get('/', [PlanController::class, 'index']);
             Route::post('/', [PlanController::class, 'store']);
             Route::put('/{id}', [PlanController::class, 'update']);
             Route::delete('/{id}', [PlanController::class, 'destroy']);

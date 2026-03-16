@@ -1,4 +1,4 @@
-import { Check, Shield, X } from 'lucide-react'
+import { Check, ExternalLink, Shield, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import {
@@ -29,6 +29,46 @@ const DeepSeekLogo = () => (
 const QwenLogo = () => (
   <img src="/qwen-ai-icon.svg" alt="Qwen" className="w-3.5 h-3.5 object-contain" />
 )
+
+// Konfigurasi dokumentasi per AI provider
+const AI_DOC_CONFIG = {
+  'SETTING-GPT': {
+    label: 'OpenAI Model Docs',
+    url: 'https://platform.openai.com/docs/models',
+    color:
+      'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700/50',
+    iconColor: 'text-emerald-500',
+  },
+  'SETTING-GMN': {
+    label: 'Google Gemini Model Docs',
+    url: 'https://ai.google.dev/gemini-api/docs/models/gemini',
+    color: 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300',
+    bgColor: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700/50',
+    iconColor: 'text-blue-500',
+  },
+  'SETTING-CLD': {
+    label: 'Anthropic Claude Model Docs',
+    url: 'https://docs.anthropic.com/en/docs/about-claude/models/overview',
+    color: 'text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300',
+    bgColor: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700/50',
+    iconColor: 'text-orange-500',
+  },
+  'SETTING-DSK': {
+    label: 'DeepSeek Model Docs',
+    url: 'https://api-docs.deepseek.com/quick_start/pricing',
+    color: 'text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300',
+    bgColor: 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-700/50',
+    iconColor: 'text-sky-500',
+  },
+  'SETTING-QWN': {
+    label: 'Qwen Model Docs',
+    url: 'https://qwen.readthedocs.io/en/latest/',
+    color: 'text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300',
+    bgColor: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700/50',
+    iconColor: 'text-purple-500',
+  },
+}
 
 const EMPTY_FORM = {
   name: '',
@@ -87,6 +127,9 @@ export default function AIForm({
     })
   }
 
+  // Ambil config dokumentasi berdasarkan AI yang dipilih
+  const docConfig = formData.code ? AI_DOC_CONFIG[formData.code] : null
+
   const inputClass =
     'w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 h-11 text-[14px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 dark:focus:border-orange-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-orange-900/30 focus:bg-white dark:focus:bg-gray-800 focus:outline-none transition-colors'
 
@@ -97,7 +140,7 @@ export default function AIForm({
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col">
         <div className="bg-blue-600 dark:bg-orange-500 px-6 py-4 flex items-center justify-between">
           <h3 className="text-white font-bold text-lg tracking-wide">
             {isEdit ? 'Edit AI Key' : 'Add New AI Key'}
@@ -168,6 +211,18 @@ export default function AIForm({
                   placeholder="e.g. gpt-4o"
                   className={inputClass}
                 />
+                {/* Link dokumentasi model — muncul jika AI sudah dipilih */}
+                {docConfig && (
+                  <a
+                    href={docConfig.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold transition-all ${docConfig.bgColor} ${docConfig.color}`}
+                  >
+                    <ExternalLink className={`w-3 h-3 ${docConfig.iconColor}`} />
+                    {docConfig.label}
+                  </a>
+                )}
               </div>
             </div>
 
@@ -235,14 +290,14 @@ export default function AIForm({
             onClick={onClose}
             className="px-6 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors"
           >
-            Batal
+            Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
             className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 dark:bg-orange-500 hover:bg-blue-700 dark:hover:bg-orange-600 disabled:opacity-60 rounded-xl shadow-sm hover:shadow-md hover:shadow-blue-200 dark:hover:shadow-orange-900/30 transition-all uppercase tracking-wide"
           >
-            {loading ? 'Menyimpan...' : 'Simpan'}
+            {loading ? 'Saving...' : 'Save AI'}
           </button>
         </div>
       </div>

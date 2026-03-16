@@ -18,9 +18,10 @@ class OtpReset extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct($resetLink, $userName)
     {
-        //
+        $this->resetLink = $resetLink;
+        $this->userName = $userName;
     }
 
     /**

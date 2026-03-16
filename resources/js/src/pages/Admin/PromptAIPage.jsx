@@ -224,7 +224,7 @@ export default function PromptAIPage() {
                   setSearchQuery(e.target.value)
                   setPage(1)
                 }}
-                placeholder="Cari prompt..."
+                placeholder="Search prompt..."
                 className="w-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl pl-10 pr-4 py-3 text-[14px] text-gray-800 dark:text-gray-100 shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 dark:focus:border-orange-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-orange-900/30 focus:outline-none transition-all"
               />
             </div>
@@ -395,12 +395,12 @@ export default function PromptAIPage() {
           {/* Pagination */}
           <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between flex-wrap gap-3">
             <p className="text-[13px] text-gray-500 dark:text-gray-400">
-              Menampilkan{' '}
+              Viewing{' '}
               <span className="font-semibold text-gray-800 dark:text-gray-100">
                 {pagination ? (currentPage - 1) * PAGE_SIZE + 1 : 0}–
                 {pagination ? Math.min(currentPage * PAGE_SIZE, pagination.total) : 0}
               </span>{' '}
-              dari{' '}
+              from{' '}
               <span className="font-semibold text-gray-800 dark:text-gray-100">
                 {pagination?.total ?? 0}
               </span>{' '}
@@ -450,11 +450,11 @@ export default function PromptAIPage() {
       {/* Preview Modal */}
       {previewTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm"
           onClick={() => setPreviewTarget(null)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden border border-gray-100 dark:border-gray-700"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-blue-600 dark:bg-orange-500 px-6 py-4 flex items-center justify-between">

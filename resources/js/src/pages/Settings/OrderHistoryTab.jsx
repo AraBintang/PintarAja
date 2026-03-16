@@ -1,223 +1,237 @@
-import { Clock, CheckCircle2, XCircle, AlertCircle, ShoppingBag } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  RefreshCw,
+  ShoppingBag,
+  XCircle,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
 
+const FILTERS = [
+  { key: 'Semua', label: 'All' },
+  { key: 'Menunggu', label: 'Waiting' },
+  { key: 'Berhasil', label: 'Paid' },
+  { key: 'Kadaluarsa', label: 'Expired' },
+]
+
+const STATUS_MAP = {
+  berhasil: {
+    label: 'Paid',
+    Icon: CheckCircle2,
+    color: 'text-emerald-500',
+    badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
+  },
+  'menunggu pembayaran': {
+    label: 'Waiting',
+    Icon: Clock,
+    color: 'text-amber-500',
+    badge: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
+  },
+  kadaluarsa: {
+    label: 'Expired',
+    Icon: XCircle,
+    color: 'text-red-400',
+    badge: 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400',
+  },
+  gagal: {
+    label: 'Failed',
+    Icon: XCircle,
+    color: 'text-red-400',
+    badge: 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400',
+  },
+  refund: {
+    label: 'Refunded',
+    Icon: RefreshCw,
+    color: 'text-blue-400',
+    badge: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
+  },
+}
+
+function getStatusCfg(status) {
+  return (
+    STATUS_MAP[status?.toLowerCase()] ?? {
+      label: 'Not yet defined',
+      Icon: AlertCircle,
+      color: 'text-gray-400',
+      badge: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+    }
+  )
+}
+
+function formatPrice(price) {
+  return new Intl.NumberFormat('id-ID').format(price)
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '-'
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(dateString))
+}
+
 export default function OrderHistoryTab() {
   const { showSnackbar } = useSnackbar()
+  const navigate = useNavigate()
+
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState('Semua')
 
   useEffect(() => {
     fetchOrders()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const data = await request('/transactions/history', { method: 'GET' })
+      const data = await request('/payments', { method: 'GET' })
       setOrders(data.data || [])
     } catch (err) {
-      // If endpoint doesn't exist yet, we can use dummy data for UI display
-      setOrders([
-        {
-          id: 'INV-1773363859-6700',
-          plan_name: 'Premium Plan - 1 Bulan',
-          price: 45000,
-          status: 'Menunggu Pembayaran',
-          method: 'BCA VA',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'INV-1773293859-1234',
-          plan_name: 'Basic Plan - 1 Bulan',
-          price: 15000,
-          status: 'Berhasil',
-          method: 'OVO',
-          created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: 'INV-1773193859-9999',
-          plan_name: 'Premium Plan - 1 Bulan',
-          price: 45000,
-          status: 'Kadaluarsa',
-          method: 'QRIS',
-          created_at: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ])
-      // showSnackbar('error', 'Gagal memuat histori pesanan')
+      showSnackbar('error', err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const getStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'berhasil':
-      case 'success':
-        return <CheckCircle2 className="w-4 h-4 text-green-500" />
-      case 'menunggu':
-      case 'menunggu pembayaran':
-      case 'pending':
-        return <Clock className="w-4 h-4 text-orange-500" />
-      case 'kadaluarsa':
-      case 'expired':
-      case 'failed':
-      case 'batal':
-        return <XCircle className="w-4 h-4 text-red-500" />
-      default:
-        return <AlertCircle className="w-4 h-4 text-gray-500" />
-    }
+  // Navigate ke payment/detail dengan returnUrl yang mengarah ke settings tab history
+  const handleOpenDetail = (order) => {
+    navigate('/payment', {
+      state: {
+        referenceId: order.referenceId,
+        fromHistory: true,
+        // returnUrl dipakai tombol Kembali di PaymentDetailPage
+        returnUrl: window.location.pathname,
+      },
+    })
   }
 
-  const getStatusBadge = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'berhasil':
-      case 'success':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-      case 'menunggu':
-      case 'menunggu pembayaran':
-      case 'pending':
-        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-      case 'kadaluarsa':
-      case 'expired':
-      case 'failed':
-      case 'batal':
-        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-      default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
-    }
-  }
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('id-ID').format(price)
-  }
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-'
-    const date = new Date(dateString)
-    return new Intl.DateTimeFormat('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date)
-  }
+  const filtered = orders.filter((order) =>
+    activeFilter === 'Semua'
+      ? true
+      : order.status?.toLowerCase().includes(activeFilter.toLowerCase()),
+  )
 
   return (
-    <div className="flex-1 bg-white dark:bg-gray-900 p-6 md:p-10">
-      <div className="max-w-3xl space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="flex-1 bg-white dark:bg-gray-900 p-6 md:p-10 overflow-y-auto">
+      <div className="max-w-2xl space-y-6">
+        {/* Header */}
         <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-indigo-500" />
-            Histori Pesanan
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+            Order History
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Daftar seluruh riwayat transaksi dan status pembayaran Anda.
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            Riwayat seluruh pembayaran Anda
           </p>
         </div>
 
-        {/* Filter Buttons */}
-        <div className="flex items-center gap-2 pb-2 overflow-x-auto no-scrollbar">
-          {['Semua', 'Menunggu', 'Berhasil', 'Kadaluarsa'].map((f) => (
+        {/* Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          {FILTERS.map((f) => (
             <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-                activeFilter === f
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+              key={f.key}
+              onClick={() => {
+                setActiveFilter(f.key)
+                console.log(activeFilter)
+              }}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                activeFilter === f.key
+                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-sm'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
               }`}
             >
-              {f}
+              {f.label}
             </button>
           ))}
         </div>
 
+        {/* Content */}
         {loading ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-gray-50 dark:bg-gray-800/40 rounded-2xl p-5 border border-gray-100 dark:border-gray-800">
-                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+              <div
+                key={i}
+                className="animate-pulse rounded-xl border border-gray-100 dark:border-gray-800 p-5"
+              >
+                <div className="flex gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-gray-200 dark:bg-gray-700 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                    <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/3" />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
-        ) : orders.length === 0 ? (
-          <div className="text-center py-12 px-4 bg-gray-50 dark:bg-gray-800/40 rounded-3xl border border-gray-100 dark:border-gray-800 border-dashed">
-            <ShoppingBag className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">
-              Belum ada pesanan
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
-              Anda belum melakukan transaksi apa pun. Silakan berlangganan untuk melihat histori di sini.
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-14 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+            <ShoppingBag className="w-10 h-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-gray-400 dark:text-gray-600">
+              {activeFilter === 'Semua' ? 'No transactions yet' : 'No transaction for this status'}
             </p>
           </div>
         ) : (
-          <div key={activeFilter} className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {orders.filter(order => activeFilter === 'Semua' ? true : order.status.toLowerCase().includes(activeFilter.toLowerCase())).length === 0 ? (
-               <div className="text-center py-10 px-4">
-                 <p className="text-sm text-gray-500 dark:text-gray-400">Tidak ada pesanan untuk filter ini.</p>
-               </div>
-            ) : orders
-            .filter(order => activeFilter === 'Semua' ? true : order.status.toLowerCase().includes(activeFilter.toLowerCase()))
-            .map((order) => (
-              <div 
-                key={order.id}
-                className="bg-white dark:bg-gray-800/50 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 hover:border-indigo-100 dark:hover:border-indigo-500/30 transition-all hover:shadow-sm"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center shrink-0">
-                      <ShoppingBag className="w-5 h-5" />
+          <div className="space-y-2.5">
+            {filtered.map((order) => {
+              const { label, Icon: StatusIcon, color, badge } = getStatusCfg(order.status)
+              return (
+                <button
+                  key={order.id}
+                  onClick={() => handleOpenDetail(order)}
+                  className="w-full text-left rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/40 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-sm transition-all p-4 group"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center justify-center shrink-0">
+                      <ShoppingBag className="w-4 h-4 text-gray-400" />
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-0.5">
-                        {order.id}
-                      </p>
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                        {order.plan_name}
-                      </h4>
-                    </div>
-                  </div>
-                  <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold w-fit ${getStatusBadge(order.status)}`}>
-                    {getStatusIcon(order.status)}
-                    {order.status}
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-12 pt-4 border-t border-gray-100 dark:border-gray-700/50">
-                  <div>
-                    <span className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                      Total
-                    </span>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">
-                      Rp {formatPrice(order.price)}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                            {order.planName}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">
+                            {order.referenceId}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0 mt-0.5 group-hover:text-gray-500 transition-colors" />
+                      </div>
+
+                      <div className="flex items-center gap-3 mt-2.5 flex-wrap">
+                        <span
+                          className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${badge}`}
+                        >
+                          <StatusIcon className={`w-3 h-3 ${color}`} />
+                          {label}
+                        </span>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                          Rp {formatPrice(order.amount)}
+                        </span>
+                        {order.method && (
+                          <span className="text-xs text-gray-400 dark:text-gray-500 uppercase font-medium">
+                            {order.method}
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">
+                          {formatDate(order.createdAt)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                      Metode
-                    </span>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {order.method || '-'}
-                    </span>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <span className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                      Tanggal
-                    </span>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {formatDate(order.created_at)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

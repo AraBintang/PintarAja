@@ -3,7 +3,7 @@ export default function AuthProvider() {
     <button
       type="button"
       onClick={() => (window.location.href = '/auth/google')}
-      className="w-full mt-2 flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-[16px]"
+      className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-[16px]"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

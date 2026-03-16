@@ -59,7 +59,7 @@ export default function PaperForm({
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
         <div className="bg-blue-600 dark:bg-orange-500 px-6 py-4 flex items-center justify-between">
           <h3 className="text-white font-bold text-lg tracking-wide">
             {isEdit ? 'Edit Paper Setting' : 'Add New Paper'}
@@ -129,14 +129,14 @@ export default function PaperForm({
             onClick={onClose}
             className="px-6 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors"
           >
-            Batal
+            Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
             className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 dark:bg-orange-500 hover:bg-blue-700 dark:hover:bg-orange-600 disabled:opacity-60 rounded-xl shadow-sm hover:shadow-md hover:shadow-blue-200 dark:hover:shadow-orange-900/30 transition-all uppercase tracking-wide"
           >
-            {loading ? 'Menyimpan...' : isEdit ? 'Update Paper' : 'Simpan Paper'}
+            {loading ? 'Saving...' : 'Save Paper'}
           </button>
         </div>
       </div>

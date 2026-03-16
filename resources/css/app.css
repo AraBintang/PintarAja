@@ -302,3 +302,14 @@ body[data-scroll-locked] .fixed.inset-0 {
     background-position: 0% 50%;
   }
 }
+
+ @keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

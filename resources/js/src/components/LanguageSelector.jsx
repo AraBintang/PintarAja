@@ -1,3 +1,4 @@
+import { LANGUAGES } from '@/assets/languages'
 import {
   Select,
   SelectContent,
@@ -7,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { LANGUAGES } from '@/data/languages'
 
 export default function LanguageSelector({ selectedLang, onLangChange }) {
   return (

@@ -69,7 +69,7 @@ export default function UserForm({ open, onClose, onSubmit, initialData = null, 
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-blue-600 dark:bg-orange-500 px-6 py-4 flex items-center justify-between">
           <h3 className="text-white font-bold text-lg tracking-wide">
@@ -194,7 +194,7 @@ export default function UserForm({ open, onClose, onSubmit, initialData = null, 
             disabled={loading}
             className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 dark:bg-orange-500 hover:bg-blue-700 dark:hover:bg-orange-600 disabled:opacity-60 rounded-xl shadow-sm hover:shadow-md hover:shadow-blue-200 dark:hover:shadow-orange-900/30 transition-all uppercase tracking-wide"
           >
-            {loading ? 'Menyimpan...' : 'Simpan'}
+            {loading ? 'Saving...' : 'Save User'}
           </button>
         </div>
       </div>

@@ -48,7 +48,7 @@ class PromptController extends Controller
             ->orderBy('M_PaperName')
             ->get();
 
-        $sections = Section::select('M_SectionID as id', 'M_SectionName as name')
+        $sections = Section::select('M_SectionID as id', 'M_SectionM_PaperID as paper_id', 'M_SectionName as name')
             ->orderBy('M_SectionName')
             ->get();
 

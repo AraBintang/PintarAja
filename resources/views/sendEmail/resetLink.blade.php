@@ -267,14 +267,14 @@
                     <a href="{{ $resetLink }}" class="reset-button">Reset Password</a>
                 </div>
 
-                <div>
+                {{-- <div>
                     <span class="expiry-notice">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                         </svg>
                         This link expires in <strong>&nbsp;60 minutes</strong>
                     </span>
-                </div>
+                </div> --}}
 
                 <div class="divider"></div>
 
