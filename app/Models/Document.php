@@ -18,7 +18,7 @@ class Document extends Model
         'M_DocumentM_UserID',
         'M_DocumentM_WorkbookID',
         'M_DocumentName',
-        'M_DocumentM_TopicID',
+        'M_DocumentPromptData',
         'M_DocumentFullPrompt',
         'M_DocumentResult',
         'M_DocumentCreated',

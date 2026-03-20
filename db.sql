@@ -120,7 +120,7 @@ CREATE TABLE `m_document` (
   `M_DocumentM_UserID` int(11) NOT NULL DEFAULT 0,
   `M_DocumentM_WorkbookID` int(11) NOT NULL DEFAULT 0,
   `M_DocumentName` varchar(100) DEFAULT NULL,
-  `M_DocumentM_TopicID` int(11) DEFAULT 0,
+  `M_DocumentPromptData` text DEFAULT 0,
   `M_DocumentFullPrompt` text DEFAULT NULL,
   `M_DocumentResult` text DEFAULT NULL,
   `M_DocumentCreated` datetime NOT NULL DEFAULT current_timestamp(),
@@ -128,7 +128,6 @@ CREATE TABLE `m_document` (
   PRIMARY KEY (`M_DocumentID`),
   KEY `M_DocumentName` (`M_DocumentName`),
   KEY `M_DocumentM_WorkbookID` (`M_DocumentM_WorkbookID`),
-  KEY `M_DocumentM_TopicID` (`M_DocumentM_TopicID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 

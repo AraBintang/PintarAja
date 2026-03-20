@@ -67,7 +67,9 @@ export default function Pricing() {
     const base = p[period] ?? 0
     const disc = p[`${period}_discount`] ?? 0
     const final = p[`${period}_final`] ?? base
-    return { base, disc, final, hasDiscount: disc > 0 && base > 0 }
+    const isYearly = period === 'yearly'
+    const perMonth = isYearly && final > 0 ? Math.round(final / 12) : null
+    return { base, disc, final, hasDiscount: disc > 0 && base > 0, isYearly, perMonth }
   }
 
   const periodHasDiscount = (pKey) =>
@@ -89,7 +91,7 @@ export default function Pricing() {
   }
 
   return (
-    <section id="pricing" ref={sectionRef} className="py-24 bg-white dark:bg-gray-900">
+    <section id="pricing" ref={sectionRef} className="pt-8 pb-40 bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-6 xl:px-0">
         {/* Header */}
         <div
@@ -126,7 +128,7 @@ export default function Pricing() {
                   onClick={() => setPeriod(opt.key)}
                   className={`py-2 px-1 sm:px-6 sm:py-2.5 rounded-xl text-[12px] sm:text-sm font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 flex-1 sm:flex-none leading-tight ${
                     period === opt.key
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md'
+                      ? 'bg-blue-600 dark:bg-orange-500 text-white shadow-md'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
@@ -167,7 +169,7 @@ export default function Pricing() {
           <div className="flex flex-col md:flex-row flex-wrap justify-center items-center md:items-stretch gap-6 lg:gap-8 max-w-[1200px] mx-auto w-full">
             {plans.map((plan, i) => {
               const isPopular = plan.isPopular === 'Y'
-              const { base, disc, final, hasDiscount } = getPriceInfo(plan)
+              const { base, disc, final, hasDiscount, isYearly, perMonth } = getPriceInfo(plan)
 
               return (
                 <div
@@ -206,24 +208,52 @@ export default function Pricing() {
 
                   {/* Price */}
                   <div className="text-center mb-6">
-                    {hasDiscount && (
-                      <div className="flex items-center justify-center gap-2 mb-1">
-                        <span className="text-base font-bold text-gray-400 line-through">
-                          Rp {formatPrice(base)}
-                        </span>
-                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-                          -{disc}%
-                        </span>
-                      </div>
+                    {isYearly && perMonth !== null ? (
+                      <>
+                        {hasDiscount && (
+                          <div className="flex items-center justify-center gap-2 mb-1">
+                            <span className="text-base font-bold text-gray-400 line-through">
+                              Rp {formatPrice(Math.round(base / 12))}
+                            </span>
+                            <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                              Hemat {disc}%
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-end justify-center gap-1">
+                          <span className="text-3xl font-extrabold text-[#118A43]">
+                            Rp {formatPrice(perMonth)}
+                          </span>
+                          <span className="text-lg font-semibold text-[#118A43] mb-0.5">
+                            /bulan
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-1">
+                          Tagihan Rp {formatPrice(final)}/tahun
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        {hasDiscount && (
+                          <div className="flex items-center justify-center gap-2 mb-1">
+                            <span className="text-base font-bold text-gray-400 line-through">
+                              Rp {formatPrice(base)}
+                            </span>
+                            <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                              -{disc}%
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-end justify-center gap-1">
+                          <span className="text-3xl font-extrabold text-[#118A43]">
+                            Rp {final === 0 ? '0' : formatPrice(final)}
+                          </span>
+                          <span className="text-lg font-semibold text-[#118A43] mb-0.5">
+                            {activePeriod.unit}
+                          </span>
+                        </div>
+                      </>
                     )}
-                    <div className="flex items-end justify-center gap-1">
-                      <span className="text-3xl font-extrabold text-[#118A43]">
-                        Rp {final === 0 ? '0' : formatPrice(final)}
-                      </span>
-                      <span className="text-lg font-semibold text-[#118A43] mb-0.5">
-                        {activePeriod.unit}
-                      </span>
-                    </div>
                   </div>
 
                   {/* CTA Button */}

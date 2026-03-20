@@ -2,7 +2,7 @@ import Lottie from 'lottie-react'
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import Lottie404 from '@/assets/404.json'
+import Lottie404 from '@/assets/lottie/404.json'
 import { useTheme } from '@/context/ThemeContext'
 
 export default function AuthLayout() {

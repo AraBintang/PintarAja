@@ -93,7 +93,7 @@ Rules:
 
         $paraphrase = $response->output[0]->content[0]->text;
 
-        Paraphrase::create([
+        $paraphraseId =Paraphrase::create([
             'M_ParaphraseM_UserID' => $user->M_UserID,
             'M_ParaphraseName' => 'Paraphrase ' . now()->format('Y-m-d H:i'),
             'M_ParaphraseOrigin' => $text,
@@ -102,7 +102,8 @@ Rules:
 
         return response()->json([
             'success' => true,
-            'data' => $paraphrase
+            'data' => $paraphrase,
+            'id' => $paraphraseId->M_ParaphraseID
         ]);
     }
 
@@ -137,7 +138,8 @@ Rules:
         $paraphrase->delete();
 
         return response()->json([
-            'message' => 'Deleted successfully'
+            'message' => 'Deleted successfully',
+            'id' => $id
         ]);
     }
 }

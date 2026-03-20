@@ -1,7 +1,7 @@
 import Lottie from 'lottie-react'
 import { Link } from 'react-router-dom'
 
-import lottiePaperPlane from '@/assets/paperPlane.json'
+import lottiePaperPlane from '@/assets/lottie/paperPlane.json'
 
 export default function HumanizerPage() {
   return (

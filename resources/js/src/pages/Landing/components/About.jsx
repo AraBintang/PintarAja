@@ -1,26 +1,13 @@
 import Lottie from 'lottie-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
+import lottieAiService from '@/assets/lottie/aiService.json'
 import useScrollReveal from '@/hooks/useScrollReveal'
 
 export default function About() {
   const { ref: sectionRef, isVisible, inView } = useScrollReveal({ threshold: 0.1 })
-  const [lottieData, setLottieData] = useState(null)
-  const lottieRef = useRef(null)
 
-  useEffect(() => {
-    if (!isVisible || lottieData) return
-    let isMounted = true
-    fetch('/ai-services-animation.json')
-      .then((res) => res.json())
-      .then((data) => {
-        if (isMounted) setLottieData(data)
-      })
-      .catch((err) => console.error('Error loading Lottie animation:', err))
-    return () => {
-      isMounted = false
-    }
-  }, [isVisible, lottieData])
+  const lottieRef = useRef(null)
 
   useEffect(() => {
     if (!lottieRef.current) return
@@ -29,13 +16,13 @@ export default function About() {
     } else {
       lottieRef.current.pause()
     }
-  }, [inView, lottieData])
+  }, [inView])
 
   return (
     <section
       id="tentang"
       ref={sectionRef}
-      className="relative py-24 bg-[#f4f7fb] dark:bg-gray-900 overflow-hidden"
+      className="relative pt-8 py-24 bg-[#f4f7fb] dark:bg-gray-900 overflow-hidden"
     >
       {/* Soft background accents */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#4A90D9] opacity-[0.03] rounded-full blur-[100px] pointer-events-none" />
@@ -98,32 +85,13 @@ export default function About() {
           style={{ transition: 'opacity 0.9s ease 0.5s, transform 0.9s ease 0.5s' }}
         >
           <div className="relative overflow-hidden flex items-center justify-center min-h-[300px]">
-            {lottieData ? (
-              <Lottie
-                lottieRef={lottieRef}
-                animationData={lottieData}
-                loop
-                autoplay={false}
-                style={{ width: '100%', height: 350, maxHeight: '450px' }}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center text-gray-400">
-                <svg
-                  className="w-12 h-12 mb-3 animate-pulse"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-                <p>Memuat animasi AI...</p>
-              </div>
-            )}
+            <Lottie
+              lottieRef={lottieRef}
+              animationData={lottieAiService}
+              loop
+              autoplay={false}
+              style={{ width: '100%', height: 350, maxHeight: '450px' }}
+            />
             <div className="absolute inset-0 border border-white/20 dark:border-white/5 rounded-[1.5rem] pointer-events-none" />
           </div>
         </div>

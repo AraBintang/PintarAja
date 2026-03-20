@@ -44,6 +44,18 @@ class PromptController extends Controller
             ];
         });
 
+        if ($request->input('view') === 'writer') {
+            return response()->json([
+                'data' => $data,
+                'pagination' => [
+                    'current_page' => $paginated->currentPage(),
+                    'per_page' => $paginated->perPage(),
+                    'total' => $paginated->total(),
+                    'last_page' => $paginated->lastPage(),
+                ],
+            ]);
+        }
+
         $papers = Paper::select('M_PaperID as id', 'M_PaperName as name')
             ->orderBy('M_PaperName')
             ->get();

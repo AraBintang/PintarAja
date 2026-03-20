@@ -2,7 +2,7 @@ import { Check, Eye, EyeOff, Loader2, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
-import lottieReset from '@/assets/auth.json'
+import lottieReset from '@/assets/lottie/auth.json'
 import { useSnackbar } from '@/context/SnackbarContext'
 import AuthLayout from '@/layout/AuthLayout'
 import { request } from '@/utils/Http'

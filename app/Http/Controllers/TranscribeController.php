@@ -219,7 +219,7 @@ class TranscribeController extends Controller
 
         $user = $request->user();
 
-        Transcribe::create([
+        $transcribeId = Transcribe::create([
             'M_TranscribeM_UserID' => $user->M_UserID,
             'M_TranscribeName' => 'Transcribe ' . now()->format('Y-m-d H:i'),
             'M_TranscribeData' => $transcript,
@@ -233,7 +233,8 @@ class TranscribeController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $transcript
+            'data' => $transcript,
+            'id' => $transcribeId->M_TranscribeID
         ]);
     }
 
@@ -273,7 +274,8 @@ class TranscribeController extends Controller
         $transcribe->delete();
 
         return response()->json([
-            'message' => 'Deleted successfully'
+            'message' => 'Deleted successfully',
+            'id' => $id
         ]);
     }
 }

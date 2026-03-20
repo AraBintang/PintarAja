@@ -195,6 +195,7 @@ export default function TranscribePage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingProgress, setProcessingProgress] = useState(0)
   const [transcriptionResult, setTranscriptionResult] = useState(null)
+  const [currentHistoryId, setCurrentHistoryId] = useState(null)
 
   const fileInputRef = useRef(null)
 
@@ -212,6 +213,7 @@ export default function TranscribePage() {
         transcript,
       })
 
+      setCurrentHistoryId(item.id)
       setIsProcessing(false)
       setActiveTab('landing')
     }
@@ -219,6 +221,18 @@ export default function TranscribePage() {
     window.addEventListener('loadHistoryTranscribe', handleLoadHistory)
     return () => window.removeEventListener('loadHistoryTranscribe', handleLoadHistory)
   }, [])
+
+  useEffect(() => {
+    const handleDeleted = (e) => {
+      if (e.detail.path !== '/transcribe') return
+      if (e.detail.id === currentHistoryId) {
+        setTranscriptionResult(null)
+        setCurrentHistoryId(null)
+      }
+    }
+    window.addEventListener('historyItemDeleted', handleDeleted)
+    return () => window.removeEventListener('historyItemDeleted', handleDeleted)
+  }, [currentHistoryId])
 
   const handleExport = () => {
     const lines = transcriptionResult.transcript
@@ -261,9 +275,6 @@ export default function TranscribePage() {
         formData.append('file', file)
       }
 
-      console.log(file)
-      console.log([...formData.entries()])
-
       const res = await request('/transcribes', {
         method: 'POST',
         body: formData,
@@ -286,6 +297,22 @@ export default function TranscribePage() {
         summary: [],
         transcript,
       })
+
+      if (res.id) {
+        setCurrentHistoryId(res.id)
+        window.dispatchEvent(
+          new CustomEvent('paraphraseCompleted', {
+            detail: {
+              id: res.id,
+              title: inputText.slice(0, 60),
+              name: inputText.slice(0, 60),
+              data: res.data,
+              origin: inputText,
+              time: new Date().toLocaleString('id-ID'),
+            },
+          }),
+        )
+      }
     } catch (err) {
       clearInterval(interval)
       showSnackbar('error', err.message || 'Gagal melakukan transkripsi')

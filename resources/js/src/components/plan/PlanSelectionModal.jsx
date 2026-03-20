@@ -10,9 +10,9 @@ function formatPrice(price) {
 }
 
 const PERIOD_OPTIONS = [
-  { key: 'weekly', label: 'Weekly', suffix: 'Weekly', unit: '/minggu' },
-  { key: 'monthly', label: 'Monthly', suffix: 'Monthly', unit: '/bulan' },
-  { key: 'yearly', label: 'Annual', suffix: 'Yearly', unit: '/tahun' },
+  { key: 'weekly', label: 'Weekly', suffix: 'Weekly', unit: '/week' },
+  { key: 'monthly', label: 'Monthly', suffix: 'Monthly', unit: '/month' },
+  { key: 'yearly', label: 'Annual', suffix: 'Yearly', unit: '/year' },
 ]
 
 export default function PlanSelectionModal({ open, onClose, onSelectPlan }) {
@@ -48,7 +48,9 @@ export default function PlanSelectionModal({ open, onClose, onSelectPlan }) {
     const base = p[period] ?? 0
     const disc = p[`${period}_discount`] ?? 0
     const final = p[`${period}_final`] ?? base
-    return { base, disc, final, hasDiscount: disc > 0 && base > 0 }
+    const isYearly = period === 'yearly'
+    const perMonth = isYearly && final > 0 ? Math.round(final / 12) : null
+    return { base, disc, final, hasDiscount: disc > 0 && base > 0, isYearly, perMonth }
   }
 
   // Cek apakah periode ini ada diskon di setidaknya satu plan
@@ -118,7 +120,7 @@ export default function PlanSelectionModal({ open, onClose, onSelectPlan }) {
                   onClick={() => setPeriod(opt.key)}
                   className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                     period === opt.key
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                      ? 'bg-blue-600 dark:bg-orange-500 text-white shadow-sm'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
@@ -160,7 +162,7 @@ export default function PlanSelectionModal({ open, onClose, onSelectPlan }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {plans.map((plan) => {
                 const isPopular = plan.isPopular === 'Y'
-                const { base, disc, final, hasDiscount } = getPriceInfo(plan)
+                const { base, disc, final, hasDiscount, isYearly, perMonth } = getPriceInfo(plan)
 
                 return (
                   <div
@@ -191,24 +193,52 @@ export default function PlanSelectionModal({ open, onClose, onSelectPlan }) {
 
                     {/* Price */}
                     <div className="mb-4">
-                      {hasDiscount && (
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="text-xs text-gray-400 line-through">
-                            Rp {formatPrice(base)}
-                          </span>
-                          <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-                            -{disc}%
-                          </span>
-                        </div>
+                      {isYearly && perMonth !== null ? (
+                        <>
+                          {hasDiscount && (
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-xs text-gray-400 line-through">
+                                Rp {formatPrice(Math.round(base / 12))}
+                              </span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                                Hemat {disc}%
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-end gap-1">
+                            <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                              Rp {formatPrice(perMonth)}
+                            </span>
+                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">
+                              /month
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+                            Billed Rp {formatPrice(final)}/year
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          {hasDiscount && (
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-xs text-gray-400 line-through">
+                                Rp {formatPrice(base)}
+                              </span>
+                              <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                                -{disc}%
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-end gap-1">
+                            <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                              Rp {final === 0 ? '0' : formatPrice(final)}
+                            </span>
+                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">
+                              {activePeriod.unit}
+                            </span>
+                          </div>
+                        </>
                       )}
-                      <div className="flex items-end gap-1">
-                        <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                          Rp {final === 0 ? '0' : formatPrice(final)}
-                        </span>
-                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">
-                          {activePeriod.unit}
-                        </span>
-                      </div>
                     </div>
 
                     {/* Features */}

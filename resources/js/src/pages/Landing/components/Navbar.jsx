@@ -19,7 +19,7 @@ export default function Navbar() {
 
   const navLinks = [
     { label: 'Layanan', href: '#layanan' },
-    { label: 'Paket AI', href: '#pricing' },
+    { label: 'Harga', href: '#pricing' },
     { label: 'Tentang Kami', href: '#tentang' },
   ]
 

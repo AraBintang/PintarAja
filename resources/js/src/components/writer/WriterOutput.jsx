@@ -1,4 +1,4 @@
-import { Check, Copy, Download, FileDown, FileText, FolderPlus, RotateCcw } from 'lucide-react'
+import { Check, Copy, Download, FileDown, FileText, FolderPlus, RotateCw } from 'lucide-react'
 import { memo, useMemo, useState } from 'react'
 
 import TiptapEditor from '@/components/TiptapEditor'
@@ -92,7 +92,7 @@ const WriterOutput = memo(function WriterOutput({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 px-1 md:px-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[12px] md:text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Hasil
+            Result
           </span>
           {selectedSectionName && (
             <span className="text-[10px] md:text-[11px] font-medium text-[#4A90D9] bg-[#4A90D9]/10 px-2 py-0.5 rounded-md">
@@ -101,7 +101,7 @@ const WriterOutput = memo(function WriterOutput({
           )}
           {currentDocId && (
             <span className="text-[10px] font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-md">
-              Tersimpan
+              Saved
             </span>
           )}
           {saveSuccessMsg && (
@@ -118,9 +118,9 @@ const WriterOutput = memo(function WriterOutput({
           >
             <FolderPlus className="w-4 h-4" />
             <span className="hidden sm:inline">
-              {currentDocId ? 'Update Dokumen' : 'Simpan ke Workbook'}
+              {currentDocId ? 'Update Doc' : 'Save to Workbook'}
             </span>
-            <span className="sm:hidden">Simpan</span>
+            <span className="sm:hidden">Save</span>
           </button>
 
           <button
@@ -152,7 +152,7 @@ const WriterOutput = memo(function WriterOutput({
                     <FileText className="w-4 h-4 text-blue-500" />
                     <div>
                       <span className="font-medium block">Word (.doc)</span>
-                      <span className="text-[11px] text-gray-400">Dokumen Microsoft Word</span>
+                      <span className="text-[11px] text-gray-400">Microsoft Word Document</span>
                     </div>
                   </button>
                   <button
@@ -175,7 +175,7 @@ const WriterOutput = memo(function WriterOutput({
             disabled={isGenerating}
             className="flex items-center justify-center gap-1.5 px-3 py-1.5 md:px-3 md:py-2 text-[12px] font-medium rounded-xl shadow-sm transition-colors disabled:opacity-50 border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20"
           >
-            <RotateCcw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+            <RotateCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Regenerate</span>
           </button>
         </div>

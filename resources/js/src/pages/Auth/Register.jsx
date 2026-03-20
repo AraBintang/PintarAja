@@ -3,7 +3,7 @@ import { ArrowLeft, Eye, EyeOff, Loader2, RefreshCw, ShieldCheck } from 'lucide-
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import lottieRegister from '@/assets/auth.json'
+import lottieRegister from '@/assets/lottie/auth.json'
 import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import AuthLayout from '@/layout/AuthLayout'

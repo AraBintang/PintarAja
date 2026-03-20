@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Document;
 use App\Models\Paper;
-use App\Models\Prompt;
 use App\Models\Section;
 use App\Models\Workbook;
 use App\Services\AiProviderService;
@@ -34,12 +33,6 @@ class WriterController extends Controller
             'M_SectionM_PaperID as paper_id',
             'M_SectionName as name'
         )->orderBy('M_SectionName')->get();
-
-        $prompts = Prompt::select(
-            'M_PromptID as id',
-            'M_PromptName as name',
-            'M_PromptValue as value'
-        )->orderBy('M_PromptName')->get();
 
         $aiProviders = DB::table('m_plansetting as ps')
             ->join('m_setting as s','s.M_SettingID','=','ps.M_PlanSettingM_SettingID')
@@ -77,7 +70,6 @@ class WriterController extends Controller
         return response()->json([
             'papers'=>$papers,
             'sections'=>$sections,
-            'prompts'=>$prompts,
             'ai'=>$aiProviders,
             'workbooks'=>$workbooks,
             'documents'=>$documents

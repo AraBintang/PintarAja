@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 
+import WhatsAppButton from '@/components/WhatsAppButton'
 import { RightSidebarProvider } from '@/context/RightSidebarContext'
 import { SidebarProvider, useSidebar } from '@/context/SidebarContext'
 import SettingsModal from '@/pages/Settings/SettingsModal'
@@ -24,6 +25,8 @@ function LayoutInner() {
           <Outlet />
         </div>
       </main>
+
+      <WhatsAppButton />
 
       <RightSidebar />
 

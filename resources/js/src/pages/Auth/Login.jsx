@@ -3,7 +3,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import lottieAI from '@/assets/auth.json'
+import lottieAI from '@/assets/lottie/auth.json'
 import { useAuth } from '@/context/AuthContext'
 import AuthLayout from '@/layout/AuthLayout'
 import { request } from '@/utils/Http'
@@ -15,8 +15,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('johndoe@gmail.com')
+  const [password, setPassword] = useState('Aa1234567890')
   const [remember, setRemember] = useState(true)
 
   const handleSubmit = async (e) => {

@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     q: 'Bagaimana mekanisme pembayaran produk atau jasa dari Pintaraja?',
-    a: 'Pembayaran dapat dilakukan melalui QRIS, Virtual Account (BCA, BNI, BRI, Mandiri), e-wallet (OVO, DANA, GoPay, ShopeePay), dan gerai retail (Alfamart, Indomaret).',
+    a: 'Pembayaran dapat dilakukan melalui QRIS, Virtual Account (BCA, BNI, BRI, BSI, Mandiri), e-wallet (OVO, DANA, GoPay, ShopeePay), dan gerai retail (Alfamart, Indomaret).',
   },
   {
     q: 'Apakah Pintaraja menjamin kerahasiaan data yang diperlukan dalam proses riset?',

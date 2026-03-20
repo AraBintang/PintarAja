@@ -1,3 +1,8 @@
+import claudeAiIcon from '@/assets/icons/claude-ai-icon.svg'
+import deepseekAiIcon from '@/assets/icons/deepseek-ai-icon.svg'
+import googleGeminiIcon from '@/assets/icons/google-gemini-icon.svg'
+import gptAiIcon from '@/assets/icons/gpt-ai-icon.svg'
+import qwenAiIcon from '@/assets/icons/qwen-ai-icon.svg'
 import useScrollReveal from '@/hooks/useScrollReveal'
 
 const tools = [
@@ -28,28 +33,29 @@ const tools = [
   {
     name: 'OpenAI',
     desc: 'OpenAI adalah model AI mutakhir yang mampu memahami bahasa alami dengan sangat baik dan memberikan respon yang relevan serta akurat.',
-    logo: '/gpt-ai-icon.svg',
+    logo: gptAiIcon,
     darkInvert: true,
   },
   {
     name: 'Gemini',
     desc: 'Gemini adalah AI generatif buatan Google yang mampu memahami teks, gambar, dan kode secara multimodal untuk berbagai kebutuhan kreatif maupun teknis.',
-    logo: '/google-gemini-icon.svg',
-  },
-  {
-    name: 'DeepSeek',
-    desc: 'DeepSeek dirancang untuk kemampuan reasoning dan pemrosesan teks tingkat lanjut, ideal untuk kebutuhan penelitian dan solusi enterprise.',
-    logo: '/deepseek-ai-icon.svg',
+    logo: googleGeminiIcon,
   },
   {
     name: 'Claude',
     desc: 'Claude dirancang untuk interaksi percakapan alami, mampu menangani tugas-tugas seperti menjawab pertanyaan, menghasilkan teks dan kode, meringkas dokumen, dan bertukar pikiran.',
-    logo: '/claude-ai-icon.svg',
+    logo: claudeAiIcon,
   },
+  {
+    name: 'DeepSeek',
+    desc: 'DeepSeek dirancang untuk kemampuan reasoning dan pemrosesan teks tingkat lanjut, ideal untuk kebutuhan penelitian dan solusi enterprise.',
+    logo: deepseekAiIcon,
+  },
+
   {
     name: 'Qwen',
     desc: 'Qwen adalah model bahasa buatan Alibaba dengan kekuatan analisis dan pemahaman kontekstual yang baik, cocok untuk integrasi AI dalam aplikasi sehari-hari.',
-    logo: '/qwen-ai-icon.svg',
+    logo: qwenAiIcon,
   },
 ]
 

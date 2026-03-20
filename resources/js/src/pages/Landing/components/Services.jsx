@@ -1,7 +1,14 @@
 import Lottie from 'lottie-react'
 import { useEffect, useRef, useState } from 'react'
 
+import lottieAi from '@/assets/lottie/ai.json'
 import useScrollReveal from '@/hooks/useScrollReveal'
+
+import claudeAiIcon from '@/assets/icons/claude-ai-icon.svg'
+import deepseekAiIcon from '@/assets/icons/deepseek-ai-icon.svg'
+import googleGeminiIcon from '@/assets/icons/google-gemini-icon.svg'
+import gptAiIcon from '@/assets/icons/gpt-ai-icon.svg'
+import qwenAiIcon from '@/assets/icons/qwen-ai-icon.svg'
 
 const services = [
   {
@@ -34,24 +41,8 @@ const services = [
 export default function Services() {
   const [openIndex, setOpenIndex] = useState(0)
   const { ref: sectionRef, isVisible, inView } = useScrollReveal({ threshold: 0.1 })
-  const [lottieData, setLottieData] = useState(null)
-  const lottieRef = useRef(null)
 
-  useEffect(() => {
-    if (!isVisible || lottieData) return
-    let isMounted = true
-    fetch('/Artificial Intelligence (AI).json')
-      .then((res) => res.json())
-      .then((data) => {
-        if (isMounted) setLottieData(data)
-      })
-      .catch(() => {
-        if (isMounted) setLottieData(null)
-      })
-    return () => {
-      isMounted = false
-    }
-  }, [isVisible, lottieData])
+  const lottieRef = useRef(null)
 
   useEffect(() => {
     if (!lottieRef.current) return
@@ -60,13 +51,13 @@ export default function Services() {
     } else {
       lottieRef.current.pause()
     }
-  }, [inView, lottieData])
+  }, [inView])
 
   return (
     <section
       id="layanan"
       ref={sectionRef}
-      className="py-24 bg-[#f4f7fb] dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700"
+      className="pt-8 pb-40 bg-[#f4f7fb] dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700"
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
@@ -78,38 +69,13 @@ export default function Services() {
             style={{ transition: 'opacity 0.8s ease, transform 0.8s ease' }}
           >
             <div className="relative overflow-hidden pt-6">
-              {lottieData ? (
-                <Lottie
-                  lottieRef={lottieRef}
-                  animationData={lottieData}
-                  loop
-                  autoplay={false}
-                  style={{ width: '100%', height: 420, maxHeight: '520px' }}
-                />
-              ) : (
-                <div className="w-full h-[420px] lg:h-[520px] flex items-center justify-center text-gray-400">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#4A90D9]/10 flex items-center justify-center">
-                      <svg
-                        width="32"
-                        height="32"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        className="text-[#4A90D9]"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-medium">AI Tools Dashboard</p>
-                  </div>
-                </div>
-              )}
+              <Lottie
+                lottieRef={lottieRef}
+                animationData={lottieAi}
+                loop
+                autoplay={false}
+                style={{ width: '100%', height: 420, maxHeight: '520px' }}
+              />
             </div>
             {/* Relocated AI Tools */}
             <div className="mt-8 lg:mt-12">
@@ -144,11 +110,11 @@ export default function Services() {
                       </svg>
                     ),
                   },
-                  { name: 'OpenAI', logo: '/gpt-ai-icon.svg', darkInvert: true },
-                  { name: 'Gemini', logo: '/google-gemini-icon.svg' },
-                  { name: 'DeepSeek', logo: '/deepseek-ai-icon.svg' },
-                  { name: 'Claude', logo: '/claude-ai-icon.svg' },
-                  { name: 'Qwen', logo: '/qwen-ai-icon.svg' },
+                  { name: 'OpenAI', logo: gptAiIcon, darkInvert: true },
+                  { name: 'Gemini', logo: googleGeminiIcon },
+                  { name: 'DeepSeek', logo: deepseekAiIcon },
+                  { name: 'Claude', logo: claudeAiIcon },
+                  { name: 'Qwen', logo: qwenAiIcon },
                 ].map((tool, i) => (
                   <div
                     key={i}

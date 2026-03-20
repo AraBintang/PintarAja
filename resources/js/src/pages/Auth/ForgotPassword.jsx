@@ -2,7 +2,7 @@ import { ArrowLeft, Loader2, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import lottieForgot from '@/assets/auth.json'
+import lottieForgot from '@/assets/lottie/auth.json'
 import { useSnackbar } from '@/context/SnackbarContext'
 import AuthLayout from '@/layout/AuthLayout'
 import { request } from '@/utils/Http'

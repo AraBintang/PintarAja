@@ -1,30 +1,36 @@
 import { Zap } from 'lucide-react'
 import { createElement } from 'react'
 
+import claudeAiIcon from '@/assets/icons/claude-ai-icon.svg'
+import deepseekAiIcon from '@/assets/icons/deepseek-ai-icon.svg'
+import googleGeminiIcon from '@/assets/icons/google-gemini-icon.svg'
+import gptAiIcon from '@/assets/icons/gpt-ai-icon.svg'
+import qwenAiIcon from '@/assets/icons/qwen-ai-icon.svg'
+
 export const AutoIcon = () => createElement(Zap, { className: 'w-3.5 h-3.5 text-amber-500' })
 
 const OpenAILogo = createElement('img', {
-  src: '/gpt-ai-icon.svg',
+  src: gptAiIcon,
   alt: 'GPT',
-  className: 'w-3.5 h-3.5 object-contain',
+  className: 'w-3.5 h-3.5 object-contain dark:invert',
 })
 const GeminiLogo = createElement('img', {
-  src: '/google-gemini-icon.svg',
+  src: googleGeminiIcon,
   alt: 'Gemini',
   className: 'w-3.5 h-3.5 object-contain',
 })
 const ClaudeLogo = createElement('img', {
-  src: '/claude-ai-icon.svg',
+  src: claudeAiIcon,
   alt: 'Claude',
   className: 'w-3.5 h-3.5 object-contain',
 })
 const DeepSeekLogo = createElement('img', {
-  src: '/deepseek-ai-icon.svg',
+  src: deepseekAiIcon,
   alt: 'DeepSeek',
   className: 'w-3.5 h-3.5 object-contain',
 })
 const QwenLogo = createElement('img', {
-  src: '/qwen-ai-icon.svg',
+  src: qwenAiIcon,
   alt: 'Qwen',
   className: 'w-3.5 h-3.5 object-contain',
 })

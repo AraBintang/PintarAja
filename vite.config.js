@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     laravel({
       input: ['resources/css/app.css', 'resources/js/main.jsx'],
-      refresh: true,
+      refresh: false,
     }),
     react(),
     tailwindcss(),

@@ -24,14 +24,25 @@ ${instruksi ? `\nInstruksi Tambahan:\n${instruksi}` : ''}
 Tulis dalam format HTML yang bersih (gunakan tag h1, h2, h3, p, ul, li, blockquote, strong, em). Jangan sertakan tag html, head, atau body. Langsung mulai dari konten.`
 }
 
-export default function AIWriterPage() {
+function buildPromptData({ topik, instruksi, paperName, sectionName, bahasa, jumlah, panjang }) {
+  return {
+    topik: topik,
+    instruksi: instruksi,
+    paperName: paperName,
+    sectionName: sectionName,
+    bahasa: bahasa,
+    jumlah: jumlah,
+    panjang: panjang,
+  }
+}
+
+export default function WriterPage() {
   const { user } = useAuth()
   const { showSnackbar } = useSnackbar()
 
   /* ─── Master data ─── */
   const [papers, setPapers] = useState([])
   const [allSections, setAllSections] = useState([])
-  const [prompts, setPrompts] = useState([])
   const [aiProviders, setAiProviders] = useState([])
   const [workbooks, setWorkbooks] = useState([])
   const [isLoadingData, setIsLoadingData] = useState(true)
@@ -65,7 +76,6 @@ export default function AIWriterPage() {
       .then((res) => {
         setPapers(res.papers || [])
         setAllSections(res.sections || [])
-        setPrompts(res.prompts || [])
         setAiProviders(res.ai || [])
         setWorkbooks(res.workbooks || [])
         if (res.papers?.length) setSelectedPaperId(String(res.papers[0].id))
@@ -100,6 +110,27 @@ export default function AIWriterPage() {
     window.addEventListener('loadHistoryWriter', handleLoadDoc)
     return () => window.removeEventListener('loadHistoryWriter', handleLoadDoc)
   }, [])
+
+  const handleReset = useCallback(() => {
+    if (abortRef.current) abortRef.current.abort()
+    setIsGenerated(false)
+    setEditorContent('')
+    setInputCollapsed(false)
+    setCurrentDocId(null)
+    setTopik('')
+    setInstruksi('')
+  }, [])
+
+  useEffect(() => {
+    const handleDeleted = (e) => {
+      if (e.detail.path !== '/writer') return
+      if (e.detail.id === currentDocId) {
+        handleReset()
+      }
+    }
+    window.addEventListener('historyItemDeleted', handleDeleted)
+    return () => window.removeEventListener('historyItemDeleted', handleDeleted)
+  }, [currentDocId, handleReset])
 
   /* ─── Derived ─── */
   const selectedPaperName = papers.find((p) => String(p.id) === selectedPaperId)?.name || ''
@@ -148,10 +179,13 @@ export default function AIWriterPage() {
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
-      let accumulated = ''
+
+      const prefix = editorContent?.trim() ? `${editorContent}\n\n` : ''
+      let accumulated = prefix
 
       setIsGenerated(true)
       setInputCollapsed(true)
+      setEditorContent(accumulated)
 
       while (true) {
         const { done, value } = await reader.read()
@@ -180,21 +214,11 @@ export default function AIWriterPage() {
     panjang,
   ])
 
-  const handleReset = useCallback(() => {
-    if (abortRef.current) abortRef.current.abort()
-    setIsGenerated(false)
-    setEditorContent('')
-    setInputCollapsed(false)
-    setCurrentDocId(null)
-    setTopik('')
-    setInstruksi('')
-  }, [])
-
   /* ─── Save ─── */
   const handleSaveToWorkbook = useCallback(
     async (fileName, targetWorkbookId) => {
       try {
-        const fullPrompt = buildPrompt({
+        const promptParams = {
           topik,
           instruksi,
           paperName: selectedPaperName,
@@ -202,18 +226,36 @@ export default function AIWriterPage() {
           bahasa,
           jumlah,
           panjang,
-        })
+        }
+
+        const promptData = buildPromptData(promptParams)
+        const fullPrompt = buildPrompt(promptParams)
+
         if (currentDocId) {
           await request(`/documents/${currentDocId}`, {
             method: 'PUT',
             body: {
               workbookId: parseInt(targetWorkbookId),
               name: fileName,
-              topicId: parseInt(selectedPaperId) || 0,
+              promptData,
               fullPrompt,
               result: editorContent,
             },
           })
+
+          window.dispatchEvent(
+            new CustomEvent('documentSaved', {
+              detail: {
+                id: currentDocId,
+                title: fileName,
+                name: fileName,
+                workbook: workbooks.find((wb) => String(wb.id) === String(targetWorkbookId))?.name,
+                workbook_id: parseInt(targetWorkbookId),
+                result: editorContent,
+                lastEdited: new Date().toLocaleString('id-ID'),
+              },
+            }),
+          )
         } else {
           const res = await request('/documents', {
             method: 'POST',
@@ -221,15 +263,33 @@ export default function AIWriterPage() {
               userId: user?.M_UserID || user?.id,
               workbookId: parseInt(targetWorkbookId),
               name: fileName,
-              topicId: parseInt(selectedPaperId) || 0,
+              promptData,
               fullPrompt,
               result: editorContent,
             },
           })
-          if (res?.data?.M_DocumentID || res?.data?.id) {
-            setCurrentDocId(res.data.M_DocumentID || res.data.id)
+
+          const docId = res?.id
+          if (docId) {
+            setCurrentDocId(docId)
+            // Dispatch ke sidebar
+            window.dispatchEvent(
+              new CustomEvent('documentSaved', {
+                detail: {
+                  id: docId,
+                  title: fileName,
+                  name: fileName,
+                  workbook: workbooks.find((wb) => String(wb.id) === String(targetWorkbookId))
+                    ?.name,
+                  workbook_id: parseInt(targetWorkbookId),
+                  result: editorContent,
+                  lastEdited: new Date().toLocaleString('id-ID'),
+                },
+              }),
+            )
           }
         }
+
         const wbName = workbooks.find((wb) => String(wb.id) === String(targetWorkbookId))?.name
         setSaveSuccessMsg(`Disimpan ke "${wbName}"`)
         setTimeout(() => setSaveSuccessMsg(''), 4000)
@@ -247,7 +307,6 @@ export default function AIWriterPage() {
       jumlah,
       panjang,
       currentDocId,
-      selectedPaperId,
       editorContent,
       workbooks,
       user,
@@ -436,8 +495,9 @@ export default function AIWriterPage() {
       <PromptLibraryModal
         open={promptOpen}
         onClose={() => setPromptOpen(false)}
-        onSelect={setTopik}
-        prompts={prompts}
+        onSelect={setInstruksi}
+        papers={papers}
+        sections={allSections}
       />
 
       <SaveWorkbookModal

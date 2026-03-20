@@ -52,11 +52,11 @@ const WriterForm = memo(function WriterForm({
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="w-full flex items-center justify-between px-5 py-3 mb-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-[13px] font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center justify-between px-5 py-3 mb-3 bg-white dark:bg-gray-800 border text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-all border-gray-200 dark:border-gray-700 rounded-3xl text-[13px] font-semibold"
         >
           <span className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#4A90D9]" />
-            {inputCollapsed ? 'Tampilkan Input' : 'Sembunyikan Input'}
+            {inputCollapsed ? 'Show Input' : 'Hide Input'}
           </span>
           {inputCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
         </button>
@@ -72,14 +72,6 @@ const WriterForm = memo(function WriterForm({
               <label className="text-[12px] md:text-[13px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 Research Topics
               </label>
-              <button
-                type="button"
-                onClick={onPromptLibraryOpen}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] md:text-[12px] font-semibold rounded-lg md:rounded-xl border border-blue-200 bg-blue-50 text-[#2686D4] dark:text-[#F2901E] hover:bg-blue-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:hover:bg-orange-500/20 transition-colors"
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                Prompt Library
-              </button>
             </div>
             <textarea
               value={topik}
@@ -184,12 +176,22 @@ const WriterForm = memo(function WriterForm({
 
         {/* Instruksi Tambahan */}
         <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[24px] p-4 md:p-6 mb-4 md:mb-6 shadow-sm hover:shadow-md transition-shadow">
-          <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">
-            Additional Instructions{' '}
-            <span className="text-gray-400 dark:text-gray-500 normal-case font-normal">
-              (optional)
-            </span>
-          </label>
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">
+              Additional Instructions{' '}
+              <span className="text-gray-400 dark:text-gray-500 normal-case font-normal">
+                (optional)
+              </span>
+            </label>
+            <button
+              type="button"
+              onClick={onPromptLibraryOpen}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] md:text-[12px] font-semibold rounded-lg md:rounded-xl border border-blue-200 bg-blue-50 text-[#2686D4] dark:text-[#F2901E] hover:bg-blue-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:hover:bg-orange-500/20 transition-colors"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              Prompt Library
+            </button>
+          </div>
           <textarea
             value={instruksi}
             onChange={(e) => onInstruksiChange(e.target.value)}

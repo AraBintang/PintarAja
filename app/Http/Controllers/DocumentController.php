@@ -45,7 +45,7 @@ class DocumentController extends Controller
             'userId' => 'required|integer',
             'workbookId' => 'required|integer',
             'name' => 'required|string',
-            'topicId' => 'nullable|integer',
+            'promptData' => 'nullable',
             'fullPrompt' => 'nullable|string',
             'result' => 'required|string'
         ]);
@@ -54,7 +54,9 @@ class DocumentController extends Controller
             'M_DocumentM_UserID' => $validated['userId'],
             'M_DocumentM_WorkbookID' => $validated['workbookId'],
             'M_DocumentName' => $validated['name'],
-            'M_DocumentM_TopicID' => $validated['topicId'] ?? 0,
+            'M_DocumentPromptData' => isset($validated['promptData']) 
+                ? json_encode($validated['promptData']) 
+                : null,
             'M_DocumentFullPrompt' => $validated['fullPrompt'] ?? null,
             'M_DocumentResult' => $validated['result'],
             'M_DocumentCreated' => now(),
@@ -63,7 +65,7 @@ class DocumentController extends Controller
 
         return response()->json([
             'message' => 'Document created',
-            'data' => $document
+            'id' => $document->M_DocumentID
         ], 201);
     }
 
@@ -101,7 +103,7 @@ class DocumentController extends Controller
         $validated = $request->validate([
             'workbookId' => 'required|integer',
             'name' => 'required|string',
-            'topicId' => 'nullable|integer',
+            'promptData' => 'nullable',
             'fullPrompt' => 'nullable|string',
             'result' => 'required|string'
         ]);
@@ -109,7 +111,9 @@ class DocumentController extends Controller
         $document->update([
             'M_DocumentM_WorkbookID' => $validated['workbookId'],
             'M_DocumentName' => $validated['name'],
-            'M_DocumentM_TopicID' => $validated['topicId'] ?? 0,
+            'M_DocumentPromptData' => isset($validated['promptData']) 
+                ? json_encode($validated['promptData']) 
+                : null,
             'M_DocumentFullPrompt' => $validated['fullPrompt'] ?? null,
             'M_DocumentResult' => $validated['result'],
             'M_DocumentLastUpdated' => now()
@@ -117,7 +121,7 @@ class DocumentController extends Controller
 
         return response()->json([
             'message' => 'Document updated',
-            'data' => $document
+            'id' => $document->M_DocumentID
         ]);
     }
 

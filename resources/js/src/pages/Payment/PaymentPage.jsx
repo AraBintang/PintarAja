@@ -14,6 +14,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import WhatsAppButton from '@/components/WhatsAppButton'
 import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { useTheme } from '@/context/ThemeContext'
@@ -582,6 +583,8 @@ export default function PaymentPage() {
           </div>
         </div>
       </div>
+
+      <WhatsAppButton />
     </div>
   )
 }

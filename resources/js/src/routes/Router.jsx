@@ -7,11 +7,11 @@ import CouponPage from '@/pages/Admin/CouponPage'
 import AdminPlanPage from '@/pages/Admin/PlanPage'
 import PromptAIPage from '@/pages/Admin/PromptAIPage'
 import AdminUserPage from '@/pages/Admin/UserPage'
-import AIWriterPage from '@/pages/App/AIWriterPage'
 import ChatPage from '@/pages/App/ChatPage'
 import HumanizerPage from '@/pages/App/HumanizerPage'
 import ParafrasePage from '@/pages/App/ParafrasePage'
 import TranscribePage from '@/pages/App/TranscribePage'
+import WriterPage from '@/pages/App/WriterPage'
 import ForgotPassword from '@/pages/Auth/ForgotPassword'
 import GoogleAuth from '@/pages/Auth/GoogleAuth'
 import Login from '@/pages/Auth/Login'
@@ -51,7 +51,7 @@ export const router = createBrowserRouter([
 
           { path: 'new', element: <ChatPage /> },
           { path: 'chat', element: <ChatPage /> },
-          { path: 'writer', element: <AIWriterPage /> },
+          { path: 'writer', element: <WriterPage /> },
           { path: 'humanize', element: <HumanizerPage /> },
           { path: 'paraphrase', element: <ParafrasePage /> },
           { path: 'transcribe', element: <TranscribePage /> },

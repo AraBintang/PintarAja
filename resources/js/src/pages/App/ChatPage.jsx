@@ -196,6 +196,22 @@ export default function ChatPage() {
   }, [loadConversation])
 
   useEffect(() => {
+    const handleDeleted = (e) => {
+      if (e.detail.path !== '/chat' && e.detail.path !== '/new') return
+      if (e.detail.id === conversationId) {
+        setMessages([])
+        setConversationId(null)
+        setNextCursor(null)
+        setHasMoreChats(false)
+        setAttachedFiles([])
+        setInputValue('')
+      }
+    }
+    window.addEventListener('historyItemDeleted', handleDeleted)
+    return () => window.removeEventListener('historyItemDeleted', handleDeleted)
+  }, [conversationId])
+
+  useEffect(() => {
     if (!suppressScrollRef.current) {
       endRef.current?.scrollIntoView({ behavior: 'smooth' })
     }

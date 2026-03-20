@@ -14,7 +14,19 @@ import {
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import alfamartImage from '@/assets/images/alfamart.png'
+import bcaImage from '@/assets/images/bca.png'
+import bniImage from '@/assets/images/bni.png'
+import briImage from '@/assets/images/bri.png'
+import bsiImage from '@/assets/images/bsi.png'
+import danaImage from '@/assets/images/dana.png'
+import indomaretImage from '@/assets/images/indomaret.png'
+import mandiriImage from '@/assets/images/mandiri.png'
+import ovoImage from '@/assets/images/ovo.png'
+import qrisImage from '@/assets/images/qris.png'
+import shopeePayImage from '@/assets/images/shopeepay.png'
 import PlanSelectionModal from '@/components/plan/PlanSelectionModal'
+import WhatsAppButton from '@/components/WhatsAppButton'
 import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { useTheme } from '@/context/ThemeContext'
@@ -28,19 +40,19 @@ const PAYMENT_GROUPS = [
   {
     category: 'QRIS',
     icon: <CreditCard className="w-3.5 h-3.5" />,
-    methods: [{ id: 'qris', name: 'QRIS', channel: 'QRIS2', image: '/assets/images/qris.png' }],
+    methods: [{ id: 'qris', name: 'QRIS', channel: 'QRIS2', image: qrisImage }],
   },
   {
     category: 'E-Wallet',
     icon: <Wallet className="w-3.5 h-3.5" />,
     methods: [
-      { id: 'ovo', name: 'OVO', channel: 'OVO', image: '/assets/images/ovo.png' },
-      { id: 'dana', name: 'DANA', channel: 'DANA', image: '/assets/images/dana.png' },
+      { id: 'dana', name: 'DANA', channel: 'DANA', image: danaImage },
+      { id: 'ovo', name: 'OVO', channel: 'OVO', image: ovoImage },
       {
         id: 'shopeepay',
         name: 'ShopeePay',
         channel: 'SHOPEEPAY',
-        image: '/assets/images/shopeepay.png',
+        image: shopeePayImage,
       },
     ],
   },
@@ -48,15 +60,16 @@ const PAYMENT_GROUPS = [
     category: 'Virtual Account',
     icon: <CreditCard className="w-3.5 h-3.5" />,
     methods: [
-      { id: 'bri_va', name: 'BRI VA', channel: 'BRIVA', image: '/assets/images/bri.png' },
-      { id: 'bni_va', name: 'BNI VA', channel: 'BNIVA', image: '/assets/images/bni.png' },
+      { id: 'bca_va', name: 'BCA VA', channel: 'BCAVA', image: bcaImage },
+      { id: 'bni_va', name: 'BNI VA', channel: 'BNIVA', image: bniImage },
+      { id: 'bri_va', name: 'BRI VA', channel: 'BRIVA', image: briImage },
+      { id: 'bsi_va', name: 'BSI VA', channel: 'BSIVA', image: bsiImage },
       {
         id: 'mandiri_va',
         name: 'Mandiri VA',
         channel: 'MANDIRIVA',
-        image: '/assets/images/mandiri.png',
+        image: mandiriImage,
       },
-      { id: 'bca_va', name: 'BCA VA', channel: 'BCAVA', image: '/assets/images/bca.png' },
     ],
   },
   {
@@ -67,13 +80,13 @@ const PAYMENT_GROUPS = [
         id: 'alfamart',
         name: 'Alfamart',
         channel: 'ALFAMART',
-        image: '/assets/images/alfamart.png',
+        image: alfamartImage,
       },
       {
         id: 'indomaret',
         name: 'Indomaret',
         channel: 'INDOMARET',
-        image: '/assets/images/indomaret.png',
+        image: indomaretImage,
       },
     ],
   },
@@ -365,6 +378,8 @@ export default function CheckoutPage() {
           setChangePlanOpen(false)
         }}
       />
+
+      <WhatsAppButton />
     </div>
   )
 }

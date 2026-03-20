@@ -140,10 +140,7 @@ export default function OrderHistoryTab() {
           {FILTERS.map((f) => (
             <button
               key={f.key}
-              onClick={() => {
-                setActiveFilter(f.key)
-                console.log(activeFilter)
-              }}
+              onClick={() => setActiveFilter(f.key)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
                 activeFilter === f.key
                   ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-sm'

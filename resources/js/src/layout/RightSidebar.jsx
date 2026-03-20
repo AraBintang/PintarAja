@@ -64,7 +64,7 @@ export default function RightSidebar() {
   const [editingId, setEditingId] = useState(null)
   const [editingValue, setEditingValue] = useState('')
   const [deletingId, setDeletingId] = useState(null)
-  const [activeId, setActiveId] = useState(null)
+  const [activeItemId, setActiveItemId] = useState(null)
 
   const editInputRef = useRef(null)
 
@@ -116,10 +116,6 @@ export default function RightSidebar() {
   }, [isOpen, location.pathname])
 
   useEffect(() => {
-    setActiveId(null)
-  }, [location.pathname])
-
-  useEffect(() => {
     const handler = (e) => {
       setHistoryItems((prev) => [
         {
@@ -137,6 +133,81 @@ export default function RightSidebar() {
     window.addEventListener('conversationCreated', handler)
     return () => window.removeEventListener('conversationCreated', handler)
   }, [])
+
+  // Listen event dari pages untuk set active item
+  useEffect(() => {
+    const handlers = {
+      // Chat: conversation baru dibuat
+      conversationCreated: (e) => {
+        if (location.pathname !== '/chat' && location.pathname !== '/new') return
+        const conv = e.detail
+        setHistoryItems((prev) => {
+          // Cegah duplikat
+          if (prev.some((h) => h.id === conv.id)) return prev
+          return [
+            {
+              id: conv.id,
+              title: conv.title || 'New Conversation',
+              lastUpdated: conv.lastUpdated || 'Baru saja',
+              chats: [],
+              nextCursor: null,
+              hasMoreChats: false,
+              ai: [],
+            },
+            ...prev,
+          ]
+        })
+        setActiveItemId(conv.id)
+      },
+
+      // Writer: document disave
+      documentSaved: (e) => {
+        if (location.pathname !== '/writer') return
+        const doc = e.detail // { id, name, workbook, workbook_id, lastEdited }
+        setHistoryItems((prev) => {
+          const exists = prev.some((h) => h.id === doc.id)
+          if (exists) {
+            // Update nama jika sudah ada (re-save)
+            return prev.map((h) => (h.id === doc.id ? { ...h, ...doc } : h))
+          }
+          return [doc, ...prev]
+        })
+        setActiveItemId(doc.id)
+      },
+
+      // Paraphrase: history baru
+      paraphraseCompleted: (e) => {
+        if (location.pathname !== '/paraphrase') return
+        const item = e.detail // { id, title/name, data, time }
+        setHistoryItems((prev) => {
+          if (prev.some((h) => h.id === item.id)) return prev
+          return [item, ...prev]
+        })
+        setActiveItemId(item.id)
+      },
+
+      // Transcribe: history baru
+      transcribeCompleted: (e) => {
+        if (location.pathname !== '/transcribe') return
+        const item = e.detail
+        setHistoryItems((prev) => {
+          if (prev.some((h) => h.id === item.id)) return prev
+          return [item, ...prev]
+        })
+        setActiveItemId(item.id)
+      },
+    }
+
+    Object.entries(handlers).forEach(([event, handler]) => {
+      window.addEventListener(event, handler)
+    })
+
+    return () => {
+      Object.entries(handlers).forEach(([event, handler]) => {
+        window.removeEventListener(event, handler)
+      })
+    }
+  }, [location.pathname])
 
   // Focus input when editing starts
   useEffect(() => {
@@ -182,7 +253,7 @@ export default function RightSidebar() {
     // Don't navigate if editing or showing delete confirm
     if (editingId === item.id || deletingId === item.id) return
 
-    setActiveId(item.id)
+    setActiveItemId(item.id)
 
     if (location.pathname === '/chat' || location.pathname === '/new') {
       window.dispatchEvent(
@@ -241,8 +312,6 @@ export default function RightSidebar() {
   }
 
   const submitRename = async (e, item) => {
-    console.log(item)
-
     e?.stopPropagation()
     const newName = editingValue.trim()
     if (!newName || newName === (item.title || item.name)) {
@@ -304,6 +373,8 @@ export default function RightSidebar() {
       window.dispatchEvent(
         new CustomEvent('historyItemDeleted', { detail: { id: item.id, path: location.pathname } }),
       )
+
+      if (activeItemId === item.id) setActiveItemId(null)
 
       showSnackbar('success', 'Deleted successfully!')
     } catch (err) {
@@ -532,7 +603,7 @@ export default function RightSidebar() {
                       ${
                         isDeleting
                           ? 'bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/30'
-                          : activeId === item.id
+                          : activeItemId === item.id
                             ? 'bg-[#eeedeb] dark:bg-gray-900'
                             : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'
                       }`}
@@ -611,7 +682,7 @@ export default function RightSidebar() {
                               <h3
                                 className={`text-[13px] font-medium truncate transition-colors
                                 ${
-                                  activeId === item.id
+                                  activeItemId === item.id
                                     ? 'text-[#4A90D9]'
                                     : 'text-gray-800 dark:text-gray-200 group-hover:text-[#4A90D9]'
                                 }`}
@@ -652,14 +723,12 @@ export default function RightSidebar() {
                         {/* Preview */}
                         {!isEditing && (
                           <div className="flex justify-between">
-                            {
-                              <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                                {chatPreview ||
-                                  (typeof item.data === 'string'
-                                    ? item.data.slice(0, 80)
-                                    : item.preview || '')}
-                              </p>
-                            }
+                            <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                              {chatPreview ||
+                                (typeof item.data === 'string'
+                                  ? item.data.slice(0, 80)
+                                  : item.preview || '')}
+                            </p>
 
                             <div>
                               {(item.time || item.lastUpdated) && (

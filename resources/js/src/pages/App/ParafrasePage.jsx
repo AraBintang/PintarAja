@@ -20,7 +20,7 @@ export default function ParafrasePage() {
   const [selectedLang, setSelectedLang] = useState('Indonesian (Indonesia)')
   const [mode, setMode] = useState('Standard')
   const [isProcessing, setIsProcessing] = useState(false)
-
+  const [currentHistoryId, setCurrentHistoryId] = useState(null)
   const [moreOpen, setMoreOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -30,6 +30,7 @@ export default function ParafrasePage() {
     const handleLoadHistory = (e) => {
       const item = e.detail
 
+      setCurrentHistoryId(item.id)
       setInputText(item.origin || '')
       setOutputText(item.data || '')
     }
@@ -37,6 +38,19 @@ export default function ParafrasePage() {
     window.addEventListener('loadHistoryParaphrase', handleLoadHistory)
     return () => window.removeEventListener('loadHistoryParaphrase', handleLoadHistory)
   }, [])
+
+  useEffect(() => {
+    const handleDeleted = (e) => {
+      if (e.detail.path !== '/paraphrase') return
+      if (e.detail.id === currentHistoryId) {
+        setInputText('')
+        setOutputText('')
+        setCurrentHistoryId(null)
+      }
+    }
+    window.addEventListener('historyItemDeleted', handleDeleted)
+    return () => window.removeEventListener('historyItemDeleted', handleDeleted)
+  }, [currentHistoryId])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -138,6 +152,22 @@ export default function ParafrasePage() {
       })
 
       setOutputText(res.data)
+
+      if (res.id) {
+        setCurrentHistoryId(res.id)
+        window.dispatchEvent(
+          new CustomEvent('paraphraseCompleted', {
+            detail: {
+              id: res.id,
+              title: inputText.slice(0, 60),
+              name: inputText.slice(0, 60),
+              data: res.data,
+              origin: inputText,
+              time: new Date().toLocaleString('id-ID'),
+            },
+          }),
+        )
+      }
     } catch (err) {
       showSnackbar('error', err.message || 'Gagal memparafrase teks')
     } finally {
@@ -160,10 +190,10 @@ export default function ParafrasePage() {
           Susun ulang teks Anda untuk meningkatkan keterbacaan dan menghindari plagiarisme.
         </p>
       </div>
-      <div className="max-w-[1200px] mx-auto w-full flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 overflow-visible min-h-[600px] mb-20 md:mb-8 shadow-sm">
+      <div className="max-w-[1200px] mx-auto w-full flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 overflow-visible min-h-[600px] mb-28 md:mb-8 shadow-sm">
         <div className="px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto overflow-visible">
-            <div className="flex flex-wrap md:items-center gap-1.5 md:gap-2 w-full lg:w-auto pl-1 pt-1">
+            <div className="flex flex-wrap items-center gap-1.5 md:gap-2 w-full lg:w-auto pl-1 pt-1">
               <span className="font-semibold text-slate-800 dark:text-gray-200 text-[15px] mr-1">
                 Modes:
               </span>
@@ -173,7 +203,7 @@ export default function ParafrasePage() {
                   onClick={() => setMode(m)}
                   className={`px-3 py-2 text-[14px] font-medium rounded-[10px] transition-all duration-200 ${
                     mode === m
-                      ? 'bg-[#eeedeb] dark:bg-gray-800 text-gray-800 dark:text-gray-200'
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
@@ -194,7 +224,7 @@ export default function ParafrasePage() {
                   <ChevronDown className="w-4 h-4 ml-1" />
                 </button>
                 {moreOpen && (
-                  <div className="absolute top-full left-0 mt-2 bg-white dark:bg-[#1e2330] border border-gray-100 dark:border-gray-700 shadow-xl rounded-xl flex flex-col min-w-[160px] z-50 overflow-hidden py-1">
+                  <div className="absolute top-full left-0 mt-2 p-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-xl rounded-xl flex flex-col min-w-[160px] z-50 overflow-hidden py-1">
                     {MORE_MODES.map((m) => (
                       <button
                         key={m}
@@ -202,7 +232,7 @@ export default function ParafrasePage() {
                           setMode(m)
                           setMoreOpen(false)
                         }}
-                        className={`px-5 py-2.5 text-left text-[14px] transition-colors hover:bg-gray-50 dark:hover:bg-[#252b3b] ${
+                        className={`rounded-lg px-5 py-2.5 text-left text-[14px] transition-colors text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 ${
                           mode === m
                             ? 'text-blue-600 dark:text-orange-400 font-semibold bg-blue-50 dark:bg-orange-900/20'
                             : 'text-slate-700 dark:text-gray-300'
@@ -268,7 +298,7 @@ export default function ParafrasePage() {
               )}
             </div>
           </div>
-          <div className="flex-1 flex flex-col bg-black/20 dark:bg-gray-900 text-white">
+          <div className="flex-1 flex flex-col bg-black/20 dark:bg-gray-900 text-white rounded-b-xl md:rounded-none">
             <div className="flex-1 p-6 overflow-y-auto">
               {isProcessing ? (
                 <div className="flex items-center justify-center h-full min-h-[250px] md:min-h-0">
@@ -341,27 +371,38 @@ export default function ParafrasePage() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 px-4 pt-3 pb-5 z-[30] transition-all duration-300 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between px-2">
-            <span className="text-[14px] font-bold text-blue-600 dark:text-orange-400">{mode}</span>
             <div className="flex items-center gap-3">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".txt,.docx"
+                className="hidden"
+              />
               <button
-                onClick={handleCopy}
-                className={`p-2 transition-colors ${isCopied ? 'text-blue-600 dark:text-orange-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center text-[14px] font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:scale-105 transition-colors px-3 py-2.5 rounded-xl border border-transparent w-full sm:w-auto justify-center"
               >
-                {isCopied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                <Upload className="w-5 h-5" />
               </button>
             </div>
+            <span className="text-[14px] font-bold text-blue-600 dark:text-orange-400 mr-4">
+              {mode}
+            </span>
           </div>
-          <button
-            onClick={handleParaphrase}
-            disabled={!canParaphrase}
-            className={`w-full py-3 text-[15px] font-bold rounded-full transition-all ${
-              canParaphrase
-                ? 'bg-blue-600 dark:bg-orange-500 text-white active:scale-95'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
-            }`}
-          >
-            {isProcessing ? 'Processing...' : 'Paraphrase'}
-          </button>
+          <div>
+            <button
+              onClick={handleParaphrase}
+              disabled={!canParaphrase}
+              className={`w-full py-3 text-[15px] font-bold rounded-full transition-all l ${
+                canParaphrase
+                  ? 'bg-blue-600 dark:bg-orange-500 text-white active:scale-95'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+              }`}
+            >
+              {isProcessing ? 'Paraphrasing...' : 'Paraphrase Text'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

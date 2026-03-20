@@ -11,9 +11,9 @@ function formatPrice(price) {
 }
 
 const PERIODS = [
-  { key: 'weekly', label: 'Weekly', unit: '/minggu' },
-  { key: 'monthly', label: 'Monthly', unit: '/bulan' },
-  { key: 'yearly', label: 'Annual', unit: '/tahun' },
+  { key: 'weekly', label: 'Weekly', unit: '/week' },
+  { key: 'monthly', label: 'Monthly', unit: '/month' },
+  { key: 'yearly', label: 'Annual', unit: '/year' },
 ]
 
 export default function PlanPage() {
@@ -73,7 +73,9 @@ export default function PlanPage() {
     const base = p[activePeriod] ?? 0
     const disc = p[`${activePeriod}_discount`] ?? 0
     const final = p[`${activePeriod}_final`] ?? base
-    return { base, disc, final, hasDiscount: disc > 0 && base > 0 }
+    const isYearly = activePeriod === 'yearly'
+    const perMonth = isYearly && final > 0 ? Math.round(final / 12) : null
+    return { base, disc, final, hasDiscount: disc > 0 && base > 0, isYearly, perMonth }
   }
 
   const period = PERIODS.find((p) => p.key === activePeriod)
@@ -144,7 +146,7 @@ export default function PlanPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {plans.map((plan) => {
-              const { base, disc, final, hasDiscount } = getPriceInfo(plan)
+              const { base, disc, final, hasDiscount, isYearly, perMonth } = getPriceInfo(plan)
 
               return (
                 <div
@@ -186,24 +188,50 @@ export default function PlanPage() {
 
                   {/* Price */}
                   <div className="text-center mb-5">
-                    {hasDiscount && (
-                      <div className="flex items-center justify-center gap-2 mb-1">
-                        <span className="text-sm text-gray-400 line-through">
-                          Rp {formatPrice(base)}
-                        </span>
-                        <span className="text-[11px] font-bold px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md">
-                          -{disc}%
-                        </span>
-                      </div>
+                    {isYearly && perMonth !== null ? (
+                      <>
+                        {hasDiscount && (
+                          <div className="flex items-center justify-center gap-2 mb-1">
+                            <span className="text-sm text-gray-400 line-through">
+                              Rp {formatPrice(Math.round(base / 12))}
+                            </span>
+                            <span className="text-[11px] font-bold px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md">
+                              Hemat {disc}%
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-end justify-center gap-1">
+                          <span className="text-3xl font-extrabold text-[#118A43]">
+                            Rp {formatPrice(perMonth)}
+                          </span>
+                          <span className="text-sm font-medium text-[#118A43] mb-0.5">/month</span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+                          Billed Rp {formatPrice(final)}/year
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        {hasDiscount && (
+                          <div className="flex items-center justify-center gap-2 mb-1">
+                            <span className="text-sm text-gray-400 line-through">
+                              Rp {formatPrice(base)}
+                            </span>
+                            <span className="text-[11px] font-bold px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md">
+                              -{disc}%
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-end justify-center gap-1">
+                          <span className="text-3xl font-extrabold text-[#118A43]">
+                            Rp {final === 0 ? '0' : formatPrice(final)}
+                          </span>
+                          <span className="text-sm font-medium text-[#118A43] mb-0.5">
+                            {period?.unit}
+                          </span>
+                        </div>
+                      </>
                     )}
-                    <div className="flex items-end justify-center gap-1">
-                      <span className="text-3xl font-extrabold text-[#118A43]">
-                        Rp {final === 0 ? '0' : formatPrice(final)}
-                      </span>
-                      <span className="text-sm font-medium text-[#118A43] mb-0.5">
-                        {period?.unit}
-                      </span>
-                    </div>
                     {plan.isPopular === 'Y' && (
                       <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30">
                         ⭐ Most Popular

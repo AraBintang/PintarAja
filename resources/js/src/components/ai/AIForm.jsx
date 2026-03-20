@@ -2,6 +2,11 @@ import { Check, ExternalLink, Shield, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { AI_DOC_CONFIG, AI_MODELS } from '@/assets/ai'
+import claudeAiIcon from '@/assets/icons/claude-ai-icon.svg'
+import deepseekAiIcon from '@/assets/icons/deepseek-ai-icon.svg'
+import googleGeminiIcon from '@/assets/icons/google-gemini-icon.svg'
+import gptAiIcon from '@/assets/icons/gpt-ai-icon.svg'
+import qwenAiIcon from '@/assets/icons/qwen-ai-icon.svg'
 import {
   Select,
   SelectContent,
@@ -12,20 +17,18 @@ import {
 } from '@/components/ui/select'
 
 const OpenAILogo = () => (
-  <img src="/gpt-ai-icon.svg" alt="GPT" className="w-3.5 h-3.5 object-contain" />
+  <img src={gptAiIcon} alt="GPT" className="w-3.5 h-3.5 object-contain dark:invert" />
 )
 const GeminiLogo = () => (
-  <img src="/google-gemini-icon.svg" alt="Gemini" className="w-3.5 h-3.5 object-contain" />
+  <img src={googleGeminiIcon} alt="Gemini" className="w-3.5 h-3.5 object-contain" />
 )
 const ClaudeLogo = () => (
-  <img src="/claude-ai-icon.svg" alt="Claude" className="w-3.5 h-3.5 object-contain" />
+  <img src={claudeAiIcon} alt="Claude" className="w-3.5 h-3.5 object-contain" />
 )
 const DeepSeekLogo = () => (
-  <img src="/deepseek-ai-icon.svg" alt="DeepSeek" className="w-3.5 h-3.5 object-contain" />
+  <img src={deepseekAiIcon} alt="DeepSeek" className="w-3.5 h-3.5 object-contain" />
 )
-const QwenLogo = () => (
-  <img src="/qwen-ai-icon.svg" alt="Qwen" className="w-3.5 h-3.5 object-contain" />
-)
+const QwenLogo = () => <img src={qwenAiIcon} alt="Qwen" className="w-3.5 h-3.5 object-contain" />
 
 const EMPTY_FORM = {
   name: '',

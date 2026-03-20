@@ -26,7 +26,7 @@ class PlanController extends Controller
 
         $data = $paginated->getCollection()->map(fn($plan) => $this->formatPlan($plan));
 
-        $ai = SettingAI::select('M_SettingID as id', 'M_SettingName as name')->get();
+        $ai = SettingAI::select('M_SettingID as id', 'M_SettingName as name')->where('M_SettingIsActive', 'Y')->get();
 
         return response()->json([
             'data' => $data,
