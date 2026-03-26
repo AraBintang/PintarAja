@@ -6,7 +6,6 @@ use App\Models\Chat;
 use App\Models\Conver;
 use GuzzleHttp\Client;
 use Illuminate\Support\Str;
-use OpenAI;
 
 class AiProviderService
 {
@@ -14,8 +13,10 @@ class AiProviderService
     {
         $client = \OpenAI::client($apiKey);
 
-        return response()->stream(function () use ($client, $userMessage, $format, $converId, $provider) {
-            $messages = $format === false ? $userMessage : [['role' => 'user', 'content' => $userMessage]];
+        return response()->stream(function () use ($client, $model, $userMessage, $format, $converId, $provider) {
+            $messages = $format === false
+                ? $this->normalizeMessagesForOpenAI($userMessage)
+                : [['role' => 'user', 'content' => $userMessage]];
 
             $stream = $client->chat()->createStreamed([
                 'model' => $model ?? 'gpt-4o-mini',
@@ -23,18 +24,17 @@ class AiProviderService
             ]);
 
             $output = '';
-
             foreach ($stream as $response) {
-                if (isset($response['choices'][0]['delta']['content'])) {
-                    $chunk = $response['choices'][0]['delta']['content'];
-                    $formattedChunk = $format ? $this->formatMessage($chunk) : $chunk;
-                    $output .= $formattedChunk;
-                    echo $formattedChunk;
+                $chunk = $response['choices'][0]['delta']['content'] ?? null;
+                if ($chunk !== null && $chunk !== '') {
+                    $out = $format ? $this->formatMessage($chunk) : $chunk;
+                    $output .= $out;
+                    echo $out;
                     ob_flush();
                     flush();
                 }
             }
-            
+
             if ($format == false && $converId) {
                 $this->inputAssistantChatByConversationId($converId, $provider, $output);
             }
@@ -47,9 +47,12 @@ class AiProviderService
 
     public function streamGemini($apiKey, $model = null, $userMessage, $format = true, $converId = null, $provider = null)
     {
-        return response()->stream(function () use ($apiKey, $userMessage, $format, $converId, $provider) {
+        return response()->stream(function () use ($apiKey, $model, $userMessage, $format, $converId, $provider) {
             $client = new Client();
-            $messages = $format === false ? $userMessage : [['role' => 'user', 'content' => $userMessage . '. langsung tanpa basa basi diawal']];
+
+            $messages = $format === false
+                ? $this->normalizeMessagesForOpenAI($userMessage)
+                : [['role' => 'user', 'content' => $userMessage . '. langsung tanpa basa basi diawal']];
 
             $response = $client->post('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', [
                 'headers' => [
@@ -57,7 +60,7 @@ class AiProviderService
                     'Content-Type' => 'application/json',
                     'Accept' => 'text/event-stream',
                 ],
-                'json' => [
+                'json'   => [
                     'model' => $model ?? 'gemini-2.0-flash',
                     'messages' => $messages,
                     'stream' => true,
@@ -69,105 +72,21 @@ class AiProviderService
             $output = '';
 
             while (!$body->eof()) {
-                $line = '';
-                while (!$body->eof()) {
-                    $char = $body->read(1);
-                    if ($char === "\n") break;
-                    $line .= $char;
-                }
-
-                $line = trim($line);
-                if (Str::startsWith($line, 'data: ')) {
-                    $jsonLine = trim(Str::replaceFirst('data: ', '', $line));
-                    if ($jsonLine === '[DONE]') break;
-
-                    $data = json_decode($jsonLine, true);
-                    if (isset($data['choices'][0]['delta']['content'])) {
-                        $chunk = $data['choices'][0]['delta']['content'];
-                        $formattedChunk = $format ? $this->formatMessage($chunk) : $chunk;
-                        $output .= $formattedChunk;
-                        echo $formattedChunk;
-                        ob_flush();
-                        flush();
-                    }
-                }
-            }
-
-            if ($format == false && $converId) {
-                $this->inputAssistantChatByConversationId($converId, $provider, $output);
-            }
-        }, 200, [
-            'Content-Type' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
-            'Connection' => 'keep-alive',
-        ]);
-    }
-
-    public function streamDeepSeek($apiKey, $model = null, $userMessage, $format = true, $converId = null, $provider = null)
-    {
-      \Log::info($provider);
-
-        return response()->stream(function () use ($apiKey, $userMessage, $format, $converId, $provider) {
-            $client = new \GuzzleHttp\Client();
-            $messages = $format === false ? $userMessage : [['role' => 'user', 'content' => $userMessage]];
-
-            $response = $client->request('POST', 'https://api.deepseek.com/chat/completions', [
-                'headers' => [
-                    'Authorization' => "Bearer $apiKey",
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'text/event-stream',
-                ],
-                'json' => [
-                    'model' => $model ?? 'deepseek-chat',
-                    'messages' => $messages,
-                    'stream' => true,
-                ],
-                'stream' => true,
-            ]);
-
-            $body = $response->getBody();
-            $output = '';
-            $buffer = '';
-
-            while (!$body->eof()) {
-                $line = '';
-
-                while (!$body->eof()) {
-                    $char = $body->read(1);
-                    if ($char === "\n") break;
-                    $line .= $char;
-                }
-
+                $line = $this->readLine($body);
                 $line = trim($line);
 
-                if (Str::startsWith($line, 'data: ')) {
-                    $jsonLine = trim(Str::replaceFirst('data: ', '', $line));
+                if (!Str::startsWith($line, 'data: ')) continue;
+                $jsonLine = trim(Str::replaceFirst('data: ', '', $line));
+                if ($jsonLine === '[DONE]') break;
 
-                    if ($jsonLine === '[DONE]') break;
-
-                    try {
-                        $data = json_decode($jsonLine, true);
-
-                        if (isset($data['choices'][0]['delta']['content'])) {
-                            $chunk = $data['choices'][0]['delta']['content'];
-
-                            if (!empty($chunk)) {
-                                $buffer .= $chunk;
-
-                                if (strlen($buffer) >= 12 || preg_match('/[.!?]\s$/', $buffer)) {
-                                    $formattedChunk = $format ? $this->formatMessage($buffer) : $buffer;
-                                    echo $formattedChunk;
-                                    ob_flush();
-                                    flush();
-                                    $output .= $formattedChunk;
-                                    $buffer = '';
-                                }
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        echo "Terjadi kesalahan koneksi ke model.";
-                        return;
-                    }
+                $data  = json_decode($jsonLine, true);
+                $chunk = $data['choices'][0]['delta']['content'] ?? null;
+                if ($chunk !== null && $chunk !== '') {
+                    $out = $format ? $this->formatMessage($chunk) : $chunk;
+                    $output .= $out;
+                    echo $out;
+                    ob_flush();
+                    flush();
                 }
             }
 
@@ -181,9 +100,10 @@ class AiProviderService
         ]);
     }
 
-    public function streamClaude($apiKey, $model = null, $userMessage, $format = true, $converId = null, $provider = null) {
+    public function streamClaude($apiKey, $model = null, $userMessage, $format = true, $converId = null, $provider = null)
+    {
         return response()->stream(function () use ($apiKey, $model, $userMessage, $format, $converId, $provider) {
-            $client = new \GuzzleHttp\Client(['timeout' => 0]);
+            $client = new Client(['timeout' => 0]);
 
             $systemPrompt = null;
             $messages = [];
@@ -191,12 +111,9 @@ class AiProviderService
             if ($format === false) {
                 foreach ($userMessage as $msg) {
                     if (($msg['role'] ?? '') === 'system') {
-                        if ($systemPrompt === null) {
-                            $systemPrompt = $msg['content'];
-                        }
+                        $systemPrompt = $systemPrompt ?? $msg['content'];
                         continue;
                     }
-
                     $messages[] = [
                         'role' => $msg['role'],
                         'content' => $this->normalizeClaudeContent($msg['content']),
@@ -205,9 +122,7 @@ class AiProviderService
             } else {
                 $messages[] = [
                     'role' => 'user',
-                    'content' => [
-                        ['type' => 'text', 'text' => $userMessage]
-                    ],
+                    'content' => [['type' => 'text', 'text' => $userMessage]],
                 ];
             }
 
@@ -218,7 +133,7 @@ class AiProviderService
                     'content-type' => 'application/json',
                     'accept' => 'text/event-stream',
                 ],
-               'json' => array_filter([
+                'json' => array_filter([
                     'model' => $model ?? 'claude-3-sonnet-20240229',
                     'system' => $format === false ? $systemPrompt : null,
                     'messages' => $messages,
@@ -228,7 +143,7 @@ class AiProviderService
                 'stream' => true,
             ]);
 
-            $body = $response->getBody();
+            $body   = $response->getBody();
             $buffer = '';
             $output = '';
 
@@ -236,22 +151,19 @@ class AiProviderService
                 $buffer .= $body->read(1024);
 
                 while (($pos = strpos($buffer, "\n")) !== false) {
-                    $line = trim(substr($buffer, 0, $pos));
+                    $line   = trim(substr($buffer, 0, $pos));
                     $buffer = substr($buffer, $pos + 1);
 
-                    if (!str_starts_with($line, 'data:')) {
-                        continue;
-                    }
+                    if (!str_starts_with($line, 'data:')) continue;
 
-                    $json = trim(substr($line, 5));
-                    $data = json_decode($json, true);
+                    $data = json_decode(trim(substr($line, 5)), true);
 
                     if (isset($data['delta']['text'])) {
-                        $chunk = $data['delta']['text'];
+                        $chunk   = $data['delta']['text'];
+                        $output .= $chunk;
                         echo $chunk;
                         ob_flush();
                         flush();
-                        $output .= $chunk;
                     }
 
                     if (($data['type'] ?? '') === 'message_stop') {
@@ -270,13 +182,85 @@ class AiProviderService
         ]);
     }
 
+    public function streamDeepSeek($apiKey, $model = null, $userMessage, $format = true, $converId = null, $provider = null)
+    {
+        return response()->stream(function () use ($apiKey, $model, $userMessage, $format, $converId, $provider) {
+            $client = new Client();
+
+            // DeepSeek tidak mendukung vision — gambar distrip, hanya teks yang dikirim
+            $messages = $format === false
+                ? $this->normalizeMessagesTextOnly($userMessage)
+                : [['role' => 'user', 'content' => $userMessage]];
+
+            $response = $client->request('POST', 'https://api.deepseek.com/chat/completions', [
+                'headers' => [
+                    'Authorization' => "Bearer $apiKey",
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'text/event-stream',
+                ],
+                'json'   => [
+                    'model' => $model ?? 'deepseek-chat',
+                    'messages' => $messages,
+                    'stream' => true,
+                ],
+                'stream' => true,
+            ]);
+
+            $body = $response->getBody();
+            $output = '';
+            $buffer = '';
+
+            while (!$body->eof()) {
+                $line = trim($this->readLine($body));
+
+                if (!Str::startsWith($line, 'data: ')) continue;
+                $jsonLine = trim(Str::replaceFirst('data: ', '', $line));
+                if ($jsonLine === '[DONE]') break;
+
+                try {
+                    $data = json_decode($jsonLine, true);
+                    $chunk = $data['choices'][0]['delta']['content'] ?? null;
+                    if ($chunk !== null && $chunk !== '') {
+                        $buffer .= $chunk;
+                        if (strlen($buffer) >= 12 || preg_match('/[.!?]\s$/', $buffer)) {
+                            $out = $format ? $this->formatMessage($buffer) : $buffer;
+                            $output .= $out;
+                            echo $out;
+                            ob_flush();
+                            flush();
+                            $buffer = '';
+                        }
+                    }
+                } catch (\Exception $e) {
+                    echo 'Terjadi kesalahan koneksi ke model.';
+                    return;
+                }
+            }
+
+            if ($format == false && $converId) {
+                $this->inputAssistantChatByConversationId($converId, $provider, $output);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection' => 'keep-alive',
+        ]);
+    }
+
     public function streamQwen($apiKey, $model = null, $userMessage, $format = true, $converId = null, $provider = null, $userQuota = null, $withImage = false)
     {
-        return response()->stream(function () use ($apiKey, $userMessage, $format, $converId, $provider, $userQuota, $withImage) {
-            $client = new \GuzzleHttp\Client();
+        return response()->stream(function () use ($apiKey, $model, $userMessage, $format, $converId, $provider, $withImage) {
+            $client    = new Client();
             $baseModel = $model ?? 'qwen-turbo';
-            $modelSpecific = $withImage === true ? 'qwen-vl-plus' : $baseModel;
-            $messages = $format === false ? $userMessage : [['role' => 'user', 'content' => $userMessage]];
+
+            $hasVision = $format === false && $this->messagesHaveImages($userMessage);
+            $finalModel = ($withImage || $hasVision) ? 'qwen-vl-plus' : $baseModel;
+
+            $messages = $format === false
+                ? ($hasVision
+                    ? $this->normalizeMessagesForOpenAI($userMessage)
+                    : $this->normalizeMessagesTextOnly($userMessage))
+                : [['role' => 'user', 'content' => $userMessage]];
 
             try {
                 $response = $client->request('POST', 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', [
@@ -285,18 +269,16 @@ class AiProviderService
                         'Content-Type'  => 'application/json',
                         'Accept'        => 'text/event-stream',
                     ],
-                    'json' => [
-                        'model' => $modelSpecific,
+                    'json'   => [
+                        'model' => $finalModel,
                         'messages' => $messages,
                         'stream' => true,
-                        'stream_options' => [
-                            'include_usage' => true
-                        ]
+                        'stream_options' => ['include_usage' => true],
                     ],
                     'stream' => true,
                 ]);
             } catch (\Exception $e) {
-                echo "Terjadi kesalahan koneksi ke model.";
+                echo 'Terjadi kesalahan koneksi ke model.';
                 return;
             }
 
@@ -305,44 +287,29 @@ class AiProviderService
             $buffer = '';
 
             while (!$body->eof()) {
-                $line = '';
+                $line = trim($this->readLine($body));
 
-                while (!$body->eof()) {
-                    $char = $body->read(1);
-                    if ($char === "\n") break;
-                    $line .= $char;
-                }
+                if (!Str::startsWith($line, 'data: ')) continue;
+                $jsonLine = trim(Str::replaceFirst('data: ', '', $line));
+                if ($jsonLine === '[DONE]') break;
 
-                $line = trim($line);
-
-                if (Str::startsWith($line, 'data: ')) {
-                    $jsonLine = trim(Str::replaceFirst('data: ', '', $line));
-
-                    if ($jsonLine === '[DONE]') break;
-
-                    try {
-                        $data = json_decode($jsonLine, true);
-
-                         if (isset($data['choices'][0]['delta']['content'])) {
-                            $chunk = $data['choices'][0]['delta']['content'];
-
-                            if (!empty($chunk)) {
-                                $buffer .= $chunk;
-
-                                if (strlen($buffer) >= 12 || preg_match('/[.!?]\s$/', $buffer)) {
-                                    $formattedChunk = $format ? $this->formatMessage($buffer) : $buffer;
-                                    echo $formattedChunk;
-                                    ob_flush();
-                                    flush();
-                                    $output .= $formattedChunk;
-                                    $buffer = '';
-                                }
-                            }
+                try {
+                    $data  = json_decode($jsonLine, true);
+                    $chunk = $data['choices'][0]['delta']['content'] ?? null;
+                    if ($chunk !== null && $chunk !== '') {
+                        $buffer .= $chunk;
+                        if (strlen($buffer) >= 12 || preg_match('/[.!?]\s$/', $buffer)) {
+                            $out    = $format ? $this->formatMessage($buffer) : $buffer;
+                            $output .= $out;
+                            echo $out;
+                            ob_flush();
+                            flush();
+                            $buffer = '';
                         }
-                    } catch (\Exception $e) {
-                        echo "Terjadi kesalahan koneksi ke model.";
-                        return;
                     }
+                } catch (\Exception $e) {
+                    echo 'Terjadi kesalahan koneksi ke model.';
+                    return;
                 }
             }
 
@@ -356,44 +323,59 @@ class AiProviderService
         ]);
     }
 
+    private function normalizeMessagesForOpenAI(array $messages): array
+    {
+        return array_map(function ($msg) {
+            if (is_array($msg['content'] ?? null)) {
+                return [
+                    'role'    => $msg['role'],
+                    'content' => $msg['content'],
+                ];
+            }
+            return [
+                'role'    => $msg['role'],
+                'content' => (string) ($msg['content'] ?? ''),
+            ];
+        }, $messages);
+    }
+
+    private function normalizeMessagesTextOnly(array $messages): array
+    {
+        return array_map(function ($msg) {
+            if (is_array($msg['content'] ?? null)) {
+                $text = collect($msg['content'])
+                    ->where('type', 'text')
+                    ->pluck('text')
+                    ->implode(' ');
+                return ['role' => $msg['role'], 'content' => $text];
+            }
+            return ['role' => $msg['role'], 'content' => (string) ($msg['content'] ?? '')];
+        }, $messages);
+    }
+
     private function normalizeClaudeContent(array|string $content): array
     {
         if (is_string($content)) {
-            return [
-                [
-                    'type' => 'text',
-                    'text' => $content,
-                ]
-            ];
+            return [['type' => 'text', 'text' => $content]];
         }
 
         $result = [];
-
         foreach ($content as $item) {
             if (($item['type'] ?? '') === 'text') {
-                $result[] = [
-                    'type' => 'text',
-                    'text' => $item['text'] ?? '',
-                ];
+                $result[] = ['type' => 'text', 'text' => $item['text'] ?? ''];
             }
 
             if (($item['type'] ?? '') === 'image_url') {
                 $url = $item['image_url']['url'] ?? '';
-
                 if (str_starts_with($url, 'data:image/')) {
-                    preg_match(
-                        '/data:image\/(.+);base64,(.*)/',
-                        $url,
-                        $matches
-                    );
-
+                    preg_match('/data:image\/(.+);base64,(.*)/', $url, $matches);
                     if (!empty($matches)) {
                         $result[] = [
-                            'type' => 'image',
+                            'type'   => 'image',
                             'source' => [
-                                'type' => 'base64',
-                            'media_type' => 'image/' . $matches[1],
-                            'data' => $matches[2],
+                                'type'       => 'base64',
+                                'media_type' => 'image/' . $matches[1],
+                                'data'       => $matches[2],
                             ],
                         ];
                     }
@@ -402,6 +384,28 @@ class AiProviderService
         }
 
         return $result;
+    }
+
+    private function messagesHaveImages(array $messages): bool
+    {
+        foreach ($messages as $msg) {
+            if (!is_array($msg['content'] ?? null)) continue;
+            foreach ($msg['content'] as $part) {
+                if (($part['type'] ?? '') === 'image_url') return true;
+            }
+        }
+        return false;
+    }
+
+    private function readLine($body): string
+    {
+        $line = '';
+        while (!$body->eof()) {
+            $char = $body->read(1);
+            if ($char === "\n") break;
+            $line .= $char;
+        }
+        return $line;
     }
 
     private function formatMessage($chunk)
@@ -413,7 +417,6 @@ class AiProviderService
         $chunk = preg_replace('/\*(.*?)\*/', '<em>$1</em>', $chunk);
         $chunk = preg_replace('/_(.*?)_/', '<u>$1</u>', $chunk);
         $chunk = str_replace(['*', '`'], '', $chunk);
-
         return $chunk;
     }
 
@@ -423,13 +426,11 @@ class AiProviderService
             'T_ChatT_ConversationID' => $converId,
             'T_ChatCode' => $provider,
             'T_ChatRole' => 'assistant',
-            'T_ChatContent' => $output
+            'T_ChatContent' => $output,
         ]);
 
-        $conversation = Conver::findOrFail($converId);
-
-        $conversation->update([
-            'T_ConversationLastUpdated' => now()
+        Conver::findOrFail($converId)->update([
+            'T_ConversationLastUpdated' => now(),
         ]);
     }
 }

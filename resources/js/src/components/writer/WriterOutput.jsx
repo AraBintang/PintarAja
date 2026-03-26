@@ -1,8 +1,24 @@
-import { Check, Copy, Download, FileDown, FileText, FolderPlus, RotateCw } from 'lucide-react'
+import {
+  BookMarked,
+  Check,
+  Copy,
+  Download,
+  FileDown,
+  FileText,
+  FolderPlus,
+  RotateCw,
+} from 'lucide-react'
 import { memo, useMemo, useState } from 'react'
 
 import TiptapEditor from '@/components/TiptapEditor'
 import { useSnackbar } from '@/context/SnackbarContext'
+
+function formatFileSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
 
 const WriterOutput = memo(function WriterOutput({
   editorContent,
@@ -11,12 +27,13 @@ const WriterOutput = memo(function WriterOutput({
   selectedSectionName,
   currentDocId,
   saveSuccessMsg,
+  citations,
+  savedFileInfo,
   onSave,
   onRegenerate,
   onReset,
 }) {
   const { showSnackbar } = useSnackbar()
-
   const [copied, setCopied] = useState(false)
   const [downloadOpen, setDownloadOpen] = useState(false)
 
@@ -28,7 +45,6 @@ const WriterOutput = memo(function WriterOutput({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Word count — useMemo agar tidak hitung ulang setiap render
   const wordCount = useMemo(() => {
     const temp = document.createElement('div')
     temp.innerHTML = editorContent
@@ -38,34 +54,24 @@ const WriterOutput = memo(function WriterOutput({
   const handleDownloadDoc = async () => {
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-
       const res = await fetch('/api/documents/download', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          content: editorContent,
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content: editorContent }),
       })
-
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || 'Error downloading document!')
       }
-
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
-
       a.href = url
       a.download = 'Document.docx'
       document.body.appendChild(a)
       a.click()
       a.remove()
       window.URL.revokeObjectURL(url)
-
       setDownloadOpen(false)
       showSnackbar('success', 'Document downloaded successfully!')
     } catch (err) {
@@ -86,9 +92,13 @@ const WriterOutput = memo(function WriterOutput({
     setDownloadOpen(false)
   }
 
+  const hasCitations = citations?.length > 0
+  const hasSavedFile = !!savedFileInfo?.fileName
+  const showRefPanel = hasCitations || hasSavedFile
+
   return (
     <div className="mb-8">
-      {/* Action Bar */}
+      {/* ── Action Bar ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 px-1 md:px-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[12px] md:text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -109,17 +119,21 @@ const WriterOutput = memo(function WriterOutput({
               ✓ {saveSuccessMsg}
             </span>
           )}
+          {showRefPanel && (
+            <span className="text-[10px] font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded-md flex items-center gap-1">
+              <BookMarked className="w-3 h-3" />
+              {hasCitations ? `${citations.length} Referensi` : `Dari: ${savedFileInfo.fileName}`}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 custom-scrollbar">
           <button
             onClick={onSave}
-            className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-[12px] md:text-[13px] font-bold text-white rounded-xl shadow-md transition-colors whitespace-nowrap bg-gradient-to-r from-[#4A90D9] to-blue-500 hover:from-[#3f86cc] hover:to-[#2f6fb8]  dark:from-orange-500 dark:to-orange-600 dark:hover:from-orange-400 dark:hover:to-orange-500"
+            className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-[12px] md:text-[13px] font-bold text-white rounded-xl shadow-md transition-colors whitespace-nowrap bg-gradient-to-r from-[#4A90D9] to-blue-500 hover:from-[#3f86cc] hover:to-[#2f6fb8] dark:from-orange-500 dark:to-orange-600 dark:hover:from-orange-400 dark:hover:to-orange-500"
           >
             <FolderPlus className="w-4 h-4" />
-            <span className="hidden sm:inline">
-              {currentDocId ? 'Update Doc' : 'Save to Workbook'}
-            </span>
+            <span className="hidden sm:inline">{currentDocId ? 'Update Doc' : 'Save Doc'}</span>
             <span className="sm:hidden">Save</span>
           </button>
 
@@ -181,21 +195,118 @@ const WriterOutput = memo(function WriterOutput({
         </div>
       </div>
 
+      {/* ── Editor ── */}
       <TiptapEditor
         content={editorContent}
         onUpdate={onEditorUpdate}
-        placeholder="Hasil AI akan muncul di sini. Anda dapat mengedit langsung..."
+        placeholder="AI ​​results will appear here. You can edit them directly...."
       />
 
       <div className="flex items-center justify-between mt-3">
-        <span className="text-[12px] text-gray-400 dark:text-gray-500">{wordCount} kata</span>
+        <span className="text-[12px] text-gray-400 dark:text-gray-500">{wordCount} Word</span>
         <button
           onClick={onReset}
           className="text-[12px] font-medium text-gray-400 hover:text-red-500 transition-colors"
         >
-          Reset Semua
+          Reset
         </button>
       </div>
+
+      {/* ── Referensi Panel ── */}
+      {showRefPanel && (
+        <div className="mt-4">
+          <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-700/30 rounded-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-purple-100 dark:border-purple-700/20">
+              <BookMarked className="w-4 h-4 text-purple-500 dark:text-purple-400 flex-shrink-0" />
+              <h3 className="text-[13px] font-semibold text-purple-700 dark:text-purple-300">
+                Referensi File yang Digunakan
+              </h3>
+              {hasCitations && (
+                <span className="ml-auto text-[11px] font-medium text-purple-500 dark:text-purple-400 bg-purple-100 dark:bg-purple-800/30 px-2 py-0.5 rounded-full">
+                  {citations.length} sumber
+                </span>
+              )}
+            </div>
+
+            {/* Info file dari history (tidak ada citations detail) */}
+            {!hasCitations && hasSavedFile && (
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-800/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg
+                    className="w-4 h-4 text-purple-500"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-purple-800 dark:text-purple-200 truncate">
+                    {savedFileInfo.fileName}
+                  </p>
+                  {savedFileInfo.fileSize && (
+                    <p className="text-[11px] text-purple-500 dark:text-purple-400 mt-0.5">
+                      {formatFileSize(savedFileInfo.fileSize)} · File referensi (sudah dihapus dari
+                      server)
+                    </p>
+                  )}
+                </div>
+                <span className="text-[10px] font-medium text-purple-400 dark:text-purple-500 bg-purple-100 dark:bg-purple-800/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                  Arsip
+                </span>
+              </div>
+            )}
+
+            {/* Citations detail (dari generate aktif) */}
+            {hasCitations && (
+              <div className="divide-y divide-purple-100 dark:divide-purple-700/20">
+                {citations.map((cite, idx) => (
+                  <div key={cite.file_id || idx} className="flex items-start gap-3 px-4 py-3">
+                    <div className="w-5 h-5 bg-purple-200 dark:bg-purple-700/40 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300">
+                        {idx + 1}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-semibold text-purple-800 dark:text-purple-200 truncate">
+                        {cite.filename || cite.file_id}
+                      </p>
+                      {cite.filename && cite.file_id && (
+                        <p className="text-[11px] text-purple-400 dark:text-purple-500 mt-0.5 font-mono truncate">
+                          ID: {cite.file_id}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-mono text-purple-400 dark:text-purple-500 bg-purple-100 dark:bg-purple-800/20 px-1.5 py-0.5 rounded flex-shrink-0">
+                      [{idx + 1}]
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="px-4 py-2.5 bg-purple-100/50 dark:bg-purple-900/10 border-t border-purple-100 dark:border-purple-700/20">
+              <p className="text-[11px] text-purple-500 dark:text-purple-400">
+                Tanda{' '}
+                <code className="bg-purple-200/60 dark:bg-purple-700/20 px-1 rounded text-[10px]">
+                  [Sumber: nama_file]
+                </code>{' '}
+                dalam teks menunjukkan kutipan dari file referensi yang diunggah.
+                {hasSavedFile && !hasCitations && (
+                  <span className="block mt-1 text-purple-400 dark:text-purple-500">
+                    File asli sudah dihapus dari server — informasi ini hanya untuk catatan arsip.
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 })

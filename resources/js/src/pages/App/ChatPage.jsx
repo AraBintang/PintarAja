@@ -7,21 +7,18 @@ import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
 
-/* ─── Batas ukuran file ─── */
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB per file
 
-/* ─── Helper: ekstrak pesan error dari berbagai format JSON ─── */
 const extractErrorMessage = (raw) => {
   try {
     const json = JSON.parse(raw.trim())
-    if (json?.error?.message) return json.error.message // format OpenAI
-    if (json?.message) return json.message // format Laravel
+    if (json?.error?.message) return json.error.message
+    if (json?.message) return json.message
     // eslint-disable-next-line no-unused-vars, no-empty
   } catch (_) {}
   return null
 }
 
-/* ─── Helper: parse SSE stream jadi plain text ─── */
 const parseSseContent = (raw) => {
   if (!raw.includes('data: ')) return raw
 
@@ -30,8 +27,10 @@ const parseSseContent = (raw) => {
     if (!line.startsWith('data: ') || line === 'data: [DONE]') continue
     try {
       const json = JSON.parse(line.slice(6))
+      // Format OpenAI chat/completions
       const delta = json?.choices?.[0]?.delta?.content
       if (delta) result += delta
+      // Format Gemini
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
       if (text) result += text
       // eslint-disable-next-line no-unused-vars, no-empty
@@ -40,7 +39,23 @@ const parseSseContent = (raw) => {
   return result || raw
 }
 
-/* ─── Helper: baca stream, throw segera kalau dapat JSON error ─── */
+// Format GFF: `data: {"delta":"..."}` dan `data: {"done":true,"annotations":[...]}`
+const parseGffSse = (raw) => {
+  let content = ''
+  let annotations = []
+
+  for (const line of raw.split('\n')) {
+    if (!line.startsWith('data: ')) continue
+    try {
+      const json = JSON.parse(line.slice(6))
+      if (json?.delta) content += json.delta
+      if (json?.done && Array.isArray(json.annotations)) annotations = json.annotations
+      // eslint-disable-next-line no-unused-vars, no-empty
+    } catch (_) {}
+  }
+  return { content, annotations }
+}
+
 const readStream = async (response, onProgress) => {
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
@@ -53,7 +68,7 @@ const readStream = async (response, onProgress) => {
     const chunk = decoder.decode(value, { stream: true })
     fullRaw += chunk
 
-    // Kalau akumulasi adalah JSON murni (bukan SSE), berarti error object
+    // Deteksi error JSON non-SSE lebih awal
     const trimmed = fullRaw.trim()
     if (trimmed.startsWith('{') && !trimmed.includes('data: ')) {
       const errMsg = extractErrorMessage(trimmed)
@@ -63,7 +78,7 @@ const readStream = async (response, onProgress) => {
     onProgress(fullRaw)
   }
 
-  // Final check setelah stream selesai
+  // Cek error di akhir stream
   const trimmed = fullRaw.trim()
   if (trimmed.startsWith('{') && !trimmed.includes('data: ')) {
     const errMsg = extractErrorMessage(trimmed)
@@ -137,6 +152,7 @@ export default function ChatPage() {
       role: c.role,
       content: c.content,
       code: c.code,
+      annotations: c.annotations ?? [],
       time: c.time,
     }))
 
@@ -177,6 +193,7 @@ export default function ChatPage() {
             role: c.role,
             content: c.content,
             code: c.code,
+            annotations: c.annotations ?? [],
             time: c.time,
           })),
         )
@@ -235,9 +252,37 @@ export default function ChatPage() {
     return () => el.removeEventListener('scroll', onScroll)
   }, [hasMoreChats, isLoadingMore, conversationId, nextCursor, loadConversation])
 
-  /* ─── Kirim pesan teks biasa via SSE ─── */
-  const sendTextMessage = async (convId, text, contextMessages) => {
+  const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+
+  const sendTextMessage = async (convId, text, contextMessages, imageFiles = []) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+
+    let messagesPayload
+
+    if (imageFiles.length > 0) {
+      const base64Images = await Promise.all(imageFiles.map(fileToBase64))
+
+      const prevContext = contextMessages.slice(0, -1)
+
+      const userContentParts = [
+        { type: 'text', text },
+        ...base64Images.map((b64) => ({
+          type: 'image_url',
+          image_url: { url: b64 },
+        })),
+      ]
+
+      messagesPayload = [...prevContext, { role: 'user', content: userContentParts }]
+    } else {
+      messagesPayload = contextMessages
+    }
+
     const response = await fetch('/api/chats', {
       method: 'POST',
       headers: {
@@ -250,7 +295,7 @@ export default function ChatPage() {
         providerId: parseInt(selectedAiId),
         conversationId: convId,
         message: text,
-        messageToAi: contextMessages,
+        messageToAi: messagesPayload,
       }),
       signal: abortRef.current.signal,
     })
@@ -264,14 +309,12 @@ export default function ChatPage() {
       setStreamingContent(parseSseContent(raw))
     })
 
-    return parseSseContent(fullRaw)
+    return { content: parseSseContent(fullRaw), annotations: [] }
   }
 
-  /* ─── Kirim pesan dengan file via /gff (multipart/form-data) ─── */
   const sendFileMessage = async (convId, text, files) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
 
-    // Validasi ukuran file sebelum kirim
     const oversized = files.filter((f) => f.size > MAX_FILE_SIZE)
     if (oversized.length) {
       throw new Error(
@@ -279,7 +322,6 @@ export default function ChatPage() {
       )
     }
 
-    // Pakai FormData — tidak ada base64, tidak ada overhead encoding
     const form = new FormData()
     form.append('providerId', selectedAiId)
     form.append('conversationId', convId)
@@ -289,7 +331,6 @@ export default function ChatPage() {
     const response = await fetch('/api/chats/gff', {
       method: 'POST',
       headers: {
-        // Jangan set Content-Type manual — browser set otomatis + boundary
         Authorization: `Bearer ${token}`,
         'X-Requested-With': 'XMLHttpRequest',
       },
@@ -305,22 +346,31 @@ export default function ChatPage() {
     const contentType = response.headers.get('Content-Type') ?? ''
 
     if (contentType.includes('text/event-stream')) {
+      // ─── Stream GFF: format {"delta":"..."} + {"done":true,"annotations":[...]}
       const fullRaw = await readStream(response, (raw) => {
-        setStreamingContent(parseSseContent(raw))
+        const { content } = parseGffSse(raw)
+        setStreamingContent(content)
       })
-      return parseSseContent(fullRaw)
+      return parseGffSse(fullRaw)
     }
 
-    // JSON response (Gemini non-streaming)
+    // ─── Response JSON biasa (Gemini fallback)
     const json = await response.json()
     if (json?.error) throw new Error(json.error.message || 'AI provider error')
     if (!json?.reply && json?.message) throw new Error(json.message)
     const reply = json.reply ?? ''
     setStreamingContent(reply)
-    return reply
+    return { content: reply, annotations: [] }
   }
 
-  /* ─── Handler utama kirim pesan ─── */
+  const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+
+  const classifyFiles = (files) => {
+    const images = files.filter((f) => IMAGE_TYPES.includes(f.type))
+    const docs = files.filter((f) => !IMAGE_TYPES.includes(f.type))
+    return { images, docs }
+  }
+
   const handleSendMessage = async () => {
     const text = inputValue.trim()
     if (!text && !attachedFiles.length) return
@@ -354,6 +404,7 @@ export default function ChatPage() {
       role: 'user',
       content: text,
       files,
+      annotations: [],
       time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
     }
     setMessages((prev) => [...prev, userMsg])
@@ -368,10 +419,22 @@ export default function ChatPage() {
     abortRef.current = new AbortController()
 
     try {
-      const fullContent =
-        files.length > 0
-          ? await sendFileMessage(convId, text, files)
-          : await sendTextMessage(convId, text, contextMessages)
+      let result
+
+      if (files.length > 0) {
+        const { images, docs } = classifyFiles(files)
+
+        if (docs.length > 0) {
+          // Ada dokumen (PDF/DOC/TXT), dengan atau tanpa gambar → /gff (Vector Store)
+          result = await sendFileMessage(convId, text, files)
+        } else {
+          // Hanya gambar → konversi base64, kirim via /api/chats sebagai vision
+          result = await sendTextMessage(convId, text, contextMessages, images)
+        }
+      } else {
+        // Teks murni tanpa file
+        result = await sendTextMessage(convId, text, contextMessages)
+      }
 
       const ai = aiProviders.find((a) => String(a.id) === selectedAiId)
       setMessages((prev) => [
@@ -379,7 +442,8 @@ export default function ChatPage() {
         {
           id: `ai-${Date.now()}`,
           role: 'assistant',
-          content: fullContent,
+          content: result.content,
+          annotations: result.annotations ?? [],
           code: ai?.code ?? null,
           time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         },
@@ -407,6 +471,7 @@ export default function ChatPage() {
       return next
     })
   }
+
   const handleFileRemove = (i) => setAttachedFiles((prev) => prev.filter((_, idx) => idx !== i))
 
   const canSend = Boolean(

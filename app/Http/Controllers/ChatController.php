@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chat;
+use App\Services\AiUploadFileService;
 use App\Services\AiProviderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -31,6 +32,14 @@ class ChatController extends Controller
                 's.M_SettingCode as code',
                 's.M_SettingModel as model'
             )
+            ->orderByRaw("CASE 
+                WHEN s.M_SettingCode = 'SETTING-GPT' THEN 1
+                WHEN s.M_SettingCode = 'SETTING-GMN' THEN 2
+                WHEN s.M_SettingCode = 'SETTING-CLD' THEN 3
+                WHEN s.M_SettingCode = 'SETTING-DSK' THEN 4
+                WHEN s.M_SettingCode = 'SETTING-QWN' THEN 5
+                ELSE 6
+            END")
             ->get();
 
         return response()->json($aiProviders);
@@ -52,19 +61,26 @@ class ChatController extends Controller
             ->get();
 
         $hasMore = $chats->count() > $limit;
-
         $chats = $chats->take($limit);
-
         $nextCursor = $chats->last()?->T_ChatID;
 
         return response()->json([
             'chats' => $chats->reverse()->values()->map(function ($chat) {
+                $annotations = [];
+                if (!empty($chat->T_ChatAnnotations)) {
+                    $decoded = json_decode($chat->T_ChatAnnotations, true);
+                    if (is_array($decoded)) {
+                        $annotations = $decoded;
+                    }
+                }
+
                 return [
                     'id' => $chat->T_ChatID,
                     'conversationId' => $chat->T_ChatT_ConversationID,
                     'code' => $chat->T_ChatCode,
                     'role' => $chat->T_ChatRole,
                     'content' => $chat->T_ChatContent,
+                    'annotations' => $annotations,
                     'time' => Carbon::parse($chat->T_ChatCreated)->format('H:i')
                 ];
             }),
@@ -90,21 +106,10 @@ class ChatController extends Controller
             ], 401);
         }
 
-        $provider = DB::table('m_plansetting as ps')
-            ->join('m_setting as s','s.M_SettingID','=','ps.M_PlanSettingM_SettingID')
-            ->where('ps.M_PlanSettingM_PlanID',$user->M_UserPlan)
-            ->where('s.M_SettingID',$request->providerId)
-            ->where('s.M_SettingIsActive','Y')
-            ->select(
-                's.M_SettingCode',
-                's.M_SettingModel',
-                's.M_SettingKey'
-            )
-            ->first();
-
+        $provider = $this->resolveProvider($user, $request->providerId);
         if (!$provider) {
             return response()->json([
-                'message' => 'You are not allowed to use this AI provider with your current subscription plan.'
+                'message' => 'You are not allowed to use this AI provider with your current subscription plan.',
             ], 403);
         }
 
@@ -118,22 +123,31 @@ class ChatController extends Controller
         $message = $request->message;
         $messages = $request->messageToAi ?? [];
 
-        $chat = Chat::create([
-            'T_ChatT_ConversationID' => $conversationId,
-            'T_ChatRole' => 'user',
-            'T_ChatContent' => $message
-        ]);
+        $lastMsg   = !empty($messages) ? end($messages) : null;
+        $hasImages = isset($lastMsg['content']) && is_array($lastMsg['content']);
+ 
+        if ($hasImages) {
+            $chatContent = array_values(array_map(function ($part) {
+                if (($part['type'] ?? '') === 'image_url') {
+                    return ['type' => 'image', 'name' => 'gambar'];
+                }
+                return $part;
+            }, $lastMsg['content']));
+ 
+            Chat::create([
+                'T_ChatT_ConversationID' => $conversationId,
+                'T_ChatRole' => 'user',
+                'T_ChatContent' => json_encode($chatContent),
+            ]);
+        } else {
+            Chat::create([
+                'T_ChatT_ConversationID' => $conversationId,
+                'T_ChatRole'  => 'user',
+                'T_ChatContent'  => $message,
+            ]);
+        }
 
-        $providerMap = [
-            'SETTING-GPT' => 'openai',
-            'SETTING-GMN' => 'gemini',
-            'SETTING-CLD' => 'claude',
-            'SETTING-DSK' => 'deepseek',
-            'SETTING-QWN' => 'qwen',
-        ];
-
-        $driver = $providerMap[$provider->M_SettingCode] ?? null;
-
+        $driver = $this->getDriver($provider->M_SettingCode);
         if (!$driver) {
             return response()->json([
                 'message' => 'Unsupported AI provider.'
@@ -158,7 +172,7 @@ class ChatController extends Controller
         }
     }
 
-    public function generateFromFile(Request $request, AiProviderService $aiService)
+    public function generateFromFile(Request $request, AiUploadFileService $aiUploadFileService)
     {
         $request->validate([
             'providerId' => 'required|integer',
@@ -173,22 +187,13 @@ class ChatController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
     
-        $provider = DB::table('m_plansetting as ps')
-            ->join('m_setting as s', 's.M_SettingID', '=', 'ps.M_PlanSettingM_SettingID')
-            ->where('ps.M_PlanSettingM_PlanID', $user->M_UserPlan)
-            ->where('s.M_SettingID', $request->providerId)
-            ->where('s.M_SettingIsActive', 'Y')
-            ->select('s.M_SettingCode', 's.M_SettingKey', 's.M_SettingModel')
-            ->first();
-    
+        $provider = $this->resolveProvider($user, $request->providerId);
         if (!$provider) {
-            return response()->json([
-                'message' => 'You are not allowed to use this AI provider.'
-            ], 403);
+            return response()->json(['message' => 'You are not allowed to use this AI provider.'], 403);
         }
     
         $message = $request->message;
-        $convId  = $request->conversationId;
+        $convId = $request->conversationId;
         $files = $request->file('files', []);
     
         $chatContent = [['type' => 'text', 'text' => $message]];
@@ -198,6 +203,7 @@ class ChatController extends Controller
                 'name' => $file->getClientOriginalName(),
             ];
         }
+
         Chat::create([
             'T_ChatT_ConversationID' => $convId,
             'T_ChatRole' => 'user',
@@ -206,163 +212,39 @@ class ChatController extends Controller
     
         $fileData = array_map(function ($file) {
             return [
-                'name'    => $file->getClientOriginalName(),
-                'type'    => $file->getMimeType(),
+                'name' => $file->getClientOriginalName(),
+                'type' => $file->getMimeType(),
                 'base64'  => base64_encode(file_get_contents($file->getRealPath())),
                 'isImage' => str_starts_with($file->getMimeType(), 'image/'),
             ];
         }, $files);
     
-        if ($provider->M_SettingCode === 'SETTING-GPT') {
-            return response()->stream(function () use ($provider, $message, $fileData, $convId) {
-    
-                $content = [];
-    
-                foreach ($fileData as $f) {
-                    if ($f['isImage']) {
-                        $content[] = [
-                            'type'      => 'image_url',
-                            'image_url' => [
-                                'url'    => "data:{$f['type']};base64,{$f['base64']}",
-                                'detail' => 'auto',
-                            ],
-                        ];
-                    } else {
-                        $text = $this->extractTextFromFile($f['base64'], $f['type'], $f['name']);
-                        $content[] = [
-                            'type' => 'text',
-                            'text' => "[File: {$f['name']}]\n{$text}",
-                        ];
-                    }
-                }
-    
-                $content[] = ['type' => 'text', 'text' => $message];
-    
-                $response = Http::withToken($provider->M_SettingKey)
-                    ->withOptions(['stream' => true])
-                    ->post('https://api.openai.com/v1/chat/completions', [
-                        'model'    => $provider->M_SettingModel ?? 'gpt-4o',
-                        'stream'   => true,
-                        'messages' => [
-                            ['role' => 'user', 'content' => $content],
-                        ],
-                    ]);
-    
-                $body  = $response->getBody();
-                $fullContent = '';
-    
-                while (!$body->eof()) {
-                    $chunk = $body->read(1024);
-    
-                    foreach (explode("\n", $chunk) as $line) {
-                        $line = trim($line);
-                        if (!str_starts_with($line, 'data: ') || $line === 'data: [DONE]') continue;
-                        try {
-                            $json  = json_decode(substr($line, 6), true);
-                            $delta = $json['choices'][0]['delta']['content'] ?? '';
-                            if ($delta) $fullContent .= $delta;
-                        } catch (\Throwable $_) {}
-                    }
-    
-                    echo $chunk;
-                    ob_flush();
-                    flush();
-                }
-    
-                Chat::create([
-                    'T_ChatT_ConversationID' => $convId,
-                    'T_ChatCode' => $provider->M_SettingCode,
-                    'T_ChatRole' => 'assistant',
-                    'T_ChatContent' => $fullContent,
-                ]);
-    
-            }, 200, [
-                'Content-Type' => 'text/event-stream',
-                'Cache-Control' => 'no-cache',
-                'Connection' => 'keep-alive',
-                'X-Accel-Buffering' => 'no',
-            ]);
-        }
-    
-        if ($provider->M_SettingCode === 'SETTING-GMN') {
-            $parts = [];
-    
-            foreach ($fileData as $f) {
-                $parts[] = [
-                    'inline_data' => [
-                        'mime_type' => $f['type'],
-                        'data' => $f['base64'],
-                    ],
-                ];
-            }
-            $parts[] = ['text' => $message];
-    
-            $model = $provider->M_SettingModel ?? 'gemini-2.0-flash';
-    
-            $response = Http::post(
-                "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$provider->M_SettingKey}",
-                ['contents' => [['role' => 'user', 'parts' => $parts]]]
-            );
-    
-            if (!$response->successful()) {
-                return response()->json([
-                    'message' => $response->json('error.message') ?? 'Gemini API error',
-                ], 502);
-            }
-    
-            $assistantReply = $response->json('candidates.0.content.parts.0.text') ?? '';
-    
-            Chat::create([
-                'T_ChatT_ConversationID' => $convId,
-                'T_ChatCode' => $provider->M_SettingCode,
-                'T_ChatRole' => 'assistant',
-                'T_ChatContent' => $assistantReply,
-            ]);
-    
-            return response()->json(['reply' => $assistantReply]);
-        }
-    
-        return response()->json(['message' => 'Provider not supported for file input.'], 400);
+        return match ($provider->M_SettingCode) {
+            'SETTING-GPT' => $aiUploadFileService->handleOpenAiFileStream($provider, $message, $fileData, $convId),
+            'SETTING-GMN' => $aiUploadFileService->handleGeminiFile($provider, $message, $fileData, $convId),
+            default => response()->json(['message' => 'Provider not supported for file input.'], 400),
+        };
     }
-    
-    private function extractTextFromFile(string $base64, string $mimeType, string $name): string
+
+    private function resolveProvider($user, int $providerId)
     {
-        $raw = base64_decode($base64);
-    
-        try {
-            if (in_array($mimeType, ['text/plain', 'text/csv'])) {
-                return $raw;
-            }
-    
-            if ($mimeType === 'application/pdf') {
-                if (class_exists('\Smalot\PdfParser\Parser')) {
-                    $parser = new \Smalot\PdfParser\Parser();
-                    $pdf    = $parser->parseContent($raw);
-                    return $pdf->getText();
-                }
-                preg_match_all('/\(([^)]{1,200})\)\s*Tj/s', $raw, $m);
-                return implode(' ', $m[1] ?? []);
-            }
-    
-            if (in_array($mimeType, [
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/msword',
-            ])) {
-                $tmp = sys_get_temp_dir() . '/' . uniqid('docx_') . '.docx';
-                file_put_contents($tmp, $raw);
-                $zip = new \ZipArchive();
-                if ($zip->open($tmp) === true) {
-                    $xml = $zip->getFromName('word/document.xml');
-                    $zip->close();
-                    @unlink($tmp);
-                    return preg_replace('/\s+/', ' ', strip_tags($xml));
-                }
-                @unlink($tmp);
-            }
-        } catch (\Throwable $e) {
-            //
-        }
-    
-        return "(Konten file \"{$name}\" tidak dapat diekstrak)";
+        return DB::table('m_plansetting as ps')
+            ->join('m_setting as s', 's.M_SettingID', '=', 'ps.M_PlanSettingM_SettingID')
+            ->where('ps.M_PlanSettingM_PlanID', $user->M_UserPlan)
+            ->where('s.M_SettingID', $providerId)
+            ->where('s.M_SettingIsActive', 'Y')
+            ->select('s.M_SettingCode', 's.M_SettingModel', 's.M_SettingKey')
+            ->first();
+    }
+ 
+    private function getDriver(string $code): ?string
+    {
+        return [
+            'SETTING-GPT' => 'openai',
+            'SETTING-GMN' => 'gemini',
+            'SETTING-CLD' => 'claude',
+            'SETTING-DSK' => 'deepseek',
+            'SETTING-QWN' => 'qwen',
+        ][$code] ?? null;
     }
 }

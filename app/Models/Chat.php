@@ -19,6 +19,7 @@ class Chat extends Model
         'T_ChatCode',
         'T_ChatRole',
         'T_ChatContent',
+        'T_ChatAnnotations',
         'T_ChatCreated',
         'T_ChatLastUpdated'
     ];

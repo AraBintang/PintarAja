@@ -10,35 +10,6 @@ use PhpOffice\PhpWord\Shared\Html;
 
 class DocumentController extends Controller
 {
-    public function index(Request $request)
-    {
-        $perPage = (int) $request->input('per_page', 10);
-        $page = max(1, (int) $request->input('page', 1));
-        $search = $request->input('search');
-        $workbook = $request->input('workbook');
-
-        $query = Document::query()
-            ->when($search, function ($q) use ($search) {
-                $q->where('M_DocumentName', 'like', "%{$search}%");
-            })
-            ->when($workbook, function ($q) use ($workbook) {
-                $q->where('M_DocumentM_WorkbookID', $workbook);
-            })
-            ->orderBy('M_DocumentCreated', 'desc');
-
-        $paginated = $query->paginate($perPage, ['*'], 'page', $page);
-
-        return response()->json([
-            'data' => $paginated->items(),
-            'pagination' => [
-                'current_page' => $paginated->currentPage(),
-                'per_page' => $paginated->perPage(),
-                'total' => $paginated->total(),
-                'last_page' => $paginated->lastPage()
-            ]
-        ]);
-    }
-
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -47,53 +18,39 @@ class DocumentController extends Controller
             'name' => 'required|string',
             'promptData' => 'nullable',
             'fullPrompt' => 'nullable|string',
-            'result' => 'required|string'
+            'result' => 'required|string',
+            'citations' => 'nullable|array',
+            'citations.*.file_id' => 'nullable|string',
+            'citations.*.filename' => 'nullable|string',
+            'citations.*.index' => 'nullable|integer',
+            'fileInfo' => 'nullable|array',
+            'fileInfo.fileName' => 'nullable|string',
+            'fileInfo.fileSize' => 'nullable|integer',
         ]);
 
         $document = Document::create([
             'M_DocumentM_UserID' => $validated['userId'],
             'M_DocumentM_WorkbookID' => $validated['workbookId'],
             'M_DocumentName' => $validated['name'],
-            'M_DocumentPromptData' => isset($validated['promptData']) 
-                ? json_encode($validated['promptData']) 
+            'M_DocumentPromptData' => isset($validated['promptData'])
+                ? json_encode($validated['promptData'])
                 : null,
             'M_DocumentFullPrompt' => $validated['fullPrompt'] ?? null,
             'M_DocumentResult' => $validated['result'],
+            'M_DocumentCitations' => isset($validated['citations'])
+                ? json_encode($validated['citations'])
+                : null,
+            'M_DocumentFileInfo' => isset($validated['fileInfo'])
+                ? json_encode($validated['fileInfo'])
+                : null,
             'M_DocumentCreated' => now(),
-            'M_DocumentLastUpdated' => now()
+            'M_DocumentLastUpdated' => now(),
         ]);
 
         return response()->json([
             'message' => 'Document created',
-            'id' => $document->M_DocumentID
+            'id'      => $document->M_DocumentID,
         ], 201);
-    }
-
-    public function download(Request $request)
-    {
-        $content = $request->input('content');
-
-        if (empty($content)) {
-            return response()->json(['error' => 'Content is empty'], 400);
-        }
-    
-        $phpWord = new PhpWord();
-        $section = $phpWord->addSection();
-        Html::addHtml($section, $content);
-    
-        $fileName = 'GeneratedDocument_' . time() . '.docx';
-        $headers = [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-        ];
-    
-        $tempFile = tempnam(sys_get_temp_dir(), 'phpword');
-        $phpWord->save($tempFile, 'Word2007');
-    
-        return response()->streamDownload(function () use ($tempFile) {
-            readfile($tempFile);
-            unlink($tempFile);
-        }, $fileName, $headers);
     }
 
     public function update(Request $request, $id)
@@ -105,40 +62,108 @@ class DocumentController extends Controller
             'name' => 'required|string',
             'promptData' => 'nullable',
             'fullPrompt' => 'nullable|string',
-            'result' => 'required|string'
+            'result' => 'required|string',
+            'citations'   => 'nullable|array',
+            'citations.*.file_id' => 'nullable|string',
+            'citations.*.filename' => 'nullable|string',
+            'citations.*.index' => 'nullable|integer',
+            'fileInfo' => 'nullable|array',
+            'fileInfo.fileName' => 'nullable|string',
+            'fileInfo.fileSize' => 'nullable|integer',
         ]);
 
         $document->update([
             'M_DocumentM_WorkbookID' => $validated['workbookId'],
             'M_DocumentName' => $validated['name'],
-            'M_DocumentPromptData' => isset($validated['promptData']) 
-                ? json_encode($validated['promptData']) 
+            'M_DocumentPromptData' => isset($validated['promptData'])
+                ? json_encode($validated['promptData'])
                 : null,
             'M_DocumentFullPrompt' => $validated['fullPrompt'] ?? null,
             'M_DocumentResult' => $validated['result'],
-            'M_DocumentLastUpdated' => now()
+            'M_DocumentCitations' => isset($validated['citations'])
+                ? json_encode($validated['citations'])
+                : null,
+            'M_DocumentFileInfo' => isset($validated['fileInfo'])
+                ? json_encode($validated['fileInfo'])
+                : null,
+            'M_DocumentLastUpdated' => now(),
         ]);
 
         return response()->json([
             'message' => 'Document updated',
-            'id' => $document->M_DocumentID
+            'id' => $document->M_DocumentID,
         ]);
     }
 
     public function destroy($id)
     {
         $document = Document::findOrFail($id);
-
-        if (!$document) {
-            return response()->json([
-                'message' => 'Data not found.'
-            ], 404);
-        }
-
         $document->delete();
 
-        return response()->json([
-            'message' => 'Document deleted'
+        return response()->json(['message' => 'Document deleted']);
+    }
+
+    public function download(Request $request)
+    {
+        $content = $request->input('content');
+
+        if (empty($content)) {
+            return response()->json(['error' => 'Content is empty'], 400);
+        }
+
+        $content = $this->sanitizeForPhpWord($content);
+        $phpWord = new PhpWord();
+        $section = $phpWord->addSection();
+        Html::addHtml($section, $content);
+
+        $fileName = 'GeneratedDocument_' . time() . '.docx';
+        $tempFile = tempnam(sys_get_temp_dir(), 'phpword');
+        $phpWord->save($tempFile, 'Word2007');
+
+        return response()->streamDownload(function () use ($tempFile) {
+            readfile($tempFile);
+            unlink($tempFile);
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
         ]);
+    }
+
+    private function sanitizeForPhpWord(string $html): string
+    {
+        libxml_use_internal_errors(true);
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+        $dom->loadHTML(
+            '<html><body>' . $html . '</body></html>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
+        libxml_clear_errors();
+
+        $tagsToClean = ['li', 'th', 'td', 'tr', 'thead', 'tbody', 'table'];
+        foreach ($tagsToClean as $tag) {
+            foreach ($dom->getElementsByTagName($tag) as $node) {
+                foreach (iterator_to_array($node->childNodes) as $child) {
+                    if ($child->nodeName === 'br') {
+                        $node->removeChild($child);
+                    }
+                }
+            }
+        }
+
+        foreach (iterator_to_array($dom->getElementsByTagName('p')) as $p) {
+            $inner = trim($p->textContent);
+            $hasBrOnly = $p->childNodes->length === 1 && $p->childNodes->item(0)->nodeName === 'br';
+            if ($inner === '' || $hasBrOnly) {
+                $p->parentNode?->removeChild($p);
+            }
+        }
+
+        $body = $dom->getElementsByTagName('body')->item(0);
+        $result = '';
+        foreach ($body->childNodes as $child) {
+            $result .= $dom->saveHTML($child);
+        }
+
+        return $result;
     }
 }

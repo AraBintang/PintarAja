@@ -21,6 +21,8 @@ class Document extends Model
         'M_DocumentPromptData',
         'M_DocumentFullPrompt',
         'M_DocumentResult',
+        'M_DocumentCitations',
+        'M_DocumentFileInfo',
         'M_DocumentCreated',
         'M_DocumentLastUpdated',
     ];

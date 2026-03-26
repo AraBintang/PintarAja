@@ -1,7 +1,7 @@
 import { ArrowUp, FileText, Image, Lock, Paperclip, Plus, X as XIcon } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { AI_CODE_MAP, AutoIcon } from '@/assets/ai'
+import { AI_CODE_MAP, AI_MODELS, AutoIcon } from '@/assets/ai'
 
 /* ─── ModelSelect ─── */
 function ModelSelect({ value, onChange, aiProviders, disabled }) {
@@ -17,13 +17,14 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
         type="button"
         onClick={() => !disabled && setOpen((v) => !v)}
         disabled={disabled}
-        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700 rounded-xl text-[13px] transition-all shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-700/60 rounded-full text-[13px] transition-all shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span className="flex-shrink-0">{mapped.icon}</span>
-        <span className="text-[12px] text-gray-400 dark:text-gray-500 font-medium">Model:</span>
-        <span className="font-semibold text-gray-800 dark:text-gray-200">{mapped.label}</span>
+        <span className="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[90px]">
+          {mapped.label}
+        </span>
         {selected?.model && (
-          <span className="text-[10px] text-gray-400 font-mono hidden sm:inline truncate max-w-[90px]">
+          <span className="text-[12px] text-gray-500 dark:text-gray-400 font-medium truncate max-w-[110px]">
             {selected.model}
           </span>
         )}
@@ -43,7 +44,7 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
       {open && !disabled && (
         <>
           <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl z-[70] min-w-[230px] p-1.5 overflow-hidden">
+          <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl z-[70] min-w-[220px] max-w-[300px] p-1.5 overflow-hidden">
             <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase px-3 pt-2 pb-1.5 tracking-widest">
               Select AI Model
             </p>
@@ -62,6 +63,9 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
             ) : (
               aiProviders.map((ai) => {
                 const m = AI_CODE_MAP[ai.code] ?? { label: ai.code, icon: <AutoIcon /> }
+                const modelInfo = (AI_MODELS[ai.code] ?? []).find(
+                  (item) => item.value === ai.model || item.label === ai.model,
+                )
                 const isSelected = String(ai.id) === String(value)
                 return (
                   <button
@@ -78,19 +82,26 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
                     }`}
                   >
                     <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-[#4A90D9]/10 dark:bg-[#4A90D9]/20' : 'bg-gray-100 dark:bg-gray-700'}`}
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-[#4A90D9]/8 dark:bg-[#4A90D9]/15' : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'}`}
                     >
                       <span className="text-[15px]">{m.icon}</span>
                     </div>
                     <div className="flex flex-col min-w-0 flex-1">
-                      <span
-                        className={`text-[13px] font-semibold leading-tight ${isSelected ? 'text-[#4A90D9]' : 'text-gray-700 dark:text-gray-200'}`}
-                      >
-                        {m.label}
-                      </span>
-                      {ai.model && (
-                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono truncate leading-tight mt-0.5">
-                          {ai.model}
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-[13px] font-semibold truncate ${isSelected ? 'text-[#4A90D9]' : 'text-gray-700 dark:text-gray-200'}`}
+                        >
+                          {m.label}
+                        </span>
+                        {ai.model && (
+                          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 truncate">
+                            {ai.model}
+                          </span>
+                        )}
+                      </div>
+                      {modelInfo?.desc && (
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5 truncate">
+                          {modelInfo.desc}
                         </span>
                       )}
                     </div>
@@ -154,6 +165,13 @@ export default function ChatInput({
   const imageRef = useRef(null)
   const docRef = useRef(null)
 
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = inputValue ? Math.min(el.scrollHeight, 24 * 13) + 'px' : ''
+  }, [inputValue])
+
   const handleInput = (e) => {
     onInputChange(e.target.value)
     const el = textareaRef.current
@@ -173,10 +191,11 @@ export default function ChatInput({
     e.target.value = ''
   }
 
-  // Hanya OpenAI dan Gemini yang support upload file
-  const FILE_SUPPORTED_CODES = ['SETTING-GPT', 'SETTING-GMN']
   const selectedProvider = aiProviders.find((a) => String(a.id) === String(selectedAiId))
-  const canAttach = !isStreaming && FILE_SUPPORTED_CODES.includes(selectedProvider?.code)
+
+  const canAttachImage = !isStreaming && selectedProvider?.code !== 'SETTING-DSK'
+
+  const canAttachFile = !isStreaming && selectedProvider?.code === 'SETTING-GPT'
 
   return (
     <div className="sticky bottom-0 pt-2 px-4">
@@ -190,11 +209,11 @@ export default function ChatInput({
         <div className="flex flex-col">
           {/* File chips */}
           {attachedFiles.length > 0 && (
-            <div className="px-5 pt-3 flex items-center gap-2 flex-wrap">
+            <div className="px-3 pt-3 flex items-center gap-2 flex-wrap">
               {attachedFiles.map((f, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl text-[13px] font-medium border border-blue-100 dark:border-blue-800"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-[13px] font-medium border border-blue-100 dark:border-blue-800"
                 >
                   <Paperclip className="w-3.5 h-3.5" />
                   <span className="truncate max-w-[150px]">{f.name}</span>
@@ -241,16 +260,9 @@ export default function ChatInput({
                 className="hidden"
               />
 
-              {/* Attach button */}
               <button
                 type="button"
                 onClick={onToggleAttachMenu}
-                disabled={!canAttach}
-                title={
-                  !canAttach && !isStreaming
-                    ? 'Upload file hanya tersedia untuk model OpenAI dan Gemini'
-                    : undefined
-                }
                 className="w-9 h-9 rounded-full border bg-[#eeedeb] dark:bg-black/20 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 transition-colors relative z-30 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus
@@ -258,39 +270,86 @@ export default function ChatInput({
                 />
               </button>
 
-              {showAttachMenu && canAttach && (
+              {showAttachMenu && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={onToggleAttachMenu} />
                   <div className="absolute bottom-full mb-2 p-1 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-20 w-48">
                     <button
                       type="button"
                       onClick={() => {
+                        if (!canAttachImage) return
                         imageRef.current?.click()
                         onToggleAttachMenu()
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 rounded-xl transition-colors"
+                      disabled={!canAttachImage}
+                      title={
+                        !canAttachImage
+                          ? 'Upload gambar tidak tersedia untuk model Deepseek'
+                          : undefined
+                      }
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors
+                        ${
+                          !canAttachImage
+                            ? 'opacity-40 cursor-not-allowed pointer-events-none'
+                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'
+                        }`}
                     >
-                      <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shrink-0">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0
+                          ${
+                            !canAttachImage
+                              ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                              : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600'
+                          }`}
+                      >
                         <Image className="w-4 h-4" />
                       </div>
                       <div className="text-left">
-                        <p className="font-semibold leading-tight">Image</p>
+                        <p
+                          className={`font-semibold leading-tight ${!canAttachImage ? 'text-gray-400 dark:text-gray-500' : ''}`}
+                        >
+                          Image
+                        </p>
                         <p className="text-[11px] text-gray-400 mt-0.5">JPG, PNG, GIF</p>
                       </div>
                     </button>
+
                     <button
                       type="button"
                       onClick={() => {
+                        if (!canAttachFile) return
                         docRef.current?.click()
                         onToggleAttachMenu()
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 rounded-xl transition-colors"
+                      disabled={!canAttachFile}
+                      title={
+                        !canAttachFile
+                          ? 'Upload file hanya tersedia untuk model OpenAI (GPT)'
+                          : undefined
+                      }
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors
+                        ${
+                          !canAttachFile
+                            ? 'opacity-40 cursor-not-allowed pointer-events-none'
+                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'
+                        }`}
                     >
-                      <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 shrink-0">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0
+                          ${
+                            !canAttachFile
+                              ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                              : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600'
+                          }`}
+                      >
                         <FileText className="w-4 h-4" />
                       </div>
                       <div className="text-left">
-                        <p className="font-semibold leading-tight">File</p>
+                        <p
+                          className={`font-semibold leading-tight ${!canAttachFile ? 'text-gray-400 dark:text-gray-500' : ''}`}
+                        >
+                          File
+                        </p>
                         <p className="text-[11px] text-gray-400 mt-0.5">PDF, DOC, TXT</p>
                       </div>
                     </button>

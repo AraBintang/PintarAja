@@ -11,7 +11,7 @@ const CHAT_FEATURES = [
   { label: 'Transcribe AI', iconColor: 'text-purple-500', to: '/transcribe', icon: <Mic /> },
 ]
 
-/* ─── Copy button untuk code block ─── */
+/* ─── Copy button ─── */
 function CopyButton({ code }) {
   const [copied, setCopied] = useState(false)
   const handleCopy = () => {
@@ -40,18 +40,16 @@ function CopyButton({ code }) {
   )
 }
 
-/* ─── Code block component ─── */
+/* ─── Code block ─── */
 function CodeBlock({ lang, code }) {
   return (
     <div className="mt-3 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 text-[13px]">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-800 dark:bg-gray-900 border-b border-gray-700">
         <span className="text-[11px] font-mono font-semibold text-gray-400 uppercase tracking-wider">
           {lang || 'code'}
         </span>
         <CopyButton code={code} />
       </div>
-      {/* Code */}
       <pre className="bg-[#f7f7f5] dark:bg-[#0f141e] px-4 py-3 overflow-x-auto leading-relaxed">
         <code className="font-mono text-[13px] whitespace-pre">{code}</code>
       </pre>
@@ -59,7 +57,6 @@ function CodeBlock({ lang, code }) {
   )
 }
 
-/* ─── Inline code ─── */
 function InlineCode({ children }) {
   return (
     <code className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-mono text-[13px]">
@@ -68,18 +65,106 @@ function InlineCode({ children }) {
   )
 }
 
-/* ─── Parse dan render markdown + code blocks ─── */
+/* ─── Markdown table ─── */
+function MarkdownTable({ rows }) {
+  if (rows.length < 2) return null
+
+  const headerCells = rows[0]
+    .split('|')
+    .map((c) => c.trim())
+    .filter(Boolean)
+
+  const dataRows = rows.slice(2).map((row) =>
+    row
+      .split('|')
+      .map((c) => c.trim())
+      .filter(Boolean),
+  )
+
+  return (
+    <div className="mt-3 mb-2 overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+      <table className="w-full text-[13px] border-collapse">
+        <thead>
+          <tr className="bg-gray-50 dark:bg-gray-800/80">
+            {headerCells.map((cell, i) => (
+              <th
+                key={i}
+                className="px-4 py-2.5 text-left font-semibold text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
+              >
+                {renderInline(cell)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {dataRows.map((cells, ri) => (
+            <tr
+              key={ri}
+              className="border-b border-gray-100 dark:border-gray-700/60 last:border-0 hover:bg-gray-50/60 dark:hover:bg-gray-700/20 transition-colors"
+            >
+              {cells.map((cell, ci) => (
+                <td key={ci} className="px-4 py-2.5 text-gray-700 dark:text-gray-300">
+                  {renderInline(cell)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function HorizontalRule() {
+  return <hr className="my-3 border-0 border-t border-gray-200 dark:border-gray-700" />
+}
+
+/* ─── Citation / Annotation block ─── */
+function CitationBlock({ annotations }) {
+  if (!annotations?.length) return null
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/60">
+      <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+        <FileText className="w-3 h-3" />
+        Sumber Referensi
+      </p>
+      <div className="flex flex-col gap-1.5">
+        {annotations.map((ann, i) => (
+          <div
+            key={ann.file_id ?? i}
+            className="flex items-start gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50"
+          >
+            {/* Nomor urut citation */}
+            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
+              {i + 1}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-medium text-blue-700 dark:text-blue-300 truncate">
+                {ann.filename ?? ann.file_id ?? 'Dokumen'}
+              </p>
+              {ann.index != null && (
+                <p className="text-[11px] text-blue-500/70 dark:text-blue-400/60 mt-0.5">
+                  karakter ke-{ann.index.toLocaleString('id-ID')}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Message content renderer ─── */
 function MessageContent({ content }) {
   const raw = String(content)
-
-  // Split berdasarkan code block (```lang\n...\n```)
   const parts = []
   const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g
   let lastIndex = 0
   let match
 
   while ((match = codeBlockRegex.exec(raw)) !== null) {
-    // Teks sebelum code block
     if (match.index > lastIndex) {
       parts.push({ type: 'text', content: raw.slice(lastIndex, match.index) })
     }
@@ -87,7 +172,6 @@ function MessageContent({ content }) {
     lastIndex = match.index + match[0].length
   }
 
-  // Sisa teks setelah code block terakhir
   if (lastIndex < raw.length) {
     parts.push({ type: 'text', content: raw.slice(lastIndex) })
   }
@@ -108,96 +192,117 @@ function MessageContent({ content }) {
   )
 }
 
-/* ─── Render teks biasa dengan inline markdown ─── */
-function InlineTextContent({ content }) {
-  // Split per baris untuk handle heading, list, dll
-  const lines = content.split('\n')
-
-  return (
-    <span className="whitespace-pre-wrap break-words">
-      {lines.map((line, i) => {
-        const isLast = i === lines.length - 1
-
-        // ### Heading 3
-        if (line.startsWith('### ')) {
-          return (
-            <span key={i}>
-              <strong className="block text-[15px] font-bold text-gray-800 dark:text-gray-100 mt-3 mb-1">
-                {renderInline(line.slice(4))}
-              </strong>
-              {!isLast && ''}
-            </span>
-          )
-        }
-
-        // ## Heading 2
-        if (line.startsWith('## ')) {
-          return (
-            <span key={i}>
-              <strong className="block text-[16px] font-bold text-gray-800 dark:text-gray-100 mt-3 mb-1">
-                {renderInline(line.slice(3))}
-              </strong>
-              {!isLast && ''}
-            </span>
-          )
-        }
-
-        // # Heading 1
-        if (line.startsWith('# ')) {
-          return (
-            <span key={i}>
-              <strong className="block text-[17px] font-bold text-gray-800 dark:text-gray-100 mt-3 mb-1">
-                {renderInline(line.slice(2))}
-              </strong>
-              {!isLast && ''}
-            </span>
-          )
-        }
-
-        // List item - atau *
-        if (/^[-*] /.test(line)) {
-          return (
-            <span key={i} className="flex gap-2 my-0.5">
-              <span className="text-gray-400 mt-0.5 flex-shrink-0">•</span>
-              <span>{renderInline(line.slice(2))}</span>
-              {!isLast && ''}
-            </span>
-          )
-        }
-
-        // Numbered list
-        if (/^\d+\. /.test(line)) {
-          const numMatch = line.match(/^(\d+)\. (.*)/)
-          if (numMatch) {
-            return (
-              <span key={i} className="flex gap-2 my-0.5">
-                <span className="text-gray-400 flex-shrink-0 min-w-[1.5rem] text-right">
-                  {numMatch[1]}.
-                </span>
-                <span>{renderInline(numMatch[2])}</span>
-                {!isLast && ''}
-              </span>
-            )
-          }
-        }
-
-        // Baris biasa
-        return (
-          <span key={i}>
-            {renderInline(line)}
-            {!isLast && '\n'}
-          </span>
-        )
-      })}
-    </span>
-  )
+function isTableRow(line) {
+  return line.trim().startsWith('|') && line.trim().endsWith('|')
 }
 
-/* ─── Render inline markdown: bold, italic, inline code ─── */
+function isSeparatorRow(line) {
+  return /^\|[\s\-:|]+\|/.test(line.trim())
+}
+
+function InlineTextContent({ content }) {
+  const lines = content.split('\n')
+  const result = []
+  let i = 0
+
+  while (i < lines.length) {
+    const line = lines[i]
+
+    if (isTableRow(line)) {
+      const tableRows = []
+      while (i < lines.length && (isTableRow(lines[i]) || isSeparatorRow(lines[i]))) {
+        tableRows.push(lines[i])
+        i++
+      }
+      result.push(<MarkdownTable key={`table-${i}`} rows={tableRows} />)
+      continue
+    }
+
+    if (/^(\s*[-*_]){3,}\s*$/.test(line)) {
+      result.push(<HorizontalRule key={i} />)
+      i++
+      continue
+    }
+
+    if (line.startsWith('### ')) {
+      result.push(
+        <strong
+          key={i}
+          className="block text-[15px] font-bold text-gray-800 dark:text-gray-100 mt-3 mb-1"
+        >
+          {renderInline(line.slice(4))}
+        </strong>,
+      )
+      i++
+      continue
+    }
+
+    if (line.startsWith('## ')) {
+      result.push(
+        <strong
+          key={i}
+          className="block text-[16px] font-bold text-gray-800 dark:text-gray-100 mt-3 mb-1"
+        >
+          {renderInline(line.slice(3))}
+        </strong>,
+      )
+      i++
+      continue
+    }
+
+    if (line.startsWith('# ')) {
+      result.push(
+        <strong
+          key={i}
+          className="block text-[17px] font-bold text-gray-800 dark:text-gray-100 mt-3 mb-1"
+        >
+          {renderInline(line.slice(2))}
+        </strong>,
+      )
+      i++
+      continue
+    }
+
+    if (/^[-*] /.test(line)) {
+      result.push(
+        <span key={i} className="flex gap-2 my-0.5">
+          <span className="text-gray-400 mt-0.5 flex-shrink-0">•</span>
+          <span>{renderInline(line.slice(2))}</span>
+        </span>,
+      )
+      i++
+      continue
+    }
+
+    const numMatch = line.match(/^(\d+)\. (.*)/)
+    if (numMatch) {
+      result.push(
+        <span key={i} className="flex gap-2 my-0.5">
+          <span className="text-gray-400 flex-shrink-0 min-w-[1.5rem] text-right">
+            {numMatch[1]}.
+          </span>
+          <span>{renderInline(numMatch[2])}</span>
+        </span>,
+      )
+      i++
+      continue
+    }
+
+    result.push(
+      <span key={i}>
+        {renderInline(line)}
+        {i < lines.length - 1 && '\n'}
+      </span>,
+    )
+    i++
+  }
+
+  return <span className="whitespace-pre-wrap break-words">{result}</span>
+}
+
 function renderInline(text) {
   const parts = []
-  // Regex: `code`, **bold**, *italic*
-  const regex = /`([^`]+)`|\*\*(.+?)\*\*|\*(.+?)\*/g
+  const regex = /`([^`]+)`|\*\*(.+?)\*\*|\*(.+?)\*|\[([^\]]+)\]\(([^)]+)\)/g
   let last = 0
   let m
 
@@ -214,6 +319,18 @@ function renderInline(text) {
       )
     } else if (m[3] !== undefined) {
       parts.push(<em key={m.index}>{m[3]}</em>)
+    } else if (m[4] !== undefined && m[5] !== undefined) {
+      parts.push(
+        <a
+          key={m.index}
+          href={m[5]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 underline underline-offset-2 decoration-blue-300/60 hover:decoration-blue-500 transition-colors"
+        >
+          {m[4]}
+        </a>,
+      )
     }
 
     last = m.index + m[0].length
@@ -223,23 +340,31 @@ function renderInline(text) {
   return parts.length === 1 && typeof parts[0] === 'string' ? parts[0] : parts
 }
 
-/* ─── Message bubble ─── */
 function MessageBubble({ msg }) {
   const isUser = msg.role === 'user'
 
-  // Deteksi apakah pesan user punya file JSON-encoded (dari generateFromFile)
   let userContent = msg.content
   let userFiles = msg.files ?? []
   try {
     const parsed = JSON.parse(msg.content)
     if (Array.isArray(parsed)) {
       const textPart = parsed.find((p) => p.type === 'text')
-      const fileParts = parsed.filter((p) => p.type === 'file' || p.type === 'image_base64')
+      const fileParts = parsed.filter(
+        (p) => p.type === 'file' || p.type === 'image' || p.type === 'image_base64',
+      )
       if (textPart) userContent = textPart.text
       if (fileParts.length)
         userFiles = fileParts.map((p) => ({ name: p.name ?? p.filename ?? 'file' }))
     }
     // eslint-disable-next-line no-empty, no-unused-vars
+  } catch (_) {}
+
+  let annotations = []
+  try {
+    const raw = msg.annotations
+    if (Array.isArray(raw)) annotations = raw
+    else if (typeof raw === 'string' && raw) annotations = JSON.parse(raw)
+    // eslint-disable-next-line no-unused-vars, no-empty
   } catch (_) {}
 
   return (
@@ -251,7 +376,7 @@ function MessageBubble({ msg }) {
             : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-gray-700 rounded-tl-none'
         }`}
       >
-        {/* File attachments */}
+        {/* File chips pada bubble user */}
         {userFiles.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-2">
             {userFiles.map((f, i) => (
@@ -268,7 +393,10 @@ function MessageBubble({ msg }) {
 
         <MessageContent content={userContent} />
 
-        {/* Footer AI label */}
+        {/* Citations / Annotations dari file search */}
+        {!isUser && annotations.length > 0 && <CitationBlock annotations={annotations} />}
+
+        {/* Footer: AI model info + waktu */}
         {!isUser && (
           <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex items-center gap-1.5 opacity-50">
             {msg.code && AI_CODE_MAP[msg.code] && (
@@ -338,6 +466,7 @@ function EmptyState({ userName }) {
   )
 }
 
+/* ─── Skeleton saat loading history ─── */
 function SkeletonMessages() {
   return (
     <div className="space-y-6">
@@ -367,6 +496,7 @@ function SkeletonMessages() {
   )
 }
 
+/* ─── Skeleton awal ─── */
 function InitialSkeleton() {
   return (
     <div className="w-full space-y-6">
@@ -380,6 +510,7 @@ function InitialSkeleton() {
   )
 }
 
+/* ─── Main export ─── */
 export default function ChatMessages({
   messages,
   streamingContent,

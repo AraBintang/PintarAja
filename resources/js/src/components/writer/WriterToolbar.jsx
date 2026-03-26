@@ -1,7 +1,7 @@
 import { FileText, Lock, Ruler } from 'lucide-react'
 import { memo } from 'react'
 
-import { AI_CODE_MAP, AutoIcon } from '@/assets/ai'
+import { AI_CODE_MAP, AI_MODELS, AutoIcon } from '@/assets/ai'
 import {
   Select,
   SelectContent,
@@ -38,9 +38,14 @@ const WriterToolbar = memo(function WriterToolbar({
                   <span className="text-[12px] text-gray-400 dark:text-gray-500 font-medium">
                     Model:
                   </span>
-                  <span className="text-[13px] text-gray-800 dark:text-gray-200 font-semibold">
-                    {AI_CODE_MAP[selectedAi.code]?.label || selectedAi.code}
+                  <span className="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[90px]">
+                    {AI_CODE_MAP[selectedAi.code]?.label}
                   </span>
+                  {selectedAi.model && (
+                    <span className="text-[12px] text-gray-500 dark:text-gray-400 font-medium truncate max-w-[110px]">
+                      {selectedAi.model}
+                    </span>
+                  )}
                 </div>
               )}
             </SelectValue>
@@ -70,28 +75,42 @@ const WriterToolbar = memo(function WriterToolbar({
               ) : (
                 aiProviders.map((ai) => {
                   const mapped = AI_CODE_MAP[ai.code] || { label: ai.code, icon: <AutoIcon /> }
+                  const modelInfo = (AI_MODELS[ai.code] ?? []).find(
+                    (item) => item.value === ai.model || item.label === ai.model,
+                  )
                   const isSelected = String(ai.id) === selectedAiId
                   return (
                     <SelectItem
                       key={ai.id}
                       value={String(ai.id)}
-                      className="cursor-pointer py-2.5 px-3 hover:bg-gray-50 focus:bg-gray-50 dark:hover:bg-gray-700/60 dark:focus:bg-gray-700/60 transition-colors rounded-xl my-0.5 [&>span:first-child]:hidden"
+                      className={`cursor-pointer py-2.5 px-3 transition-colors rounded-xl my-0.5 [&>span:first-child]:hidden ${
+                        isSelected
+                          ? 'bg-[#4A90D9]/8 dark:bg-[#4A90D9]/15'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'
+                      }`}
                     >
                       <div className="flex items-center gap-2.5 w-full">
                         <div
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-[#4A90D9]/10 dark:bg-[#4A90D9]/20' : 'bg-gray-100 dark:bg-gray-700'}`}
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-[#4A90D9]/8 dark:bg-[#4A90D9]/15' : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'}`}
                         >
                           <span className="text-[15px]">{mapped.icon}</span>
                         </div>
                         <div className="flex flex-col flex-1 min-w-0">
-                          <span
-                            className={`text-[13px] font-semibold leading-tight ${isSelected ? 'text-[#4A90D9]' : 'text-gray-700 dark:text-gray-200'}`}
-                          >
-                            {mapped.label}
-                          </span>
-                          {ai.model && (
-                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono truncate leading-tight mt-0.5">
-                              {ai.model}
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-[13px] font-semibold truncate ${isSelected ? 'text-[#4A90D9]' : 'text-gray-700 dark:text-gray-200'}`}
+                            >
+                              {mapped.label}
+                            </span>
+                            {ai.model && (
+                              <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 truncate">
+                                {ai.model}
+                              </span>
+                            )}
+                          </div>
+                          {modelInfo?.desc && (
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5 truncate">
+                              {modelInfo.desc}
                             </span>
                           )}
                         </div>

@@ -40,12 +40,21 @@ class ConversationController extends Controller
                     ->reverse()
                     ->values()
                     ->map(function ($chat) {
+                        $annotations = [];
+                        if (!empty($chat->T_ChatAnnotations)) {
+                            $decoded = json_decode($chat->T_ChatAnnotations, true);
+                            if (is_array($decoded)) {
+                                $annotations = $decoded;
+                            }
+                        }
+
                         return [
                             'id' => $chat->T_ChatID,
                             'conversationId' => $chat->T_ChatT_ConversationID,
                             'code' => $chat->T_ChatCode,
                             'role' => $chat->T_ChatRole,
                             'content' => $chat->T_ChatContent,
+                            'annotations' => $annotations,
                             'time' => Carbon::parse($chat->T_ChatCreated)->format('H:i')
                         ];
                     });

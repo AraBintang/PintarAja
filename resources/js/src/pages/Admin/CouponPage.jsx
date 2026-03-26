@@ -38,7 +38,7 @@ function getStatusConfig(status) {
   switch (status) {
     case 'active':
       return {
-        label: 'Aktif',
+        label: 'Active',
         bg: 'bg-emerald-50 dark:bg-emerald-900/20',
         text: 'text-emerald-700 dark:text-emerald-400',
         border: 'border-emerald-100 dark:border-emerald-900/30',
@@ -47,7 +47,7 @@ function getStatusConfig(status) {
       }
     case 'used':
       return {
-        label: 'Digunakan',
+        label: 'Used',
         bg: 'bg-blue-50 dark:bg-orange-900/20',
         text: 'text-blue-700 dark:text-orange-400',
         border: 'border-blue-100 dark:border-orange-900/30',
@@ -56,7 +56,7 @@ function getStatusConfig(status) {
       }
     default:
       return {
-        label: 'Kadaluarsa',
+        label: 'Expired',
         bg: 'bg-gray-50 dark:bg-gray-700',
         text: 'text-gray-500 dark:text-gray-400',
         border: 'border-gray-100 dark:border-gray-600',
@@ -366,7 +366,7 @@ export default function CouponPage() {
                             {status == 'active' && (
                               <button
                                 onClick={() => handleCopy(coupon.code, coupon.id)}
-                                className="w-7 h-7 rounded-md bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-300 transition-colors"
+                                className="w-7 h-7 rounded-md bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-center text-gray-800 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                                 title="Copy code"
                               >
                                 {copiedId === coupon.id ? (

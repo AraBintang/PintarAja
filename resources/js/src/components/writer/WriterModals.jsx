@@ -366,7 +366,7 @@ export function SaveWorkbookModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md"
+      className="fixed inset-0 z-70 flex items-center justify-center bg-black/40 backdrop-blur-md"
       onClick={onClose}
     >
       <div
@@ -375,13 +375,13 @@ export function SaveWorkbookModal({
       >
         <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50/50 to-white dark:from-gray-800 dark:to-gray-800">
           <h3 className="text-gray-800 dark:text-gray-100 font-bold text-lg flex items-center gap-2">
-            <FolderPlus className="w-5 h-5 text-[#4A90D9]" /> Simpan ke Workbook
+            <FolderPlus className="w-5 h-5 text-[#4A90D9]" /> Save Document
           </h3>
         </div>
         <div className="p-6 space-y-5">
           <div>
             <label className="text-[12px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5 block">
-              Nama File
+              Document Name
             </label>
             <input
               type="text"
@@ -394,13 +394,13 @@ export function SaveWorkbookModal({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[12px] font-semibold text-gray-500 dark:text-gray-400">
-                Pilih Workbook
+                Select Workbook
               </label>
               <button
                 onClick={() => setShowAddWb(!showAddWb)}
                 className="text-[11px] text-[#4A90D9] font-semibold hover:underline"
               >
-                + Workbook Baru
+                + New Workbook
               </button>
             </div>
             {showAddWb && (
@@ -443,7 +443,7 @@ export function SaveWorkbookModal({
             disabled={isSaving}
             className="py-2.5 px-5 text-[14px] font-semibold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-all rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700"
           >
-            Batal
+            Cancel
           </button>
           <button
             onClick={handleSave}
@@ -455,7 +455,7 @@ export function SaveWorkbookModal({
             ) : (
               <FolderPlus className="w-4 h-4" />
             )}
-            {isSaving ? 'Menyimpan...' : 'Simpan'}
+            {isSaving ? 'Saving...' : 'Save Document'}
           </button>
         </div>
       </div>

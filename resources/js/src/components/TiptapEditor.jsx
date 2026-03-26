@@ -1,3 +1,7 @@
+import { Table } from '@tiptap/extension-table'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
+import { TableRow } from '@tiptap/extension-table-row'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import {
@@ -177,13 +181,26 @@ export default function TiptapEditor({
 }) {
   const isExternalUpdate = useRef(false)
 
+  const sanitizeHtml = (html) => {
+    return html
+      .replace(/(\/?(table|thead|tbody|tr|th|td)>)\s*(<br\s*\/?>)\s*/gi, '$1')
+      .replace(/(<br\s*\/?>\s*)(\/?(table|thead|tbody|tr|th|td))/gi, '<$2')
+      .replace(/(<br\s*\/?>\s*){2,}/gi, '<br />')
+      .replace(/(<\/(h[1-6]|p)>)\s*<br\s*\/?>/gi, '$1')
+      .replace(/<br\s*\/?>\s*(<(h[1-6]|p))/gi, '$1')
+  }
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
       }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
-    content,
+    content: sanitizeHtml(content),
     editorProps: {
       attributes: {
         class:
@@ -200,11 +217,12 @@ export default function TiptapEditor({
   useEffect(() => {
     if (!editor || !content) return
 
+    const sanitized = sanitizeHtml(content)
     const currentHTML = editor.getHTML()
 
-    if (content !== currentHTML) {
+    if (sanitized !== currentHTML) {
       isExternalUpdate.current = true
-      editor.commands.setContent(content, false)
+      editor.commands.setContent(sanitized, false)
       isExternalUpdate.current = false
     }
   }, [content, editor])

@@ -67,12 +67,12 @@ export const AI_MODELS = {
   ],
   'SETTING-GMN': [
     {
-      value: 'gemini-2.5-pro-preview-05-06',
+      value: 'gemini-2.5-pro',
       label: 'Gemini 2.5 Pro',
       desc: 'Most intelligent Gemini, deep reasoning',
     },
     {
-      value: 'gemini-2.5-flash-preview-04-17',
+      value: 'gemini-2.5-flash',
       label: 'Gemini 2.5 Flash',
       desc: 'Best price-performance with thinking mode',
     },

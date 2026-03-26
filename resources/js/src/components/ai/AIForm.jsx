@@ -202,9 +202,6 @@ export default function AIForm({
                             <span className="text-[13px] font-semibold leading-tight">
                               {m.label}
                             </span>
-                            <span className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight mt-0.5">
-                              {m.desc}
-                            </span>
                           </div>
                         </SelectItem>
                       ))}
