@@ -231,8 +231,12 @@ class TranscribeController extends Controller
                 $transcript = implode("\n\n", $transcriptParts);
             }
 
-            if (file_exists($audioPath)) {
+            if ($audioPath && file_exists($audioPath)) {
                 unlink($audioPath);
+            }
+
+            if (isset($fullPath) && file_exists($fullPath)) {
+                unlink($fullPath);
             }
         }
 
