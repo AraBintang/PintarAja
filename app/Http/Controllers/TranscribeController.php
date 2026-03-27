@@ -195,8 +195,6 @@ class TranscribeController extends Controller
             $filename = uniqid() . ".webm";
             $file->move(storage_path('app/private/record'), $filename);
             $fullPath = storage_path('app/private/record/' . $filename);
-            $file->move(storage_path('app/private/record'), $filename);
-            $fullPath = storage_path('app/private/record/' . $filename);
             $audioPath = storage_path("app/audio/" . uniqid() . ".mp3");
 
             $command = "ffmpeg -i " .
