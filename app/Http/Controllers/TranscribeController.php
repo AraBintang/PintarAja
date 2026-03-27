@@ -97,6 +97,7 @@ class TranscribeController extends Controller
         $request->validate([
             'source' => 'required',
             'video_url' => 'nullable|url',
+            'file' => 'nullable|file|max:102400',
         ]);
 
         $user = $request->user();
@@ -145,8 +146,9 @@ class TranscribeController extends Controller
             $file = $request->file('file');
 
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('private/uploads', $filename, 'local');
-            $fullPath = storage_path('app/private/uploads/' . basename($path));
+            $file->move(storage_path('app/private/uploads'), $filename);
+            $fullPath = storage_path('app/private/uploads/' . $filename);
+            $path = $fullPath;
 
             if (!file_exists($fullPath)) {
                 return response()->json([
@@ -177,8 +179,8 @@ class TranscribeController extends Controller
             $file = $request->file('file');
 
             $filename = uniqid() . ".webm";
-            $path = $file->storeAs('private/record', $filename, 'local');
-            $fullPath = storage_path('app/private/record/' . basename($path));
+            $file->move(storage_path('app/private/record'), $filename);
+            $fullPath = storage_path('app/private/record/' . $filename);
             $audioPath = storage_path("app/audio/" . uniqid() . ".mp3");
 
             $command = "ffmpeg -i " .
