@@ -131,6 +131,7 @@ class TranscribeController extends Controller
             'source' => 'required',
             'video_url' => 'nullable|url',
             'file' => 'nullable|file|max:102400',
+            'file' => 'nullable|file|max:102400',
         ]);
 
         $user = $request->user();
@@ -192,6 +193,8 @@ class TranscribeController extends Controller
             $file = $request->file('file');
 
             $filename = uniqid() . ".webm";
+            $file->move(storage_path('app/private/record'), $filename);
+            $fullPath = storage_path('app/private/record/' . $filename);
             $file->move(storage_path('app/private/record'), $filename);
             $fullPath = storage_path('app/private/record/' . $filename);
             $audioPath = storage_path("app/audio/" . uniqid() . ".mp3");
