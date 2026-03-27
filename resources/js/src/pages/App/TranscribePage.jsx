@@ -42,6 +42,7 @@ function TranscriptionResultView({ transcriptionResult, handleReset, handleExpor
   useEffect(() => {
     if (transcriptionResult) {
       setAnimKey((k) => k + 1)
+      console.log(transcriptionResult)
     }
   }, [transcriptionResult])
 
@@ -301,13 +302,12 @@ export default function TranscribePage() {
       if (res.id) {
         setCurrentHistoryId(res.id)
         window.dispatchEvent(
-          new CustomEvent('paraphraseCompleted', {
+          new CustomEvent('transcribeCompleted', {
             detail: {
               id: res.id,
-              title: inputText.slice(0, 60),
-              name: inputText.slice(0, 60),
+              name: res.name.slice(0, 60),
               data: res.data,
-              origin: inputText,
+              source: res.source,
               time: new Date().toLocaleString('id-ID'),
             },
           }),

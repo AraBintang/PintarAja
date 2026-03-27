@@ -92,11 +92,45 @@ class TranscribeController extends Controller
         return $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
     }
 
+    private function transcribeYoutubeWithGemini($youtubeUrl)
+    {
+        $apiKey = config('services.gemini.key');
+
+        $payload = [
+            "contents" => [[
+                "parts" => [
+                    [
+                        "file_data" => [
+                            "file_uri" => $youtubeUrl
+                        ]
+                    ],
+                    [
+                        "text" => "Please transcribe this audio with timestamps."
+                    ]
+                ]
+            ]]
+        ];
+
+        $response = Http::post(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
+            $payload
+        );
+
+        if (!$response->successful()) {
+            throw new \Exception("Gemini YouTube transcribe failed: " . $response->body());
+        }
+
+        $result = $response->json();
+
+        return $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
+    }
+
     public function transcribe(Request $request)
     {
         $request->validate([
             'source' => 'required',
             'video_url' => 'nullable|url',
+            'file' => 'nullable|file|max:102400',
         ]);
 
         $user = $request->user();
@@ -107,36 +141,17 @@ class TranscribeController extends Controller
 
         $source = $request->input('source');
         $audioPath = null;
+        $transcript = null;
 
         if ($source === 'youtube') {
             $youtubeUrl = $request->video_url;
 
-            $filename = uniqid();
-            $audioTemplate = storage_path("app/audio/{$filename}.%(ext)s");
-
-            $ytDlp = "yt-dlp";
-
-            $command = $ytDlp .
-                " -f bestaudio --extract-audio --audio-format mp3 -o " .
-                escapeshellarg($audioTemplate) . " " .
-                escapeshellarg($youtubeUrl) .
-                " 2>&1";
-
-            exec($command, $output, $status);
-
-            if ($status !== 0) {
+            try {
+                $transcript = $this->transcribeYoutubeWithGemini($youtubeUrl);
+            } catch (\Exception $e) {
                 return response()->json([
-                    'error' => 'Failed to download audio',
-                    'log' => $output
-                ], 500);
-            }
-
-            $files = glob(storage_path("app/audio/{$filename}.*"));
-            $audioPath = $files[0] ?? null;
-
-            if (!$audioPath) {
-                return response()->json([
-                    'error' => 'Audio file not found'
+                    'error' => 'Failed to transcribe YouTube video',
+                    'log' => $e->getMessage()
                 ], 500);
             }
         }
@@ -145,8 +160,8 @@ class TranscribeController extends Controller
             $file = $request->file('file');
 
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('uploads', $filename);
-            $fullPath = storage_path('app/private/' . $path);
+            $file->move(storage_path('app/private/uploads'), $filename);
+            $fullPath = storage_path('app/private/uploads/' . $filename);
 
             if (!file_exists($fullPath)) {
                 return response()->json([
@@ -177,8 +192,8 @@ class TranscribeController extends Controller
             $file = $request->file('file');
 
             $filename = uniqid() . ".webm";
-            $path = $file->storeAs('record', $filename);
-            $fullPath = storage_path('app/private/' . $path);
+            $file->move(storage_path('app/private/record'), $filename);
+            $fullPath = storage_path('app/private/record/' . $filename);
             $audioPath = storage_path("app/audio/" . uniqid() . ".mp3");
 
             $command = "ffmpeg -i " .
@@ -197,44 +212,43 @@ class TranscribeController extends Controller
             }
         }
 
-        $maxSize = 20 * 1024 * 1024;
+        if ($audioPath) {
+            $maxSize = 20 * 1024 * 1024;
 
-        if (filesize($audioPath) <= $maxSize) {
-            $transcript = $this->transcribeWithGemini($audioPath);
-        } else {
-            $chunks = $this->splitAudio($audioPath);
+            if (filesize($audioPath) <= $maxSize) {
+                $transcript = $this->transcribeWithGemini($audioPath);
+            } else {
+                $chunks = $this->splitAudio($audioPath);
 
-            $transcriptParts = [];
+                $transcriptParts = [];
 
-            foreach ($chunks as $chunk) {
-                $text = $this->transcribeWithGemini($chunk);
+                foreach ($chunks as $chunk) {
+                    $text = $this->transcribeWithGemini($chunk);
+                    $transcriptParts[] = $text;
+                    unlink($chunk);
+                }
 
-                $transcriptParts[] = $text;
-
-                unlink($chunk);
+                $transcript = implode("\n\n", $transcriptParts);
             }
 
-            $transcript = implode("\n\n", $transcriptParts);
+            if (file_exists($audioPath)) {
+                unlink($audioPath);
+            }
         }
-
-        $user = $request->user();
 
         $transcribeId = Transcribe::create([
             'M_TranscribeM_UserID' => $user->M_UserID,
-            'M_TranscribeName' => 'Transcribe ' . now()->format('Y-m-d H:i'),
+            'M_TranscribeName' => ucfirst($source) . ' transcribe ' . now()->format('Y-m-d H:i'),
             'M_TranscribeData' => $transcript,
             'M_TranscribeSource' => $source
         ]);
 
-
-        if ($audioPath && file_exists($audioPath)) {
-            unlink($audioPath);
-        }
-
         return response()->json([
             'success' => true,
             'data' => $transcript,
-            'id' => $transcribeId->M_TranscribeID
+            'id' => $transcribeId->M_TranscribeID,
+            'name' => $transcribeId->M_TranscribeName,
+            'source' => $transcribeId->M_TranscribeSource
         ]);
     }
 

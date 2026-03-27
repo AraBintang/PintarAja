@@ -178,7 +178,7 @@ export default function RightSidebar() {
       // Paraphrase: history baru
       paraphraseCompleted: (e) => {
         if (location.pathname !== '/paraphrase') return
-        const item = e.detail // { id, title/name, data, time }
+        const item = e.detail
         setHistoryItems((prev) => {
           if (prev.some((h) => h.id === item.id)) return prev
           return [item, ...prev]
