@@ -114,7 +114,7 @@ class TranscribeController extends Controller
             $filename = uniqid();
             $audioTemplate = storage_path("app/audio/{$filename}.%(ext)s");
 
-            $ytDlp = "yt-dlp";
+            $ytDlp = "yt-dlp --js-runtimes node";
 
             $command = $ytDlp .
                 " -f bestaudio --extract-audio --audio-format mp3 -o " .
@@ -145,8 +145,8 @@ class TranscribeController extends Controller
             $file = $request->file('file');
 
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('uploads', $filename);
-            $fullPath = storage_path('app/private/' . $path);
+            $path = $file->storeAs('private/uploads', $filename, 'local');
+            $fullPath = storage_path('app/private/uploads/' . basename($path));
 
             if (!file_exists($fullPath)) {
                 return response()->json([
@@ -177,8 +177,8 @@ class TranscribeController extends Controller
             $file = $request->file('file');
 
             $filename = uniqid() . ".webm";
-            $path = $file->storeAs('record', $filename);
-            $fullPath = storage_path('app/private/' . $path);
+            $path = $file->storeAs('private/record', $filename, 'local');
+            $fullPath = storage_path('app/private/record/' . basename($path));
             $audioPath = storage_path("app/audio/" . uniqid() . ".mp3");
 
             $command = "ffmpeg -i " .
