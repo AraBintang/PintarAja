@@ -116,7 +116,7 @@ const WriterForm = memo(function WriterForm({
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="w-full flex items-center justify-between px-5 py-3 mb-6 bg-white dark:bg-gray-800 border text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-all border-gray-200 dark:border-gray-700 rounded-3xl text-[13px] font-semibold"
+          className="w-full flex items-center justify-between px-5 py-3 mt-4 mb-6 bg-white dark:bg-gray-800 border text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-all border-gray-200 dark:border-gray-700 rounded-3xl text-[13px] font-semibold"
         >
           <span className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#4A90D9]" />

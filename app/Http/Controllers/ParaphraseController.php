@@ -77,7 +77,7 @@ Rules:
 ";
 
         $response = $client->responses()->create([
-            'model' => 'gpt-4.1',
+            'model' => 'gpt-5',
             'temperature' => 0.3,
             'input' => [
                 [

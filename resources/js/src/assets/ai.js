@@ -45,7 +45,21 @@ export const AI_CODE_MAP = {
 
 export const AI_MODELS = {
   'SETTING-GPT': [
-    { value: 'gpt-4.1', label: 'GPT-4.1', desc: 'Most capable, best for complex tasks & coding' },
+    {
+      value: 'gpt-5',
+      label: 'GPT-5',
+      desc: 'Most powerful OpenAI model, frontier intelligence & reasoning',
+    },
+    {
+      value: 'gpt-5-nanp',
+      label: 'GPT-5-nano',
+      desc: 'Fastest, most cost-efficient version of GPT-5',
+    },
+    {
+      value: 'gpt-4.1',
+      label: 'GPT-4.1',
+      desc: 'Flagship model, best for complex tasks & coding',
+    },
     {
       value: 'gpt-4.1-mini',
       label: 'GPT-4.1 Mini',
@@ -56,20 +70,33 @@ export const AI_MODELS = {
       label: 'GPT-4.1 Nano',
       desc: 'Ultra-fast, cheapest, ideal for simple Q&A',
     },
-    { value: 'gpt-4o', label: 'GPT-4o', desc: 'Multimodal flagship — text, vision & audio' },
+    {
+      value: 'gpt-4o',
+      label: 'GPT-4o',
+      desc: 'Multimodal flagship — text, vision & audio',
+    },
     {
       value: 'gpt-4o-mini',
       label: 'GPT-4o Mini',
       desc: 'Lightweight 4o, cost-efficient multimodal',
     },
-    { value: 'o3', label: 'o3', desc: 'Advanced reasoning for math & science' },
-    { value: 'o4-mini', label: 'o4 Mini', desc: 'Fast reasoning model, great for coding & STEM' },
+    {
+      value: 'o4-mini',
+      label: 'o4 Mini',
+      desc: 'Fast reasoning model, great for coding & STEM',
+    },
+    {
+      value: 'o1',
+      label: 'o1',
+      desc: 'Advanced reasoning for math, science & complex logic',
+    },
   ],
+
   'SETTING-GMN': [
     {
       value: 'gemini-2.5-pro',
       label: 'Gemini 2.5 Pro',
-      desc: 'Most intelligent Gemini, deep reasoning',
+      desc: 'Most intelligent Gemini, deep reasoning & 1M context',
     },
     {
       value: 'gemini-2.5-flash',
@@ -77,73 +104,55 @@ export const AI_MODELS = {
       desc: 'Best price-performance with thinking mode',
     },
     {
+      value: 'gemini-2.5-flash-lite',
+      label: 'Gemini 2.5 Flash-Lite',
+      desc: 'Lightweight 2.5, ultra cost-efficient at scale',
+    },
+    {
       value: 'gemini-2.0-flash',
       label: 'Gemini 2.0 Flash',
-      desc: 'Next-gen speed, real-time multimodal',
+      desc: 'Next-gen speed, real-time multimodal tasks',
     },
     {
       value: 'gemini-2.0-flash-lite',
       label: 'Gemini 2.0 Flash-Lite',
       desc: 'Most cost-efficient for high-volume tasks',
     },
-    {
-      value: 'gemini-1.5-pro',
-      label: 'Gemini 1.5 Pro',
-      desc: '2M token context, complex reasoning',
-    },
-    {
-      value: 'gemini-1.5-flash',
-      label: 'Gemini 1.5 Flash',
-      desc: 'Versatile & fast, long context support',
-    },
-    {
-      value: 'gemini-1.5-flash-8b',
-      label: 'Gemini 1.5 Flash-8B',
-      desc: 'Lightweight, best for high-frequency use',
-    },
   ],
+
   'SETTING-CLD': [
     {
-      value: 'claude-opus-4-5',
+      value: 'claude-sonnet-4-6',
+      label: 'Claude Sonnet 4.6',
+      desc: 'Latest Sonnet, best balance of speed & intelligence',
+    },
+    {
+      value: 'claude-opus-4-6',
+      label: 'Claude Opus 4.6',
+      desc: 'Most powerful Claude, complex analysis & writing',
+    },
+    {
+      value: 'claude-opus-4-5-20251101',
       label: 'Claude Opus 4.5',
-      desc: 'Most powerful, complex analysis & writing',
+      desc: 'High capability, strong reasoning & research',
     },
     {
-      value: 'claude-sonnet-4-5',
+      value: 'claude-sonnet-4-5-20250929',
       label: 'Claude Sonnet 4.5',
-      desc: 'Best balance of speed and intelligence',
+      desc: 'Fast & smart, ideal for coding & data analysis',
     },
     {
-      value: 'claude-haiku-4-5',
+      value: 'claude-haiku-4-5-20251001',
       label: 'Claude Haiku 4.5',
-      desc: 'Fastest & compact, near-instant responses',
-    },
-    {
-      value: 'claude-opus-4-0',
-      label: 'Claude Opus 4',
-      desc: 'Exceptional for research & reasoning',
-    },
-    {
-      value: 'claude-sonnet-4-0',
-      label: 'Claude Sonnet 4',
-      desc: 'High performance, coding & data analysis',
-    },
-    {
-      value: 'claude-3-7-sonnet-latest',
-      label: 'Claude Sonnet 3.7',
-      desc: 'Extended thinking, frontier intelligence',
-    },
-    {
-      value: 'claude-3-5-haiku-latest',
-      label: 'Claude Haiku 3.5',
-      desc: 'Fast & affordable for simple workflows',
+      desc: 'Fastest Claude, near-instant responses',
     },
   ],
+
   'SETTING-DSK': [
     {
       value: 'deepseek-chat',
       label: 'DeepSeek V3',
-      desc: 'Flagship chat model with strong reasoning',
+      desc: 'Flagship chat model, strong reasoning & coding',
     },
     {
       value: 'deepseek-reasoner',
@@ -151,12 +160,43 @@ export const AI_MODELS = {
       desc: 'Advanced chain-of-thought reasoning model',
     },
   ],
+
   'SETTING-QWN': [
-    { value: 'qwen-max', label: 'Qwen Max', desc: 'Most capable Qwen, complex multilingual tasks' },
-    { value: 'qwen-plus', label: 'Qwen Plus', desc: 'Balanced performance & cost efficiency' },
-    { value: 'qwen-turbo', label: 'Qwen Turbo', desc: 'Ultra-fast, cost-efficient responses' },
-    { value: 'qwen-long', label: 'Qwen Long', desc: 'Extra-long context, ideal for documents' },
-    { value: 'qwq-plus', label: 'QwQ Plus', desc: 'Deep reasoning & mathematical thinking' },
+    {
+      value: 'qwen3.5-plus',
+      label: 'Qwen3.5 Plus',
+      desc: 'Latest flagship Qwen, powerful multilingual reasoning',
+    },
+    {
+      value: 'qwen3.5-flash',
+      label: 'Qwen3.5 Flash',
+      desc: 'Fast & efficient, great for everyday multilingual tasks',
+    },
+    {
+      value: 'qwen-max',
+      label: 'Qwen Max',
+      desc: 'Most capable Qwen, complex multilingual tasks',
+    },
+    {
+      value: 'qwen-plus',
+      label: 'Qwen Plus',
+      desc: 'Balanced performance & cost efficiency',
+    },
+    {
+      value: 'qwen-turbo',
+      label: 'Qwen Turbo',
+      desc: 'Ultra-fast, cost-efficient responses',
+    },
+    {
+      value: 'qwq-plus',
+      label: 'QwQ Plus',
+      desc: 'Deep reasoning & mathematical thinking',
+    },
+    {
+      value: 'qwen3-coder-plus',
+      label: 'Qwen3 Coder Plus',
+      desc: 'Specialized coding model, best for dev tasks',
+    },
   ],
 }
 

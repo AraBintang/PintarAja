@@ -129,7 +129,6 @@ function CitationBlock({ annotations }) {
             key={ann.file_id ?? i}
             className="flex items-start gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50"
           >
-            {/* Nomor urut citation */}
             <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
               {i + 1}
             </span>
@@ -334,24 +333,155 @@ function renderInline(text) {
   return parts.length === 1 && typeof parts[0] === 'string' ? parts[0] : parts
 }
 
-function MessageBubble({ msg }) {
-  const isUser = msg.role === 'user'
+/* ─── Parse fileMeta dari pesan (support kedua sumber: live & dari DB) ─── */
+function parseFileMeta(msg) {
+  // Pesan baru dari state langsung punya fileMeta
+  if (Array.isArray(msg.fileMeta) && msg.fileMeta.length > 0) {
+    return msg.fileMeta
+  }
 
-  let userContent = msg.content
-  let userFiles = msg.files ?? []
+  // Pesan dari DB: content adalah JSON array
+  // Format: [{"type":"text","text":"..."}, {"type":"image","name":"...","base64":"..."}, {"type":"file","name":"..."}]
+  try {
+    const parsed = JSON.parse(msg.content)
+    if (Array.isArray(parsed)) {
+      return parsed
+        .filter((p) => p.type === 'image' || p.type === 'file')
+        .map((p) => ({
+          name: p.name ?? p.filename ?? 'file',
+          type: p.type === 'image' ? 'image/jpeg' : 'application/octet-stream',
+          isImage: p.type === 'image',
+          base64: p.base64 ?? null,
+        }))
+    }
+    // eslint-disable-next-line no-unused-vars, no-empty
+  } catch (_) {}
+
+  // Fallback: format lama dengan msg.files
+  if (Array.isArray(msg.files) && msg.files.length > 0) {
+    return msg.files.map((f) => ({
+      name: f.name ?? 'file',
+      type: f.type ?? '',
+      isImage: false,
+      base64: null,
+    }))
+  }
+
+  return []
+}
+
+/* ─── Parse text content dari pesan ─── */
+function parseTextContent(msg) {
+  // Pesan baru dari state: content adalah string teks murni
+  if (Array.isArray(msg.fileMeta)) {
+    return msg.content
+  }
+
+  // Coba parse JSON (pesan dari DB dengan lampiran)
   try {
     const parsed = JSON.parse(msg.content)
     if (Array.isArray(parsed)) {
       const textPart = parsed.find((p) => p.type === 'text')
-      const fileParts = parsed.filter(
-        (p) => p.type === 'file' || p.type === 'image' || p.type === 'image_base64',
-      )
-      if (textPart) userContent = textPart.text
-      if (fileParts.length)
-        userFiles = fileParts.map((p) => ({ name: p.name ?? p.filename ?? 'file' }))
+      return textPart?.text ?? ''
     }
-    // eslint-disable-next-line no-empty, no-unused-vars
+    // eslint-disable-next-line no-unused-vars, no-empty
   } catch (_) {}
+
+  return msg.content
+}
+
+/* ─── Attachment preview di ATAS bubble (image tampil full, file sebagai chip) ─── */
+function AttachmentPreview({ fileMeta }) {
+  if (!fileMeta || fileMeta.length === 0) return null
+
+  const images = fileMeta.filter((f) => f.isImage)
+  const files = fileMeta.filter((f) => !f.isImage)
+
+  return (
+    <div className="flex flex-col items-end gap-2 mb-1.5 max-w-[85%] md:max-w-[75%]">
+      {/* Images: tampil sebagai thumbnail */}
+      {images.length > 0 && (
+        <div className={`flex gap-2 flex-wrap justify-end`}>
+          {images.map((img, i) =>
+            img.base64 ? (
+              <div
+                key={i}
+                className="relative group rounded-2xl overflow-hidden border border-gray-200/60 dark:border-gray-700/50"
+                style={{
+                  width: images.length === 1 ? '160px' : '120px',
+                  maxHeight: images.length === 1 ? '160px' : '120px',
+                }}
+              >
+                <img
+                  src={img.base64}
+                  alt={img.name}
+                  className="w-full h-auto object-contain rounded-2xl block"
+                  style={{
+                    maxHeight: images.length === 1 ? '320px' : '120px',
+                  }}
+                  loading="lazy"
+                />
+              </div>
+            ) : (
+              // Fallback jika base64 tidak ada (pesan lama tanpa base64)
+              <div
+                key={i}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-xl"
+              >
+                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                  <svg
+                    className="w-4 h-4 text-blue-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+                    />
+                  </svg>
+                </div>
+                <span className="text-[12px] font-medium text-blue-700 dark:text-blue-300 truncate max-w-[120px]">
+                  {img.name}
+                </span>
+              </div>
+            ),
+          )}
+        </div>
+      )}
+
+      {/* Files: tampil sebagai chip */}
+      {files.length > 0 && (
+        <div className="flex flex-wrap gap-2 justify-end">
+          {files.map((f, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600/50 rounded-xl"
+            >
+              <div className="w-7 h-7 rounded-lg bg-white dark:bg-gray-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <Paperclip className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+              </div>
+              <span className="text-[12px] font-medium text-gray-700 dark:text-gray-300 truncate max-w-[150px]">
+                {f.name}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MessageBubble({ msg }) {
+  const isUser = msg.role === 'user'
+
+  // Parse text content (handle JSON array dari DB maupun string biasa)
+  const textContent = isUser ? parseTextContent(msg) : msg.content
+
+  // Parse file metadata (support fileMeta live, JSON DB, maupun msg.files lama)
+  const fileMeta = isUser ? parseFileMeta(msg) : []
 
   let annotations = []
   try {
@@ -363,46 +493,38 @@ function MessageBubble({ msg }) {
 
   return (
     <div className={`flex flex-col w-full ${isUser ? 'items-end' : 'items-start'}`}>
-      <div
-        className={` px-4 py-3 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
-          isUser
-            ? 'bg-[#eeedeb] dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tr-none max-w-[85%] md:max-w-[75%]'
-            : 'max-w-[95%] bg-[#eeedeb] dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-tl-none'
-        }`}
-      >
-        {/* File chips pada bubble user */}
-        {userFiles.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2">
-            {userFiles.map((f, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 p-2 bg-white/50 dark:bg-gray-700/50 rounded-lg border border-gray-200/50 dark:border-gray-600/50"
-              >
-                <Paperclip className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-[12px] font-medium truncate max-w-[150px]">{f.name}</span>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* ─── Attachment preview DI ATAS bubble (hanya untuk user) ─── */}
+      {isUser && fileMeta.length > 0 && <AttachmentPreview fileMeta={fileMeta} />}
 
-        <MessageContent content={userContent} />
+      {/* ─── Bubble chat ─── */}
+      {/* Sembunyikan bubble jika tidak ada teks dan ada file (agar tidak muncul bubble kosong) */}
+      {(textContent || !isUser) && (
+        <div
+          className={`px-4 py-3 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
+            isUser
+              ? 'bg-[#eeedeb] dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tr-none max-w-[85%] md:max-w-[75%]'
+              : 'max-w-[95%] bg-[#eeedeb] dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-tl-none'
+          }`}
+        >
+          <MessageContent content={textContent} />
 
-        {/* Citations / Annotations dari file search */}
-        {!isUser && annotations.length > 0 && <CitationBlock annotations={annotations} />}
+          {/* Citations / Annotations dari file search */}
+          {!isUser && annotations.length > 0 && <CitationBlock annotations={annotations} />}
 
-        {/* Footer: AI model info + waktu */}
-        {!isUser && (
-          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex items-center gap-1.5 opacity-50">
-            {msg.code && AI_CODE_MAP[msg.code] && (
-              <>
-                <span className="w-3.5 h-3.5 flex-shrink-0">{AI_CODE_MAP[msg.code].icon}</span>
-                <span className="text-[11px] font-semibold">{AI_CODE_MAP[msg.code].label}</span>
-              </>
-            )}
-            {msg.time && <span className="text-[11px] ml-auto">{msg.time}</span>}
-          </div>
-        )}
-      </div>
+          {/* Footer: AI model info + waktu */}
+          {!isUser && (
+            <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex items-center gap-1.5 opacity-50">
+              {msg.code && AI_CODE_MAP[msg.code] && (
+                <>
+                  <span className="w-3.5 h-3.5 flex-shrink-0">{AI_CODE_MAP[msg.code].icon}</span>
+                  <span className="text-[11px] font-semibold">{AI_CODE_MAP[msg.code].label}</span>
+                </>
+              )}
+              {msg.time && <span className="text-[11px] ml-auto">{msg.time}</span>}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

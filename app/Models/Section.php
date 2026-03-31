@@ -31,5 +31,10 @@ class Section extends Model
         );
     }
 
+    public function prompts()
+    {
+        return $this->hasMany(Prompt::class, 'M_PromptM_SectionID', 'M_SectionID');
+    }
+
     public $timestamps = false;
 }

@@ -296,7 +296,7 @@ export default function WriterPage() {
       setIsGenerating(true)
       const existingContent = editorContent.trim()
       setIsGenerated(false)
-      setCitations([])
+      setInputCollapsed(true)
       setShowFileCleanupNotice(false)
       if (!regenerate) setCurrentDocId(null)
 
@@ -340,7 +340,6 @@ export default function WriterPage() {
         let accumulated = existingContent + separator
 
         setIsGenerated(true)
-        setInputCollapsed(true)
 
         while (true) {
           const { done, value } = await reader.read()
@@ -351,7 +350,15 @@ export default function WriterPage() {
             const m = chunk.match(/<!--CITATIONS:(.*?)-->/)
             if (m) {
               try {
-                setCitations(JSON.parse(m[1]))
+                // ─── Append semua citasi baru (termasuk duplikat) ke existing ───
+                const newCitations = JSON.parse(m[1]).map((c) => ({
+                  ...c,
+                  paper: selectedPaperName,
+                  section: selectedSectionName,
+                  generatedAt: new Date().toLocaleString('id-ID'),
+                }))
+
+                setCitations((prev) => [...prev, ...newCitations])
                 // eslint-disable-next-line no-empty, no-unused-vars
               } catch (_) {}
             }
@@ -409,7 +416,6 @@ export default function WriterPage() {
           fileName: uploadedFile?.fileName || '',
         })
 
-        // Hanya simpan nama & ukuran file — bukan fileId/vectorStoreId (sudah tidak valid setelah dihapus)
         const fileInfoForDb = uploadedFile
           ? { fileName: uploadedFile.fileName, fileSize: uploadedFile.fileSize }
           : savedFileInfo || null
@@ -469,7 +475,6 @@ export default function WriterPage() {
         setHasUnsavedChanges(false)
         setTimeout(() => setSaveSuccessMsg(''), 4000)
 
-        // Ingatkan user hapus file setelah save berhasil
         if (uploadedFile) setShowFileCleanupNotice(true)
       } catch (err) {
         showSnackbar('error', err.message || 'Gagal menyimpan dokumen')
@@ -588,7 +593,7 @@ export default function WriterPage() {
           </div>
         )}
 
-        {/* File aktif — sebelum cleanup notice tampil */}
+        {/* File aktif */}
         {uploadedFile && !showFileCleanupNotice && (
           <div className="flex items-center px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 rounded-full text-blue-700 dark:text-blue-400 text-[13px] font-medium">
             <span className="flex items-center gap-2">
@@ -598,7 +603,7 @@ export default function WriterPage() {
           </div>
         )}
 
-        {/* ── Notifikasi cleanup file (setelah generate / save) ── */}
+        {/* Notifikasi cleanup file */}
         {showFileCleanupNotice && uploadedFile && (
           <div className="flex flex-col gap-2.5 px-4 py-3.5 bg-orange-50 dark:bg-orange-900/15 border border-orange-200 dark:border-orange-700/40 rounded-2xl">
             <div className="flex items-start gap-3">
@@ -710,8 +715,8 @@ export default function WriterPage() {
           onDeleteFile={handleDeleteFile}
         />
 
-        {isGenerating && !editorContent && (
-          <div className="mb-4">
+        {isGenerating && !isGenerated && (
+          <div className="my-4">
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
               <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
                 <div className="flex gap-1.5">

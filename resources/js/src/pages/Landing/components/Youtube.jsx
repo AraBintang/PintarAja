@@ -87,7 +87,7 @@ export default function Youtube() {
             : videos.map((video, i) => (
                 <div
                   key={video.id ?? i}
-                  className={`group rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:shadow-orange-500/40 dark:hover:shadow-blue-500/40 transition-all duration-500 hover:-translate-y-1 ${
+                  className={`group rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-500 hover:-translate-y-1 ${
                     isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                   }`}
                   style={{

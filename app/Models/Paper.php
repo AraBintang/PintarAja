@@ -30,5 +30,10 @@ class Paper extends Model
         );
     }
 
+    public function prompts()
+    {
+        return $this->hasMany(Prompt::class, 'M_PromptM_PaperID', 'M_PaperID');
+    }
+
     public $timestamps = false;
 }

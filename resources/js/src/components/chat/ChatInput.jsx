@@ -1,4 +1,4 @@
-import { ArrowUp, FileText, Image, Lock, Paperclip, Plus, X as XIcon } from 'lucide-react'
+import { ArrowUp, FileText, Image, Lock, Plus, X as XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { AI_CODE_MAP, AI_MODELS, AutoIcon } from '@/assets/ai'
@@ -75,11 +75,7 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
                       onChange(String(ai.id))
                       setOpen(false)
                     }}
-                    className={`cursor-pointer w-full text-left px-3 py-2.5 rounded-xl transition-colors flex items-center gap-2.5 my-0.5 ${
-                      isSelected
-                        ? 'bg-[#4A90D9]/8 dark:bg-[#4A90D9]/15'
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'
-                    }`}
+                    className={`cursor-pointer w-full text-left px-3 py-2.5 rounded-xl transition-colors flex items-center gap-2.5 my-0.5 ${isSelected ? 'bg-[#4A90D9]/8 dark:bg-[#4A90D9]/15' : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'}`}
                   >
                     <div
                       className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-[#4A90D9]/8 dark:bg-[#4A90D9]/15' : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'}`}
@@ -146,6 +142,77 @@ function Spinner() {
   )
 }
 
+/* ─── File Preview Chip ─── */
+function FileChip({ file, index, onRemove, isStreaming }) {
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const isImage = file.type.startsWith('image/')
+
+  useEffect(() => {
+    if (!isImage) return
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [file, isImage])
+
+  const ext = file.name.split('.').pop().toUpperCase()
+
+  const extColorMap = {
+    PDF: 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400',
+    DOC: 'bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400',
+    DOCX: 'bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400',
+    TXT: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
+  }
+  const extColor = extColorMap[ext] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+
+  if (isImage && previewUrl) {
+    return (
+      <div className="relative group shrink-0">
+        <img
+          src={previewUrl}
+          alt={file.name}
+          className="w-16 h-16 object-contain rounded-xl border border-gray-200 dark:border-gray-600"
+        />
+        <button
+          type="button"
+          onClick={() => onRemove(index)}
+          disabled={isStreaming}
+          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-40"
+        >
+          <XIcon className="w-3 h-3" />
+        </button>
+        {/* Filename tooltip on hover */}
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 text-white text-[10px] rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none max-w-[120px] truncate">
+          {file.name}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative group flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded-xl shrink-0 max-w-[200px]">
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${extColor}`}>
+        <FileText className="w-4 h-4" />
+      </div>
+      <div className="flex flex-col min-w-0">
+        <span className="text-[12px] font-semibold text-gray-700 dark:text-gray-200 truncate">
+          {file.name}
+        </span>
+        <span className={`text-[10px] font-bold ${extColor.split(' ')[2] ?? 'text-gray-400'}`}>
+          {ext}
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => onRemove(index)}
+        disabled={isStreaming}
+        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-40"
+      >
+        <XIcon className="w-3 h-3" />
+      </button>
+    </div>
+  )
+}
+
 export default function ChatInput({
   inputValue,
   onInputChange,
@@ -192,9 +259,7 @@ export default function ChatInput({
   }
 
   const selectedProvider = aiProviders.find((a) => String(a.id) === String(selectedAiId))
-
   const canAttachImage = !isStreaming && selectedProvider?.code !== 'SETTING-DSK'
-
   const canAttachFile = !isStreaming && selectedProvider?.code === 'SETTING-GPT'
 
   return (
@@ -207,25 +272,17 @@ export default function ChatInput({
         className="max-w-3xl mx-auto w-full bg-white dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50 shadow-sm"
       >
         <div className="flex flex-col">
-          {/* File chips */}
+          {/* File previews */}
           {attachedFiles.length > 0 && (
-            <div className="px-3 pt-3 flex items-center gap-2 flex-wrap">
+            <div className="px-4 pt-4 flex items-end gap-2 flex-wrap">
               {attachedFiles.map((f, i) => (
-                <div
+                <FileChip
                   key={i}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-[13px] font-medium border border-blue-100 dark:border-blue-800"
-                >
-                  <Paperclip className="w-3.5 h-3.5" />
-                  <span className="truncate max-w-[150px]">{f.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveFile(i)}
-                    disabled={isStreaming}
-                    className="disabled:opacity-40"
-                  >
-                    <XIcon className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                  file={f}
+                  index={i}
+                  onRemove={onRemoveFile}
+                  isStreaming={isStreaming}
+                />
               ))}
             </div>
           )}
@@ -287,20 +344,10 @@ export default function ChatInput({
                           ? 'Upload gambar tidak tersedia untuk model Deepseek'
                           : undefined
                       }
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors
-                        ${
-                          !canAttachImage
-                            ? 'opacity-40 cursor-not-allowed pointer-events-none'
-                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'
-                        }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors ${!canAttachImage ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'}`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0
-                          ${
-                            !canAttachImage
-                              ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
-                              : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600'
-                          }`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!canAttachImage ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600'}`}
                       >
                         <Image className="w-4 h-4" />
                       </div>
@@ -327,20 +374,10 @@ export default function ChatInput({
                           ? 'Upload file hanya tersedia untuk model OpenAI (GPT)'
                           : undefined
                       }
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors
-                        ${
-                          !canAttachFile
-                            ? 'opacity-40 cursor-not-allowed pointer-events-none'
-                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'
-                        }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors ${!canAttachFile ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'}`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0
-                          ${
-                            !canAttachFile
-                              ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
-                              : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600'
-                          }`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!canAttachFile ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600'}`}
                       >
                         <FileText className="w-4 h-4" />
                       </div>
@@ -371,13 +408,7 @@ export default function ChatInput({
               <button
                 type="submit"
                 disabled={!canSend}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-                  isStreaming
-                    ? 'bg-black dark:bg-white text-white dark:text-black cursor-not-allowed'
-                    : canSend
-                      ? 'bg-black dark:bg-white text-white dark:text-black hover:scale-105'
-                      : 'bg-[#eeedeb] dark:bg-black/20 text-gray-400 dark:text-[#555]'
-                }`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isStreaming ? 'bg-black dark:bg-white text-white dark:text-black cursor-not-allowed' : canSend ? 'bg-black dark:bg-white text-white dark:text-black hover:scale-105' : 'bg-[#eeedeb] dark:bg-black/20 text-gray-400 dark:text-[#555]'}`}
               >
                 {isStreaming ? <Spinner /> : <ArrowUp className="w-[18px] h-[18px]" />}
               </button>

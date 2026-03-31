@@ -16,20 +16,26 @@ class SettingAiController extends Controller
         $page = max(1, (int) $request->input('page', 1));
         $search = $request->input('search');
         $code = $request->input('code');
+        $model = $request->input('model');
+        $planId = $request->input('plan_id');
         $order = in_array(strtolower($request->input('order', 'desc')), ['asc', 'desc'])
             ? $request->input('order', 'desc')
             : 'desc';
-
+ 
         $query = SettingAI::with('plans')
             ->when($search, fn($q) => $q->where(function ($qq) use ($search) {
                 $qq->where('M_SettingName', 'like', "%{$search}%")
                    ->orWhere('M_SettingCode', 'like', "%{$search}%");
             }))
-            ->when($code, fn($q) => $q->where('M_SettingCode', 'like', "%{$code}%"))
+            ->when($code, fn($q) => $q->where('M_SettingCode', $code))
+            ->when($model, fn($q) => $q->where('M_SettingModel', $model))
+            ->when($planId, fn($q) => $q->whereHas('plans', fn($pq) =>
+                $pq->where('m_plan.M_PlanID', $planId)
+            ))
             ->orderBy('M_SettingCreated', $order);
-
+ 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
-
+ 
         $data = $paginated->getCollection()->map(fn($item) => [
             'id' => $item->M_SettingID,
             'code' => $item->M_SettingCode,
@@ -42,17 +48,17 @@ class SettingAiController extends Controller
                 'name' => $p->M_PlanName,
             ]),
         ]);
-
+ 
         $summary = [
             'total' => SettingAI::count(),
             'active' => SettingAI::where('M_SettingIsActive', 'Y')->count(),
         ];
-
+ 
         $plans = Plan::query()
             ->select('M_PlanID as id', 'M_PlanName as name')
             ->orderBy('M_PlanID', 'asc')
             ->get();
-
+ 
         return response()->json([
             'data' => $data,
             'summary' => $summary,
@@ -120,6 +126,22 @@ class SettingAiController extends Controller
         return response()->json(['message' => 'AI updated successfully']);
     }
 
+    private function syncPlans(int $settingId, array $planIds): void
+    {
+        DB::table('m_plansetting')
+            ->where('M_PlanSettingM_SettingID', $settingId)
+            ->delete();
+
+        if (empty($planIds)) return;
+
+        $rows = array_map(fn($planId) => [
+            'M_PlanSettingM_SettingID' => $settingId,
+            'M_PlanSettingM_PlanID' => $planId,
+        ], $planIds);
+
+        DB::table('m_plansetting')->insert($rows);
+    }
+
     public function activate($id)
     {
         SettingAI::findOrFail($id)->update([
@@ -157,21 +179,5 @@ class SettingAiController extends Controller
         });
 
         return response()->json(['message' => 'AI deleted successfully']);
-    }
-
-    private function syncPlans(int $settingId, array $planIds): void
-    {
-        DB::table('m_plansetting')
-            ->where('M_PlanSettingM_SettingID', $settingId)
-            ->delete();
-
-        if (empty($planIds)) return;
-
-        $rows = array_map(fn($planId) => [
-            'M_PlanSettingM_SettingID' => $settingId,
-            'M_PlanSettingM_PlanID' => $planId,
-        ], $planIds);
-
-        DB::table('m_plansetting')->insert($rows);
     }
 }
