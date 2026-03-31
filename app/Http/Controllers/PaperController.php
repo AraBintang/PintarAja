@@ -20,7 +20,7 @@ class PaperController extends Controller
             ->when($search, function ($q) use ($search) {
                 $q->where('M_PaperName', 'like', "%{$search}%");
             })
-            ->orderBy('M_PaperID', 'desc');
+            ->orderBy('M_PaperID', 'ASC');
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 

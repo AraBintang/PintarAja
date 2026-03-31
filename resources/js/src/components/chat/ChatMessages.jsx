@@ -1,15 +1,9 @@
-import { Check, Copy, FileText, Hash, Mic, Paperclip, Speech } from 'lucide-react'
+import { Check, Copy, FileText, Paperclip } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { AI_CODE_MAP } from '@/assets/ai'
 
-const CHAT_FEATURES = [
-  { label: 'AI Writer', iconColor: 'text-blue-500', to: '/writer', icon: <FileText /> },
-  { label: 'Paraphrase AI', iconColor: 'text-green-500', to: '/paraphrase', icon: <Hash /> },
-  { label: 'Humanizer AI', iconColor: 'text-orange-500', to: '/humanize', icon: <Speech /> },
-  { label: 'Transcribe AI', iconColor: 'text-purple-500', to: '/transcribe', icon: <Mic /> },
-]
+import EmptyState from './EmptyState'
 
 /* ─── Copy button ─── */
 function CopyButton({ code }) {
@@ -23,7 +17,7 @@ function CopyButton({ code }) {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-400 hover:text-gray-200 hover:bg-white/10 transition-colors"
+      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/10 transition-colors"
     >
       {copied ? (
         <>
@@ -44,8 +38,8 @@ function CopyButton({ code }) {
 function CodeBlock({ lang, code }) {
   return (
     <div className="mt-3 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 text-[13px]">
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-800 dark:bg-gray-900 border-b border-gray-700">
-        <span className="text-[11px] font-mono font-semibold text-gray-400 uppercase tracking-wider">
+      <div className="flex items-center justify-between px-4 py-2 bg-gray-200 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <span className="text-[11px] font-mono font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
           {lang || 'code'}
         </span>
         <CopyButton code={code} />
@@ -85,7 +79,7 @@ function MarkdownTable({ rows }) {
     <div className="mt-3 mb-2 overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
       <table className="w-full text-[13px] border-collapse">
         <thead>
-          <tr className="bg-gray-50 dark:bg-gray-800/80">
+          <tr className="bg-gray-200 dark:bg-gray-900">
             {headerCells.map((cell, i) => (
               <th
                 key={i}
@@ -100,7 +94,7 @@ function MarkdownTable({ rows }) {
           {dataRows.map((cells, ri) => (
             <tr
               key={ri}
-              className="border-b border-gray-100 dark:border-gray-700/60 last:border-0 hover:bg-gray-50/60 dark:hover:bg-gray-700/20 transition-colors"
+              className="border-b border-gray-100 dark:border-gray-700/60 last:border-0 hover:bg-gray-50/60 dark:hover:bg-gray-700/20 transition-colors bg-[#f7f7f5] dark:bg-[#0f141e]"
             >
               {cells.map((cell, ci) => (
                 <td key={ci} className="px-4 py-2.5 text-gray-700 dark:text-gray-300">
@@ -370,10 +364,10 @@ function MessageBubble({ msg }) {
   return (
     <div className={`flex flex-col w-full ${isUser ? 'items-end' : 'items-start'}`}>
       <div
-        className={`max-w-[85%] md:max-w-[75%] px-4 py-3 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
+        className={` px-4 py-3 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
           isUser
-            ? 'bg-[#eeedeb] dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tr-none'
-            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-gray-700 rounded-tl-none'
+            ? 'bg-[#eeedeb] dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tr-none max-w-[85%] md:max-w-[75%]'
+            : 'max-w-[95%] bg-[#eeedeb] dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-tl-none'
         }`}
       >
         {/* File chips pada bubble user */}
@@ -436,33 +430,6 @@ function StreamingBubble({ content }) {
         )}
       </div>
     </div>
-  )
-}
-
-/* ─── Empty state ─── */
-function EmptyState({ userName }) {
-  return (
-    <>
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mb-8 tracking-tight">
-        Hi <span className="gradient-name">{userName}</span>, What can we help you with today
-      </h1>
-      <div className="grid grid-cols-2 gap-3 w-full max-w-2xl px-6">
-        {CHAT_FEATURES.map((item) => (
-          <Link
-            key={item.label}
-            to={item.to}
-            className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-sm hover:border-gray-300 dark:hover:border-gray-600 transition-all group"
-          >
-            <span className={`${item.iconColor} group-hover:scale-110 transition-transform`}>
-              {item.icon}
-            </span>
-            <span className="text-[14px] font-medium text-gray-700 dark:text-gray-200">
-              {item.label}
-            </span>
-          </Link>
-        ))}
-      </div>
-    </>
   )
 }
 

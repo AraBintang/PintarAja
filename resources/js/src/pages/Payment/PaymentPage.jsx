@@ -11,7 +11,7 @@ import {
   Sun,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import WhatsAppButton from '@/components/WhatsAppButton'
@@ -155,24 +155,42 @@ export default function PaymentPage() {
   // returnUrl: halaman yang membuka detail ini (dipakai tombol Kembali)
   const returnUrl = state.returnUrl ?? null
 
-  const seedData =
-    !isFromHistory && state.referenceId
-      ? {
-          referenceId: state.referenceId,
-          paymentCode: state.paymentCode,
-          payUrl: state.payUrl,
-          checkoutUrl: state.checkoutUrl,
-          expiredAt: state.expiredAt,
-          instructions: state.instructions ?? [],
-          plan: state.plan,
-          price: state.price,
-          selectedMethod: state.selectedMethod,
-          statusCode: 0,
-        }
-      : null
+  const searchParams = new URLSearchParams(location.search)
+  const queryReferenceId = searchParams.get('referenceId')
+  const referenceId = state.referenceId ?? queryReferenceId
+
+  const seedData = useMemo(
+    () =>
+      !isFromHistory && state.referenceId
+        ? {
+            referenceId: state.referenceId,
+            paymentCode: state.paymentCode,
+            payUrl: state.payUrl,
+            checkoutUrl: state.checkoutUrl,
+            expiredAt: state.expiredAt,
+            instructions: state.instructions ?? [],
+            plan: state.plan,
+            price: state.price,
+            selectedMethod: state.selectedMethod,
+            statusCode: 0,
+          }
+        : null,
+    [
+      isFromHistory,
+      state.referenceId,
+      state.paymentCode,
+      state.payUrl,
+      state.checkoutUrl,
+      state.expiredAt,
+      state.instructions,
+      state.plan,
+      state.price,
+      state.selectedMethod,
+    ],
+  )
 
   const [txData, setTxData] = useState(seedData)
-  const [loading, setLoading] = useState(isFromHistory)
+  const [loading, setLoading] = useState(isFromHistory || (!!referenceId && !seedData))
   const [fetching, setFetching] = useState(false)
   const [cooldown, setCooldown] = useState(0)
   // accordion: index yang sedang terbuka (-1 = semua tutup)
@@ -180,7 +198,6 @@ export default function PaymentPage() {
 
   const cooldownRef = useRef(null)
   const autoRef = useRef(null)
-  const referenceId = state.referenceId
 
   /* ─── fetch detail ─── */
   const fetchDetail = useCallback(
@@ -213,8 +230,10 @@ export default function PaymentPage() {
 
   /* ─── initial load ─── */
   useEffect(() => {
-    if (isFromHistory) fetchDetail(false)
-  }, [isFromHistory, fetchDetail])
+    if (isFromHistory || (referenceId && !seedData)) {
+      fetchDetail(false)
+    }
+  }, [isFromHistory, referenceId, seedData, fetchDetail])
 
   /* ─── auto-refresh setiap 15 detik, stop kalau bukan pending ─── */
   useEffect(() => {
@@ -275,11 +294,53 @@ export default function PaymentPage() {
     }
   }
 
-  /* ─── loading ─── */
-  if (loading || !txData) {
+  /* ─── loading / fallback ─── */
+  if (!referenceId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f0f4ff] dark:bg-[#0c0f1a] px-6 text-center">
+        <div className="mb-5 p-5 rounded-3xl bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-800">
+          <p className="text-lg font-bold text-gray-900 dark:text-white">
+            Data pembayaran tidak tersedia
+          </p>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Buka halaman pembayaran melalui proses checkout atau gunakan tautan yang valid.
+          </p>
+        </div>
+        <button
+          onClick={handleBack}
+          className="py-3 px-6 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold hover:bg-gray-800 dark:hover:bg-gray-100 transition-all"
+        >
+          Kembali ke Chat
+        </button>
+      </div>
+    )
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f0f4ff] dark:bg-[#0c0f1a]">
         <div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+      </div>
+    )
+  }
+
+  if (!txData) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f0f4ff] dark:bg-[#0c0f1a] px-6 text-center">
+        <div className="mb-5 p-5 rounded-3xl bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-800">
+          <p className="text-lg font-bold text-gray-900 dark:text-white">
+            Transaksi tidak ditemukan
+          </p>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Silakan cek kembali link pembayaran Anda atau kembali ke halaman utama.
+          </p>
+        </div>
+        <button
+          onClick={handleBack}
+          className="py-3 px-6 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold hover:bg-gray-800 dark:hover:bg-gray-100 transition-all"
+        >
+          Kembali ke Chat
+        </button>
       </div>
     )
   }
@@ -304,7 +365,7 @@ export default function PaymentPage() {
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col relative overflow-hidden
+      className="min-h-screen w-full flex flex-col relative
       bg-[#f0f4ff] dark:bg-[#0c0f1a]"
     >
       {/* ── Decorative blobs ── */}
@@ -328,7 +389,7 @@ export default function PaymentPage() {
       </div>
 
       <div
-        className="sticky top-0 z-10 px-6 py-3.5 shrink-0
+        className="sticky top-0 z-10 px-1 md:px-6 py-3.5 shrink-0
         bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl
         border-b border-gray-200/60 dark:border-gray-800/60"
       >

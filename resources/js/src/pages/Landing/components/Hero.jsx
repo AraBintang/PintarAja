@@ -4,7 +4,14 @@ import { Link } from 'react-router-dom'
 import useScrollReveal from '@/hooks/useScrollReveal'
 
 const words = ['Skripsi', 'Tesis', 'Jurnal', 'Bisnis', 'AI Pintar']
-const badges = ['AI Chat', 'AI Writer', 'Paraphrase AI', 'Humanizer AI', 'Transcribe AI']
+const badges = [
+  'AI Chat',
+  'AI Writer',
+  'Paraphrase AI',
+  'Humanizer AI',
+  'Transcribe AI',
+  'Plagiarism Checker',
+]
 
 export default function Hero() {
   const [wordIndex, setWordIndex] = useState(0)
@@ -147,7 +154,7 @@ export default function Hero() {
                 transitionDelay: `${i * 80}ms`,
               }}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4A90D9] inline-block mr-2 shadow-[0_0_8px_rgba(74,144,217,0.5)] animate-pulse" />
+              <span className="mb-0.5 w-1.5 h-1.5 rounded-full bg-[#4A90D9] inline-block mr-2 shadow-[0_0_8px_rgba(74,144,217,0.5)] animate-pulse" />
               {badge}
             </span>
           ))}
@@ -199,12 +206,12 @@ export default function Hero() {
           </a>
 
           <Link
-            to="/login"
+            to="/register"
             className="group relative px-8 py-4 text-[15px] font-semibold text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] rounded-full transition-all min-w-[200px] shadow-[0_0_20px_rgba(74,144,217,0.2)] hover:shadow-[0_0_30px_rgba(74,144,217,0.4)] overflow-hidden hover:scale-105"
           >
             <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
             <span className="relative z-10 flex items-center justify-center gap-2">
-              Mulai Sekarang
+              Mulai Sekarang trial 7 hari
               <svg
                 className="w-4 h-4 group-hover:translate-x-1 transition-transform"
                 fill="none"

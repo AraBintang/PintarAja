@@ -1,4 +1,4 @@
-import { CreditCard, LogOut, ShoppingCart, User } from 'lucide-react'
+import { CreditCard, LogOut, ShoppingCart, User, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,6 +10,7 @@ import { request } from '@/utils/Http'
 const TABS = [
   { key: 'Profile', label: 'Profile', Icon: User },
   { key: 'Plan', label: 'Plan', Icon: CreditCard },
+  { key: 'Referral', label: 'Referral', Icon: Users },
   { key: 'History', label: 'Order History', Icon: ShoppingCart },
 ]
 
@@ -56,7 +57,11 @@ export default function SettingsSidebar({ activeTab, setActiveTab }) {
               `}
             >
               <Icon size={15} className="shrink-0" />
-              <span className="whitespace-nowrap">{label}</span>
+              <span
+                className={`whitespace-nowrap ${isActive ? 'block md:block' : ' hidden md:block'}`}
+              >
+                {label}
+              </span>
             </button>
           )
         })}

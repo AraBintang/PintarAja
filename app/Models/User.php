@@ -33,6 +33,8 @@ class User extends Authenticatable
         'M_UserIsActive',
         'M_UserRole',
         'M_UserPlan',
+        'M_UserReferralCode',
+        'M_UserReferredBy',
         'M_UserSubsExp',
         'M_UserCreated',
         'M_UserLastUpdated',
@@ -85,6 +87,63 @@ class User extends Authenticatable
             'M_UserPlan',
             'M_PlanID'
         );
+    }
+
+    /** Referral usages yang dimiliki user ini (sebagai owner kode) */
+    public function referralUsages()
+    {
+        return $this->hasMany(ReferralUsage::class, 'T_ReferralUsageOwnerID', 'M_UserID');
+    }
+    
+    /** User yang mereferral user ini */
+    public function referredBy()
+    {
+        return $this->belongsTo(User::class, 'M_UserReferredBy', 'M_UserID');
+    }
+    
+    /**
+     * Generate kode referral unik untuk user ini.
+     * Format: 8 karakter alfanumerik uppercase, contoh: "AB3X9K2M"
+     */
+    public function generateReferralCode(): string
+    {
+        do {
+            $code = strtoupper(substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 8));
+        } while (static::where('M_UserReferralCode', $code)->exists());
+    
+        $this->update(['M_UserReferralCode' => $code]);
+        return $code;
+    }
+    
+    /**
+     * Hitung total diskon pending yang belum dipakai (dari referral orang ke-1 s/d 6).
+     * Max 60% (6 orang × 10%)
+     */
+    public function getPendingDiscountPercent(): int
+    {
+        return (int) ReferralUsage::where('T_ReferralUsageOwnerID', $this->M_UserID)
+            ->where('T_ReferralUsageIsUsed', false)
+            ->where('T_ReferralUsageIsFreeMonth', false)
+            ->sum('T_ReferralUsageDiscountPercent');
+    }
+    
+    /**
+     * Cek apakah user punya reward free 1 bulan yang belum diklaim.
+     */
+    public function hasPendingFreeMonth(): bool
+    {
+        return ReferralUsage::where('T_ReferralUsageOwnerID', $this->M_UserID)
+            ->where('T_ReferralUsageIsUsed', false)
+            ->where('T_ReferralUsageIsFreeMonth', true)
+            ->exists();
+    }
+    
+    /**
+     * Jumlah total orang yang sudah pakai kode referral user ini.
+     */
+    public function getReferralCount(): int
+    {
+        return ReferralUsage::where('T_ReferralUsageOwnerID', $this->M_UserID)->count();
     }
 
     public $timestamps = false;

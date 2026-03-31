@@ -33,7 +33,7 @@ class WriterController extends Controller
             'M_SectionID as id',
             'M_SectionM_PaperID as paper_id',
             'M_SectionName as name'
-        )->orderBy('M_SectionName')->get();
+        )->orderBy('M_SectionName', 'desc')->get();
 
         $aiProviders = DB::table('m_plansetting as ps')
             ->join('m_setting as s', 's.M_SettingID', '=', 'ps.M_PlanSettingM_SettingID')

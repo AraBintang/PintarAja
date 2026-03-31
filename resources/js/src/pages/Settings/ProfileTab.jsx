@@ -92,7 +92,9 @@ export default function ProfileTab() {
         {/* ── Profile Section ── */}
         <section>
           <div className="flex items-center gap-3 mb-5">
-            <h2 className="text-[15px] font-semibold text-gray-900 dark:text-white">Profile</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+              Profile
+            </h2>
             {!isEditingProfile && (
               <button
                 onClick={() => setIsEditingProfile(true)}

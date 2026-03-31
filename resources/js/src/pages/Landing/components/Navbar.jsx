@@ -36,9 +36,6 @@ export default function Navbar() {
               intaraja
             </span>
           </div>
-          <span className="ml-1 text-[10px] block transition-colors duration-300 text-gray-400 dark:text-gray-500">
-            Guided Until Proficient
-          </span>
         </button>
 
         {/* Desktop Links */}
@@ -56,7 +53,7 @@ export default function Navbar() {
         </div>
 
         {/* CTA */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-3">
           {/* Dark mode toggle */}
           <button
             onClick={toggleTheme}
@@ -77,7 +74,7 @@ export default function Navbar() {
             to="/register"
             className="px-6 py-2.5 bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] text-white text-[14px] font-semibold rounded-full shadow-[0_4px_12px_rgba(74,144,217,0.3)] hover:shadow-[0_4px_16px_rgba(74,144,217,0.5)] transition-all hover:-translate-y-0.5"
           >
-            Daftar
+            Register
           </Link>
         </div>
 
@@ -116,7 +113,7 @@ export default function Navbar() {
               {link.label}
             </a>
           ))}
-          <div className="grid grid-cols-2 gap-3 pt-4">
+          <div className="grid grid-cols-2 gap-2 pt-4">
             <Link
               to="/login"
               className="block w-full text-center px-6 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-full"
@@ -129,7 +126,7 @@ export default function Navbar() {
               className="block w-full text-center px-6 py-3 bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] text-white text-sm font-semibold rounded-full shadow-md"
               onClick={() => setMobileOpen(false)}
             >
-              Daftar
+              Register
             </Link>
           </div>
         </div>

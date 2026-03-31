@@ -1,8 +1,16 @@
 export default function AuthProvider() {
+  const handleGoogleLogin = () => {
+    const params = new URLSearchParams(window.location.search)
+    const ref = params.get('ref') ?? ''
+
+    const url = ref ? `/auth/google?ref=${ref}` : '/auth/google'
+    window.location.href = url
+  }
+
   return (
     <button
       type="button"
-      onClick={() => (window.location.href = '/auth/google')}
+      onClick={handleGoogleLogin}
       className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-[16px]"
     >
       <svg

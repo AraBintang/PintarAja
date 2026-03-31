@@ -28,7 +28,7 @@ export default function AuthLayout() {
 
       <div className="flex flex-col items-center justify-center mx-auto">
         <button
-          onClick={() => navigate('/home')}
+          onClick={() => navigate('/')}
           className="absolute top-6 left-8 flex items-center gap-1 cursor-pointer"
         >
           <img src="/p doank.png" alt="Pintaraja" className="w-7 h-7 object-contain" />

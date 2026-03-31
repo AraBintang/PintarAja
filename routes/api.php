@@ -11,16 +11,21 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromptController;
+use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ResetController;
 use App\Http\Controllers\SettingAiController;
 use App\Http\Controllers\TranscribeController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WebSettingController;
 use App\Http\Controllers\WorkbookController;
 use App\Http\Controllers\WriterController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/payments/notify', [PaymentController::class, 'notify']);
+
 Route::get('/plans', [PlanController::class, 'index']);
+
+Route::get('/settings/public', [WebSettingController::class, 'public']);
 
 Route::middleware('guest:sanctum')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -34,6 +39,12 @@ Route::middleware('guest:sanctum')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::prefix('referrals')->group(function () {
+        Route::get('/', [ReferralController::class, 'index']);
+        Route::post('/activate', [ReferralController::class, 'activate']);
+        Route::post('/claim-free-month', [ReferralController::class, 'claimFreeMonth']);
+    });
 
     Route::prefix('profiles')->group(function () {
         Route::get('/', [ProfileController::class, 'me']);
@@ -100,9 +111,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [TranscribeController::class, 'destroy']);
     });
 
+    // Route::prefix('plagiarism')->group(function () {
+    //     Route::get('/', [PlagiarismController::class, 'index']);
+    //     Route::post('/', [PlagiarismController::class, 'detect']);
+    //     Route::put('/{id}', [PlagiarismController::class, 'update']);
+    //     Route::delete('/{id}', [PlagiarismController::class, 'destroy']);  // Coming Soon
+    // });
 
     Route::prefix('payments')->group(function () {
         Route::get('/', [PaymentController::class, 'index']);
+        Route::get('/referral-discount', [PaymentController::class, 'getReferralDiscount']);
         Route::get('/{referenceId}', [PaymentController::class, 'indexByReferenceId']);
         Route::post('/', [PaymentController::class, 'store']);
     });
@@ -150,6 +168,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/', [UserController::class, 'store']);
             Route::put('/{id}', [UserController::class, 'update']);
             Route::delete('/{id}', [UserController::class, 'destroy']);
+        });
+
+        Route::prefix('web-settings')->group(function () {
+            Route::get('/', [WebSettingController::class, 'index']);
+            Route::post('/', [WebSettingController::class, 'store']);
+            Route::put('/{id}', [WebSettingController::class, 'update']);
+            Route::delete('/{id}', [WebSettingController::class, 'destroy']);
         });
     });
 });

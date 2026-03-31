@@ -480,7 +480,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-[100vh] bg-[#f7f7f5] dark:bg-[#0f141e] transition-colors duration-300">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto pt-4 md:pt-8 px-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto pt-4 md:pt-8 px-6">
         <ChatMessages
           messages={messages}
           streamingContent={streamingContent}

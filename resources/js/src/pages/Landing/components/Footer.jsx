@@ -42,9 +42,6 @@ export default function Footer() {
                   intaraja
                 </span>
               </div>
-              <span className="ml-1 text-[10px] block transition-colors duration-300 text-gray-400 dark:text-gray-500">
-                Guided Until Proficient
-              </span>
             </button>
             <p className="text-gray-500 dark:text-gray-400 text-[14px] leading-relaxed">
               Platform AI tools untuk membantu mahasiswa lebih produktif

@@ -31,7 +31,7 @@ export function SnackbarProvider({ children }) {
       <div className="fixed top-6 left-1/2 -translate-x-1/2 z-100 pointer-events-none">
         <div
           className={`
-            px-6 py-3 text-white rounded-xl shadow-lg
+            px-6 py-3 text-white text-center rounded-xl shadow-lg
             transition-all duration-300 ease-out
             ${colors[snackbar.type]}
             ${

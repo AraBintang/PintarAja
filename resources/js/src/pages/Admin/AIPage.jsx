@@ -1,5 +1,7 @@
 import {
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Edit2,
   Key,
@@ -17,8 +19,12 @@ import { useSnackbar } from '@/context/SnackbarContext'
 import { useAIs } from '@/helpers/useAIs'
 import { Debounce } from '@/utils/Debounce'
 
+const PAGE_SIZE = 9
+
 export default function AIPage() {
   const { showSnackbar } = useSnackbar()
+
+  const [page, setPage] = useState(1)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [copiedId, setCopiedId] = useState(null)
@@ -31,6 +37,7 @@ export default function AIPage() {
 
   const {
     aiKeys,
+    pagination,
     summary,
     plans,
     loading,
@@ -39,7 +46,7 @@ export default function AIPage() {
     activateAiKey,
     deactivateAiKey,
     deleteAiKey,
-  } = useAIs({ search: debouncedSearch })
+  } = useAIs({ search: debouncedSearch, page, perPage: PAGE_SIZE })
 
   const handleCopy = (key, id) => {
     navigator.clipboard.writeText(key)
@@ -110,6 +117,21 @@ export default function AIPage() {
     isActive === 'Y'
       ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
       : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
+
+  const totalPages = pagination?.last_page ?? 1
+  const currentPage = pagination?.current_page ?? 1
+
+  const getPageNumbers = () => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
+    const pages = [1]
+    if (currentPage > 3) pages.push('...')
+    const start = Math.max(2, currentPage - 1)
+    const end = Math.min(totalPages - 1, currentPage + 1)
+    for (let i = start; i <= end; i++) pages.push(i)
+    if (currentPage < totalPages - 2) pages.push('...')
+    pages.push(totalPages)
+    return pages
+  }
 
   return (
     <div className="flex-1 h-full bg-[#f7f7f5] dark:bg-[#0f141e] text-gray-600 dark:text-gray-300 overflow-y-auto px-6 pb-6 pt-16 font-sans">
@@ -314,6 +336,59 @@ export default function AIPage() {
             ))}
           </div>
         )}
+
+        {/* Pagination */}
+        <div className="py-4 flex items-center justify-between flex-wrap gap-3">
+          <p className="text-[13px] text-gray-500 dark:text-gray-400">
+            Viewing{' '}
+            <span className="font-semibold text-gray-800 dark:text-gray-100">
+              {pagination ? (currentPage - 1) * PAGE_SIZE + 1 : 0}–
+              {pagination ? Math.min(currentPage * PAGE_SIZE, pagination.total) : 0}
+            </span>{' '}
+            from{' '}
+            <span className="font-semibold text-gray-800 dark:text-gray-100">
+              {pagination?.total ?? 0}
+            </span>{' '}
+            ai keys
+          </p>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 disabled:opacity-40 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {getPageNumbers().map((p, i) =>
+              p === '...' ? (
+                <span key={`e-${i}`} className="text-gray-400 text-sm px-1">
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-9 h-9 flex items-center justify-center rounded-lg font-medium text-[13px] transition-colors ${
+                    currentPage === p
+                      ? 'bg-blue-600 dark:bg-orange-500 text-white shadow-sm shadow-blue-200 dark:shadow-orange-900/30'
+                      : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                  }`}
+                >
+                  {p}
+                </button>
+              ),
+            )}
+
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 disabled:opacity-40 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
       <AIForm

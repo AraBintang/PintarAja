@@ -7,6 +7,7 @@ import { useSettingsModal } from '@/context/SettingsModalContext'
 import OrderHistoryTab from './OrderHistoryTab'
 import PlanTab from './PlanTab'
 import ProfileTab from './ProfileTab'
+import ReferralTab from './ReferralTab'
 import SettingsSidebar from './SettingsSidebar'
 
 export default function SettingsModal() {
@@ -40,11 +41,11 @@ export default function SettingsModal() {
   return (
     <div
       onClick={closeSettings}
-      className="fixed inset-0 z-70 flex items-end md:items-center justify-center bg-black/40 backdrop-blur-sm px-3 md:px-4"
+      className="fixed inset-0 z-70 flex items-end md:items-center justify-center bg-black/40 backdrop-blur-sm"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full md:max-w-5xl h-[92dvh] md:h-[80vh] bg-white dark:bg-gray-900 rounded-t-2xl md:rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col md:flex-row max-w-[calc(100%-1.5rem)] mx-auto"
+        className="relative w-full md:max-w-5xl min-h-[400px] md:min-h-[500px] max-h-[92dvh] md:max-h-[80vh] bg-white dark:bg-gray-900 rounded-2xl md:rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col md:flex-row max-w-[calc(100%-1.5rem)] m-auto"
       >
         {/* Close button */}
         <button
@@ -61,6 +62,7 @@ export default function SettingsModal() {
         <div className="flex-1 overflow-y-auto min-h-0">
           {activeTab === 'Profile' && <ProfileTab setActiveTab={setActiveTab} />}
           {activeTab === 'Plan' && <PlanTab />}
+          {activeTab === 'Referral' && <ReferralTab />}
           {activeTab === 'History' && <OrderHistoryTab />}
         </div>
       </div>

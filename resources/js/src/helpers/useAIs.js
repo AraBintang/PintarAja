@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { buildQuery, request } from '@/utils/Http'
 
-export function useAIs({ search = '', page = 1, perPage = 10 } = {}) {
+export function useAIs({ search = '', page = 1, perPage = 9 } = {}) {
   const [aiKeys, setAiKeys] = useState([])
   const [pagination, setPagination] = useState(null)
   const [summary, setSummary] = useState({ total: 0, active: 0 })

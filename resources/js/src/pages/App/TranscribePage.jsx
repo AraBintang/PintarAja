@@ -359,7 +359,7 @@ export default function TranscribePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f5] dark:bg-[#0f141e] flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-[#f7f7f5] dark:bg-[#0f141e] flex flex-col items-center justify-center px-6">
       {transcriptionResult ? (
         <TranscriptionResultView
           transcriptionResult={transcriptionResult}

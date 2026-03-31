@@ -16,6 +16,14 @@ class ProfileController extends Controller
     {
         $user = $request->user()->load('plan');
 
+        if ($user->M_UserPlan != 1 && $user->M_UserSubsExp !== null && now()->isAfter($user->M_UserSubsExp)) {
+            $user->update([
+                'M_UserPlan' => 1,
+                'M_UserSubsExp' => null,
+            ]);
+            $user->load('plan');
+        }
+
         return response()->json([
             'id' => $user->M_UserID,
             'email' => $user->M_UserEmail,
@@ -27,11 +35,7 @@ class ProfileController extends Controller
             'plan_id' => $user->M_UserPlan,
             'plan_name' => $user->plan?->M_PlanName,
 
-            'is_active' => $user->M_UserIsActive === 'Y',
-            'email_verified_at' => $user->M_UserEmailVerifiedAt,
             'subscription_expired_at' => $user->M_UserSubsExp,
-            'created_at' => $user->M_UserCreated,
-            'updated_at' => $user->M_UserLastUpdated,
         ]);
     }
 

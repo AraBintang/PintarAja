@@ -1,5 +1,7 @@
 import {
+  ChevronRight,
   Cpu,
+  FileSearch,
   FileText,
   Hash,
   Library,
@@ -8,6 +10,7 @@ import {
   PanelRight,
   Plus,
   Settings,
+  Settings2,
   Sparkles,
   Speech,
   Ticket,
@@ -27,6 +30,7 @@ const menuItems = [
   { label: 'Paraphrase AI', icon: Hash, to: '/paraphrase' },
   { label: 'Humanizer AI', icon: Speech, to: '/humanize' },
   { label: 'Transcribe AI', icon: Mic, to: '/transcribe' },
+  { label: 'Plagiarism Checker', icon: FileSearch, to: '/plagiarism' },
 ]
 
 const adminMenuItems = [
@@ -36,6 +40,7 @@ const adminMenuItems = [
   { label: 'Plan Setting', icon: Sparkles, to: '/admin/plan' },
   { label: 'Coupons', icon: Ticket, to: '/admin/coupons' },
   { label: 'User', icon: Users, to: '/admin/user' },
+  { label: 'Web Settings', icon: Settings2, to: '/admin/web-settings' },
 ]
 
 function SidebarItem({ icon: Icon, label, to, expanded }) {
@@ -63,7 +68,7 @@ function SidebarItem({ icon: Icon, label, to, expanded }) {
   )
 }
 
-function UserProfileSection({ expanded }) {
+function UserProfileSection({ expanded, onUpgradeClick }) {
   const { openSettings } = useSettingsModal()
   const { user } = useAuth()
 
@@ -79,7 +84,7 @@ function UserProfileSection({ expanded }) {
       <div className="px-2">
         <button
           onClick={openSettings}
-          className={`w-full rounded-xl flex items-center gap-3 transition-colors hover:bg-[#eeedeb] dark:hover:bg-gray-900 ${expanded ? 'px-4 py-2 my-2' : ' my-4 px-0 justify-center'}`}
+          className={`w-full rounded-xl flex items-center gap-3 transition-colors hover:bg-[#eeedeb] dark:hover:bg-gray-900 ${expanded ? 'px-3 py-2 my-2' : ' my-4 px-0 justify-center'}`}
         >
           <div className="w-9 h-9 rounded-full bg-[#2686D4] dark:bg-[#F2901E] flex items-center justify-center flex-shrink-0">
             <span className="text-white text-[14px] font-semibold">{userInitial}</span>
@@ -97,12 +102,34 @@ function UserProfileSection({ expanded }) {
             </>
           )}
         </button>
+
+        {user?.plan_id == 1 && expanded && (
+          <div className="mx-1 p-3 border border-gray-100 dark:border-gray-800 rounded-2xl mb-2 bg-[#f7f7f5] dark:bg-[#0f141e]">
+            <p className="text-sm font-bold">Upgrade Plan</p>
+            <p className="text-[12px] my-3">
+              Upgrade your plan at any time to get more features and benefits.
+            </p>
+            <button
+              onClick={onUpgradeClick}
+              className="
+                w-full py-3.5 rounded-xl font-bold text-sm flex items-center text-center justify-center gap-2
+                bg-gray-900 text-white hover:bg-gray-800
+                dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100
+                transition-all active:scale-[0.98]
+              "
+            >
+              <Zap className="w-4 h-4" />
+              Upgrade Plan
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-export default function Sidebar() {
+export default function Sidebar({ onUpgradeClick }) {
   const { expanded, toggle } = useSidebar()
   const { isAdmin } = useAuth()
 
@@ -155,7 +182,7 @@ export default function Sidebar() {
           )}
         </nav>
 
-        <UserProfileSection expanded={expanded} />
+        <UserProfileSection expanded={expanded} onUpgradeClick={onUpgradeClick} />
       </aside>
     </>
   )

@@ -12,7 +12,7 @@ class SettingAiController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = (int) $request->input('per_page', 10);
+        $perPage = (int) $request->input('per_page', 9);
         $page = max(1, (int) $request->input('page', 1));
         $search = $request->input('search');
         $code = $request->input('code');
