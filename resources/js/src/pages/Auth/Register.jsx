@@ -1,7 +1,7 @@
 import AuthProvider from '@components/AuthProvider'
 import { ArrowLeft, Eye, EyeOff, Loader2, RefreshCw, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import lottieRegister from '@/assets/lottie/auth.json'
 import { useAuth } from '@/context/AuthContext'
@@ -15,6 +15,7 @@ export default function Register() {
   const { login } = useAuth()
   const { showSnackbar } = useSnackbar()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState('register') // 'register' | 'otp'
@@ -25,6 +26,7 @@ export default function Register() {
     email: '',
     password: '',
     confirmPassword: '',
+    referralCode: searchParams.get('ref') ?? '',
   })
 
   const [turnstileToken, setTurnstileToken] = useState('')
@@ -107,7 +109,6 @@ export default function Register() {
       showSnackbar('error', 'Password minimal 6 karakter')
       return
     }
-
     if (!turnstileToken) {
       showSnackbar('error', 'Silakan selesaikan verifikasi Turnstile')
       return
@@ -122,6 +123,7 @@ export default function Register() {
           email: formData.email,
           password: formData.password,
           'cf-turnstile-response': turnstileToken,
+          referral_code: formData.referralCode || undefined, // hanya kirim jika ada
         },
       })
       showSnackbar('success', 'Kode OTP telah dikirim ke email Anda')
@@ -291,6 +293,27 @@ export default function Register() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div>
+              <label className="block text-[13px] font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                Referral Code <span className="text-gray-400 dark:text-gray-600">(optional)</span>
+              </label>
+              <input
+                type="text"
+                name="referralCode"
+                value={formData.referralCode}
+                onChange={handleChange}
+                placeholder="e.g AB3X9K2M"
+                maxLength={10}
+                className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm font-mono placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 dark:focus:border-blue-500 transition-all uppercase"
+                style={{ textTransform: 'uppercase' }}
+              />
+              {formData.referralCode && (
+                <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <span>✓</span> Referral code will be applied
+                </p>
+              )}
             </div>
 
             <div className="mt-6 flex flex-col items-center text-center">

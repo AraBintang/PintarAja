@@ -510,7 +510,7 @@ export default function WriterPage() {
 
   if (isLoadingData) {
     return (
-      <div className="min-h-screen bg-[#f7f7f5] dark:bg-[#0f141e] flex flex-col items-center px-4 overflow-y-auto">
+      <div className="min-h-screen bg-[#f7f7f5] dark:bg-[#0f141e] flex flex-col items-center px-6 overflow-y-auto">
         <div className="max-w-[1200px] mx-auto w-full text-center my-6">
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="w-12 h-12 skeleton rounded-xl" />
@@ -548,7 +548,7 @@ export default function WriterPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex flex-col items-center px-4 overflow-y-auto transition-colors duration-300 overflow-x-hidden">
+    <div className="min-h-screen relative flex flex-col items-center px-6 overflow-y-auto transition-colors duration-300 overflow-x-hidden">
       <div className="absolute inset-0 z-0 bg-[#f7f7f5] dark:bg-[#0f141e] pointer-events-none" />
 
       {/* Header */}

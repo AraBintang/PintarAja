@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   ChevronRight,
   CreditCard,
+  Gift,
   Monitor,
   Moon,
   ShieldCheck,
@@ -101,20 +102,43 @@ export default function CheckoutPage() {
   const { showSnackbar } = useSnackbar()
   const { theme, toggleTheme } = useTheme()
 
+  const [referralDiscount, setReferralDiscount] = useState(null)
   const [plan, setPlan] = useState(location.state?.plan ?? null)
   const [phone, setPhone] = useState(user?.phone ?? '')
   const [selectedMethod, setSelectedMethod] = useState(null)
   const [changePlanOpen, setChangePlanOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
+  const returnUrl = location.state?.returnUrl || '/chat'
+
   useEffect(() => {
-    if (!plan) navigate('/', { replace: true })
-  }, [plan, navigate])
+    if (!plan) navigate(`${returnUrl}`, { replace: true })
+  }, [returnUrl, plan, navigate])
+
+  useEffect(() => {
+    if (!plan) return
+
+    const fetchDiscount = async () => {
+      try {
+        const res = await request('/payments/referral-discount')
+        setReferralDiscount(res)
+      } catch {
+        // abaikan error, checkout tetap bisa jalan tanpa diskon
+      }
+    }
+    fetchDiscount()
+  }, [plan])
 
   if (!plan) return null
 
   const price = plan.selectedPrice ?? plan.price?.monthly_final ?? plan.price?.monthly ?? 0
   const selectedMethodObj = ALL_METHODS.find((m) => m.id === selectedMethod)
+
+  const isYearly = plan.selectedPeriod === 'yearly'
+  const discountPercent =
+    !isYearly && referralDiscount?.discount_percent ? referralDiscount.discount_percent : 0
+  const discountAmount = discountPercent > 0 ? Math.round(price * (discountPercent / 100)) : 0
+  const finalPrice = price - discountAmount
 
   const handleProceed = async () => {
     if (!phone.trim()) {
@@ -132,7 +156,7 @@ export default function CheckoutPage() {
         method: 'POST',
         body: {
           planId: plan.id,
-          amount: price,
+          amount: finalPrice,
           channel: selectedMethodObj.channel,
           method: selectedMethod,
           item: plan.itemName ?? `${plan.name} - ${plan.selectedPeriodSuffix ?? 'Monthly'}`,
@@ -149,7 +173,7 @@ export default function CheckoutPage() {
           expiredAt: res.expiredAt,
           instructions: res.instructions ?? [],
           plan,
-          price,
+          price: finalPrice,
           selectedMethod,
         },
       })
@@ -162,7 +186,7 @@ export default function CheckoutPage() {
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col relative overflow-hidden
+      className="min-h-screen w-full flex flex-col relative
       bg-[#f0f4ff] dark:bg-[#0c0f1a]"
     >
       <div className="pointer-events-none select-none absolute inset-0 overflow-hidden">
@@ -190,7 +214,7 @@ export default function CheckoutPage() {
       </div>
 
       <div
-        className="sticky top-0 z-10 px-6 py-3.5 shrink-0
+        className="sticky top-0 z-10 px-1 md:px-6 py-3.5 shrink-0
         bg-white/60 dark:bg-gray-950/60 backdrop-blur-xl
         border-b border-gray-200/60 dark:border-gray-800/60"
       >
@@ -198,8 +222,12 @@ export default function CheckoutPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
-                const returnUrl = location.state?.returnUrl || '/chat'
-                navigate(`${returnUrl}?settings=true&tab=plan&openPlans=true`)
+                const originSetting = location.state?.fromSettings
+                if (originSetting) {
+                  navigate(`${returnUrl}?settings=true&tab=plan&openPlans=true`, { replace: true })
+                  return
+                }
+                navigate(`${returnUrl}`)
               }}
               className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all"
             >
@@ -328,11 +356,31 @@ export default function CheckoutPage() {
                       Rp {formatPrice(price)}
                     </span>
                   </div>
+                  {discountPercent > 0 && (
+                    <div className="rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-3 space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Gift className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                          Diskon Referral {discountPercent}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Harga asli</span>
+                        <span className="text-gray-400 line-through">Rp {formatPrice(price)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-emerald-600 dark:text-emerald-400">Diskon</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                          - Rp {formatPrice(discountAmount)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <div className="border-t border-gray-100 dark:border-gray-800" />
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-bold text-gray-900 dark:text-white">Total</span>
                     <span className="text-xl font-extrabold text-gray-900 dark:text-white">
-                      Rp {formatPrice(price)}
+                      Rp {formatPrice(finalPrice)}
                     </span>
                   </div>
 

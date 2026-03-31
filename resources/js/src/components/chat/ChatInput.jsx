@@ -198,7 +198,7 @@ export default function ChatInput({
   const canAttachFile = !isStreaming && selectedProvider?.code === 'SETTING-GPT'
 
   return (
-    <div className="sticky bottom-0 pt-2 px-4">
+    <div className="sticky bottom-0 rounded-[32px] mt-2 mx-4">
       <form
         onSubmit={(e) => {
           e.preventDefault()

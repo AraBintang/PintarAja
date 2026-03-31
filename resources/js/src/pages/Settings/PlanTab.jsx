@@ -63,7 +63,9 @@ export default function PlanTab() {
       <div className="max-w-2xl">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Plan</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+            Plan
+          </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             Kelola paket dan masa aktif akun Anda
           </p>
@@ -125,7 +127,7 @@ export default function PlanTab() {
             </div>
 
             {/* Expire info */}
-            {expiredAt && (
+            {expiredAt && user?.plan_id !== 1 && (
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <CreditCard className="w-3.5 h-3.5 shrink-0" />
                 <span>
@@ -171,7 +173,7 @@ export default function PlanTab() {
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col md:flex-row gap-2">
             <input
               value={redeemCode}
               onChange={(e) => setRedeemCode(e.target.value)}
@@ -205,7 +207,11 @@ export default function PlanTab() {
         </div>
       </div>
 
-      <PlanSelectionModal open={planModalOpen} onClose={() => setPlanModalOpen(false)} />
+      <PlanSelectionModal
+        open={planModalOpen}
+        onClose={() => setPlanModalOpen(false)}
+        fromSettings={true}
+      />
     </div>
   )
 }

@@ -26,7 +26,7 @@ class PromptController extends Controller
             ->when($request->filled('sectionId'), function ($q) use ($request) {
                 $q->where('M_PromptM_SectionID', $request->sectionId);
             })
-            ->orderBy('M_PromptID', 'desc');
+            ->orderBy('M_PromptID', 'DESC');
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 

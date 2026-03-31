@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Mail\OtpMail;
 use App\Models\Otp;
+use App\Models\Plan;
+use App\Models\ReferralUsage;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -61,78 +63,107 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $credentials = $request->validate([
-            'name' => ['required', 'string'],
+            'name'  => ['required', 'string'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'min:8'],
+            'password'  => ['required', 'min:8'],
             'cf-turnstile-response' => ['required', new Turnstile],
+            'referral_code' => ['nullable', 'string', 'max:10'],
         ]);
-
+    
         $user = User::where('M_UserEmail', $credentials['email'])->first();
-
+    
         if ($user && $user->M_UserEmailVerifiedAt !== null) {
-            return response()->json([
-                'message' => 'Email already registered.'
-            ], 400);
+            return response()->json(['message' => 'Email already registered.'], 400);
         }
-
+    
+        $referredByUser = null;
+        if (!empty($credentials['referral_code'])) {
+            $referredByUser = User::where('M_UserReferralCode', $credentials['referral_code'])
+                ->whereNotNull('M_UserEmailVerifiedAt')
+                ->first();
+    
+            // Kode tidak valid, tapi tidak error fatal — hanya abaikan
+            // Jika mau strict bisa uncomment baris di bawah:
+            // if (!$referredByUser) {
+            //     return response()->json(['message' => 'Kode referral tidak valid.'], 400);
+            // }
+        }
+    
         if (empty($user)) {
-              User::create([
-                'M_UserEmail' => $credentials['email'],
+            $user = User::create([
+                'M_UserEmail'  => $credentials['email'],
                 'M_UserPassword' => Hash::make($credentials['password']),
                 'M_UserFullName' => $credentials['name'],
+                'M_UserReferredBy' => $referredByUser?->M_UserID,
             ]);
+        } else {
+            if ($referredByUser && !$user->M_UserReferredBy) {
+                $user->update(['M_UserReferredBy' => $referredByUser->M_UserID]);
+            }
         }
-
+    
         $otp = random_int(100000, 999999);
-
+    
         Otp::updateOrCreate(
             ['T_OtpM_UserEmail' => $credentials['email']],
             [
                 'T_OtpValue' => $otp,
-                'T_OtpExpired' => Carbon::now()->addMinutes(5)
+                'T_OtpExpired' => Carbon::now()->addMinutes(5),
             ]
         );
-
+    
         Mail::to($credentials['email'])->send(new OtpMail($otp));
-
-        return response()->json([
-            'status' => 'OTP Send to email',
-        ]);
+    
+        return response()->json(['status' => 'OTP Send to email']);
     }
 
-    public function verifyOtp(Request $request)
+   public function verifyOtp(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
-            'otp' => 'required'
+            'otp' => 'required',
         ]);
-
+    
         $otpData = Otp::where('T_OtpM_UserEmail', $request->email)
             ->where('T_OtpValue', $request->otp)
             ->where('T_OtpExpired', '>', now())
             ->first();
-
+    
         if (!$otpData) {
             return response()->json(['message' => 'OTP invalid or expired'], 400);
         }
-
+    
         $otpData->delete();
-
+    
         $user = User::where('M_UserEmail', $request->email)->first();
-
+    
+        $premiumPlan = Plan::where('M_PlanID', '>', 1)
+            ->orderBy('M_PlanID', 'ASC')
+            ->first();
+    
+        $referralCode = $this->generateUniqueReferralCode();
+    
         $user->update([
-            'M_UserEmailVerifiedAt' => now()
+            'M_UserEmailVerifiedAt' => now(),
+            'M_UserPlan' => $premiumPlan?->M_PlanID,
+            'M_UserSubsExp' => now()->addDays(7),
+            'M_UserReferralCode' => $referralCode,
         ]);
-
+    
+        if ($user->M_UserReferredBy) {
+            $this->processReferralReward($user);
+        }
+    
         $token = $user->createToken('auth')->plainTextToken;
-
+    
         return response()->json([
             'token' => $token,
             'user' => [
-                'email' => $user->M_UserEmail,
+                'email'  => $user->M_UserEmail,
                 'full_name' => $user->M_UserFullName,
                 'image' => $user->M_UserImage,
                 'phone' => $user->M_UserPhone,
+                'referral_code' => $user->M_UserReferralCode,
             ],
         ]);
     }
@@ -159,6 +190,38 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => 'OTP Send to email',
+        ]);
+    }
+
+    private function generateUniqueReferralCode(): string
+    {
+        do {
+            $code = strtoupper(substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 8));
+        } while (User::where('M_UserReferralCode', $code)->exists());
+    
+        return $code;
+    }
+ 
+    private function processReferralReward(User $newUser): void
+    {
+        $ownerID = $newUser->M_UserReferredBy;
+    
+        $totalReferrals = ReferralUsage::where('T_ReferralUsageOwnerID', $ownerID)->count();
+        $sequence = $totalReferrals + 1;
+    
+        $positionInCycle = (($sequence - 1) % 7) + 1;
+    
+        $isFreeMonth      = ($positionInCycle === 7);
+        $discountPercent  = $isFreeMonth ? 0 : 10;
+    
+        ReferralUsage::create([
+            'T_ReferralUsageOwnerID' => $ownerID,
+            'T_ReferralUsageUserID' => $newUser->M_UserID,
+            'T_ReferralUsageSequence'  => $sequence,
+            'T_ReferralUsageDiscountPercent' => $discountPercent,
+            'T_ReferralUsageIsFreeMonth' => $isFreeMonth,
+            'T_ReferralUsageIsUsed' => false,
+            'T_ReferralUsageCreated' => now(),
         ]);
     }
 

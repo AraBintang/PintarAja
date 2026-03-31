@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
+use App\Models\ReferralUsage;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
@@ -56,7 +58,7 @@ class PaymentController extends Controller
         $apiKey = config('services.tripay.api_key');
         $privateKey = config('services.tripay.private_key');
         $merchantCode = config('services.tripay.merchant_code');
-
+    
         $validated = $request->validate([
             'planId' => 'required',
             'amount' => 'required|numeric|min:1000',
@@ -65,27 +67,38 @@ class PaymentController extends Controller
             'item' => 'required|string|max:255',
             'phone' => 'required|string|max:15',
         ]);
-
+    
         if ($validated['planId'] == 1) {
             return response()->json(['error' => 'Plan Tidak Valid'], 500);
         }
-
+    
         $user = Auth::user();
+    
+        $pendingDiscountPercent = $this->getPendingReferralDiscount($user->M_UserID);
+        $originalAmount = (int) $validated['amount'];
+        $discountAmount = 0;
+        $finalAmount = $originalAmount;
+    
+        if ($pendingDiscountPercent > 0) {
+            $discountAmount = (int) round($originalAmount * ($pendingDiscountPercent / 100));
+            $finalAmount = max($originalAmount - $discountAmount, 1000);
+        }
+    
         $merchantRef = 'ORDER-' . time() . '-' . rand(1000, 9999);
-
+    
         $payload = [
             'method' => $validated['channel'],
             'merchant_ref' => $merchantRef,
-            'amount' => $validated['amount'],
+            'amount' => $finalAmount,
             'customer_name' => $user->M_UserFullName,
             'customer_email' => $user->M_UserEmail,
             'customer_phone' => $validated['phone'],
             'order_items' => [[
                 'name' => $validated['item'],
-                'price' => $validated['amount'],
+                'price' => $finalAmount,
                 'quantity' => 1,
             ]],
-            'signature' => hash_hmac('sha256', $merchantCode . $merchantRef . $validated['amount'], $privateKey),
+            'signature' => hash_hmac('sha256', $merchantCode . $merchantRef . $finalAmount, $privateKey),
         ];
 
         $response = Http::withHeaders([
@@ -115,14 +128,14 @@ class PaymentController extends Controller
         $instructions = $data['instructions'] ?? [];
         $checkoutUrl = $data['checkout_url'] ?? null;
 
-        Transaction::create([
+        $tx = Transaction::create([
             'T_TransactionM_UserID' => $user->M_UserID,
             'T_TransactionM_PlanID' => $validated['planId'],
             'T_TransactionIdResult' => $data['reference'],
             'T_TransactionIdRefrence' => $data['merchant_ref'],
             'T_TransactionQR' => $paymentCode,
             'T_TransactionItem' => $validated['item'],
-            'T_TransactionAmount' => $validated['amount'],
+            'T_TransactionAmount' => $finalAmount,
             'T_TransactionStatus' => 0,
             'T_TransactionMethod' => $validated['method'],
             'T_TransactionExpired' => $data['expired_time'] ?? (time() + 86400),
@@ -130,7 +143,11 @@ class PaymentController extends Controller
             'T_TransactionStep' => json_encode($instructions),
             'T_TransactionCheckoutURL' => $checkoutUrl,
         ]);
-
+    
+        if ($pendingDiscountPercent > 0) {
+            $this->markReferralDiscountsUsed($user->M_UserID);
+        }
+    
         return response()->json([
             'status' => 'success',
             'referenceId' => $data['merchant_ref'],
@@ -139,7 +156,60 @@ class PaymentController extends Controller
             'checkoutUrl' => $checkoutUrl,
             'expiredAt' => $data['expired_time'] ?? null,
             'instructions' => $instructions,
+            'discountInfo' => [
+                'originalAmount' => $originalAmount,
+                'discountPercent' => $pendingDiscountPercent,
+                'discountAmount' => $discountAmount,
+                'finalAmount' => $finalAmount,
+            ],
         ], 200);
+    }
+
+    private function getPendingReferralDiscount(int $userID): int
+    {
+        return (int) ReferralUsage::where('T_ReferralUsageOwnerID', $userID)
+            ->where('T_ReferralUsageIsUsed', false)
+            ->where('T_ReferralUsageIsFreeMonth', false)
+            ->sum('T_ReferralUsageDiscountPercent');
+    }
+    
+    private function markReferralDiscountsUsed(int $userID): void
+    {
+        ReferralUsage::where('T_ReferralUsageOwnerID', $userID)
+            ->where('T_ReferralUsageIsUsed', false)
+            ->where('T_ReferralUsageIsFreeMonth', false)
+            ->update(['T_ReferralUsageIsUsed' => true]);
+    }
+
+    public function getReferralDiscount(Request $request)
+    {
+        $user = Auth::user();
+        $discountPercent = $this->getPendingReferralDiscount($user->M_UserID);
+        $hasFreeMonth = $user->hasPendingFreeMonth();
+    
+        return response()->json([
+            'discount_percent' => $discountPercent,
+            'has_free_month' => $hasFreeMonth,
+            'referral_count' => $user->getReferralCount(),
+            'next_reward' => $this->getNextRewardInfo($user->M_UserID),
+        ]);
+    }
+
+    private function getNextRewardInfo(int $userID): array
+    {
+        $total = ReferralUsage::where('T_ReferralUsageOwnerID', $userID)->count();
+        $posInCycle = ($total % 7) + 1;
+        $remainingToFree = 7 - $posInCycle + 1;
+    
+        if ($remainingToFree === 1) {
+            return ['type' => 'free_month', 'remaining' => 1, 'message' => '1 orang lagi untuk free 1 bulan!'];
+        }
+    
+        return [
+            'type' => 'discount',
+            'remaining' => $remainingToFree - 1,
+            'message'   => ($remainingToFree - 1) . ' orang lagi untuk free 1 bulan',
+        ];
     }
 
     public function notify(Request $request)

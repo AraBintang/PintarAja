@@ -339,7 +339,7 @@ export default function PromptAIPage() {
                           {(currentPage - 1) * PAGE_SIZE + index + 1}
                         </td>
                         <td className="px-4 py-3.5">
-                          <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-100 mb-1.5">
+                          <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-100 mb-1.5 line-clamp-1">
                             {prompt.name}
                           </p>
                           <span
@@ -351,7 +351,7 @@ export default function PromptAIPage() {
                         </td>
                         <td className="px-6 py-5">
                           <p
-                            className={`text-[14px] text-gray-600 dark:text-gray-300 leading-relaxed max-w-[500px] ${isExpanded ? '' : 'line-clamp-3'}`}
+                            className={`text-[14px] text-gray-600 dark:text-gray-300 leading-relaxed max-w-[500px] ${isExpanded ? 'line-clamp-none' : 'line-clamp-2'}`}
                           >
                             {prompt.value}
                           </p>

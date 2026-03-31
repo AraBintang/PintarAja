@@ -12,6 +12,7 @@ const Pricing = React.lazy(() => import('./components/Pricing'))
 const Services = React.lazy(() => import('./components/Services'))
 const StatsAdvantages = React.lazy(() => import('./components/StatsAdvantages'))
 const Testimonials = React.lazy(() => import('./components/Testimonials'))
+const Youtube = React.lazy(() => import('./components/Youtube'))
 
 // Loader placeholder for Suspense
 const SectionLoader = () => (
@@ -89,7 +90,10 @@ export default function Landing() {
         <WaveDivider from="dark" to="light" />
         <FAQ />
 
-        <WaveDivider from="light" to="accent" />
+        <WaveDivider from="light" to="dark" />
+        <Youtube />
+
+        <WaveDivider from="dark" to="accent" />
         <CTA />
 
         <Footer />

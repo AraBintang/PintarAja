@@ -9,7 +9,7 @@ export default function AuthLayout({ lottieData, lottieText, lottieSub, children
   const { theme, toggleTheme } = useTheme()
 
   return (
-    <div className="relative min-h-screen flex overflow-hidden bg-[#f0f2f5] dark:bg-[#0d1117] transition-colors duration-300">
+    <div className="relative min-h-screen flex overflow-hidden bg-[#f0f2f5] dark:bg-[#0d1117] transition-colors duration-300 hide-scrollbar">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-blue-200/40 dark:bg-blue-900/20 blur-[100px]" />
         <div className="absolute top-1/2 -right-40 w-[460px] h-[460px] rounded-full bg-indigo-200/35 dark:bg-indigo-900/20 blur-[110px]" />
@@ -27,7 +27,7 @@ export default function AuthLayout({ lottieData, lottieText, lottieSub, children
 
       <div className="hidden md:flex md:w-1/2 lg:w-[55%] flex-col items-center justify-center px-12 py-16 relative z-10">
         <button
-          onClick={() => navigate('/home')}
+          onClick={() => navigate('/')}
           className="absolute top-6 left-8 flex items-center gap-1 cursor-pointer"
         >
           <img src="/p doank.png" alt="Pintaraja" className="w-7 h-7 object-contain" />
@@ -58,7 +58,7 @@ export default function AuthLayout({ lottieData, lottieText, lottieSub, children
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative z-10 lg:mr-45">
         <button
-          onClick={() => navigate('/home')}
+          onClick={() => navigate('/')}
           className="md:hidden flex items-center gap-1 mb-8 cursor-pointer"
         >
           <img src="/p doank.png" alt="Pintaraja" className="w-8 h-8 object-contain" />

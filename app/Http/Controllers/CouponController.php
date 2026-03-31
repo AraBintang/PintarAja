@@ -45,6 +45,7 @@ class CouponController extends Controller
 
         $plans = Plan::query()
             ->select('M_PlanID as id', 'M_PlanName as name')
+            ->where('M_PlanID', '!=', 1)
             ->orderBy('M_PlanID', 'desc')
             ->get();
 

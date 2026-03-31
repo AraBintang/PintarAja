@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 
 import SidebarLayout from '@/layout/SidebarLayout'
 import AdminAIPage from '@/pages/Admin/AIPage'
@@ -7,9 +7,11 @@ import CouponPage from '@/pages/Admin/CouponPage'
 import AdminPlanPage from '@/pages/Admin/PlanPage'
 import PromptAIPage from '@/pages/Admin/PromptAIPage'
 import AdminUserPage from '@/pages/Admin/UserPage'
+import WebSettingPage from '@/pages/Admin/WebSettingPage'
 import ChatPage from '@/pages/App/ChatPage'
 import HumanizerPage from '@/pages/App/HumanizerPage'
 import ParafrasePage from '@/pages/App/ParafrasePage'
+import PlagiarismPage from '@/pages/App/Plagiarism'
 import TranscribePage from '@/pages/App/TranscribePage'
 import WriterPage from '@/pages/App/WriterPage'
 import ForgotPassword from '@/pages/Auth/ForgotPassword'
@@ -26,10 +28,11 @@ import GuestRoute from '@/routes/GuestRoute'
 import ProtectedRoute from '@/routes/ProtectedRoute'
 
 export const router = createBrowserRouter([
+  { path: '/', element: <Landing /> },
+
   {
     element: <GuestRoute />,
     children: [
-      { path: 'home', element: <Landing /> },
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
       { path: 'forgot-password', element: <ForgotPassword /> },
@@ -47,14 +50,13 @@ export const router = createBrowserRouter([
       {
         element: <SidebarLayout />,
         children: [
-          { index: true, element: <Navigate to="chat" replace /> },
-
           { path: 'new', element: <ChatPage /> },
           { path: 'chat', element: <ChatPage /> },
           { path: 'writer', element: <WriterPage /> },
           { path: 'humanize', element: <HumanizerPage /> },
           { path: 'paraphrase', element: <ParafrasePage /> },
           { path: 'transcribe', element: <TranscribePage /> },
+          { path: 'plagiarism', element: <PlagiarismPage /> },
 
           {
             element: <AdminRoute />,
@@ -65,6 +67,7 @@ export const router = createBrowserRouter([
               { path: 'admin/plan', element: <AdminPlanPage /> },
               { path: 'admin/coupons', element: <CouponPage /> },
               { path: 'admin/user', element: <AdminUserPage /> },
+              { path: 'admin/web-settings', element: <WebSettingPage /> },
             ],
           },
         ],

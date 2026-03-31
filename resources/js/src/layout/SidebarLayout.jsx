@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
+import UpgradeBanner from '@/components/UpgradeBanner'
 import WhatsAppButton from '@/components/WhatsAppButton'
+import { useAuth } from '@/context/AuthContext'
 import { RightSidebarProvider } from '@/context/RightSidebarContext'
 import { SidebarProvider, useSidebar } from '@/context/SidebarContext'
 import SettingsModal from '@/pages/Settings/SettingsModal'
+import PlanSelectionModal from '@/components/plan/PlanSelectionModal'
 
 import RightSidebar from './RightSidebar'
 import Sidebar from './Sidebar'
@@ -11,17 +15,22 @@ import TopBar from './TopBar'
 
 function LayoutInner() {
   const { expanded } = useSidebar()
+  const { user } = useAuth()
+
+  const [planModalOpen, setPlanModalOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-[#f7f7f5] dark:bg-[#0f141e] transition-colors duration-300 overflow-x-hidden">
-      <Sidebar />
+      <Sidebar onUpgradeClick={() => setPlanModalOpen(true)} />
 
       <main
-        className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ease-in-out ${expanded ? 'md:ml-[260px]' : 'md:ml-[64px]'}`}
+        className={`relative flex-1 min-w-0 flex flex-col transition-all duration-300 ease-in-out ${expanded ? 'md:ml-[260px]' : 'md:ml-[64px]'}`}
       >
-        <TopBar />
+        <TopBar user={user} />
 
-        <div className="flex-1">
+        <UpgradeBanner user={user} onUpgradeClick={() => setPlanModalOpen(true)} />
+
+        <div className="flex-1 hide-scrollbar">
           <Outlet />
         </div>
       </main>
@@ -31,6 +40,8 @@ function LayoutInner() {
       <RightSidebar />
 
       <SettingsModal />
+
+      <PlanSelectionModal open={planModalOpen} onClose={() => setPlanModalOpen(false)} />
     </div>
   )
 }

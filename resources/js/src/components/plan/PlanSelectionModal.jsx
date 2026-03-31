@@ -15,7 +15,7 @@ const PERIOD_OPTIONS = [
   { key: 'yearly', label: 'Annual', suffix: 'Yearly', unit: '/year' },
 ]
 
-export default function PlanSelectionModal({ open, onClose, onSelectPlan }) {
+export default function PlanSelectionModal({ open, onClose, onSelectPlan, fromSettings = false }) {
   const navigate = useNavigate()
   const { closeSettings } = useSettingsModal()
 
@@ -76,17 +76,19 @@ export default function PlanSelectionModal({ open, onClose, onSelectPlan }) {
     }
     onClose()
     closeSettings()
-    navigate('/checkout', { state: { plan: enriched, returnUrl: window.location.pathname } })
+    navigate('/checkout', {
+      state: { plan: enriched, returnUrl: window.location.pathname, fromSettings },
+    })
   }
 
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+      className="fixed inset-0 z-80 flex items-center justify-center bg-black/60 backdrop-blur-sm"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full sm:max-w-4xl bg-white dark:bg-gray-900 sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col"
+        className="relative w-full sm:max-w-4xl bg-white dark:bg-gray-900 sm:rounded-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col mx-4"
       >
         {/* Mobile handle */}
         <div className="sm:hidden flex justify-center pt-3 pb-1">
@@ -110,7 +112,7 @@ export default function PlanSelectionModal({ open, onClose, onSelectPlan }) {
         </div>
 
         {/* Period Toggle */}
-        <div className="px-6 pt-4 pb-2 shrink-0">
+        <div className="px-6 pt-4 shrink-0">
           <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
             {PERIOD_OPTIONS.map((opt) => {
               const hasDiscount = periodHasDiscount(opt.key)
@@ -143,7 +145,7 @@ export default function PlanSelectionModal({ open, onClose, onSelectPlan }) {
         </div>
 
         {/* Plan Cards */}
-        <div className="px-6 pb-6 pt-2 overflow-y-auto flex-1">
+        <div className="px-6 pb-6 pt-4 overflow-y-auto flex-1">
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
