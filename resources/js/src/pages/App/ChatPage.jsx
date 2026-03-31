@@ -88,6 +88,22 @@ const readStream = async (response, onProgress) => {
   return fullRaw
 }
 
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result) // returns "data:image/jpeg;base64,..."
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+
+const classifyFiles = (files) => {
+  const images = files.filter((f) => IMAGE_TYPES.includes(f.type))
+  const docs = files.filter((f) => !IMAGE_TYPES.includes(f.type))
+  return { images, docs }
+}
+
 export default function ChatPage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -252,14 +268,6 @@ export default function ChatPage() {
     return () => el.removeEventListener('scroll', onScroll)
   }, [hasMoreChats, isLoadingMore, conversationId, nextCursor, loadConversation])
 
-  const fileToBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result)
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
-
   const sendTextMessage = async (convId, text, contextMessages, imageFiles = []) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
 
@@ -346,7 +354,6 @@ export default function ChatPage() {
     const contentType = response.headers.get('Content-Type') ?? ''
 
     if (contentType.includes('text/event-stream')) {
-      // ─── Stream GFF: format {"delta":"..."} + {"done":true,"annotations":[...]}
       const fullRaw = await readStream(response, (raw) => {
         const { content } = parseGffSse(raw)
         setStreamingContent(content)
@@ -354,21 +361,13 @@ export default function ChatPage() {
       return parseGffSse(fullRaw)
     }
 
-    // ─── Response JSON biasa (Gemini fallback)
+    // Response JSON biasa (Gemini fallback)
     const json = await response.json()
     if (json?.error) throw new Error(json.error.message || 'AI provider error')
     if (!json?.reply && json?.message) throw new Error(json.message)
     const reply = json.reply ?? ''
     setStreamingContent(reply)
     return { content: reply, annotations: [] }
-  }
-
-  const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-
-  const classifyFiles = (files) => {
-    const images = files.filter((f) => IMAGE_TYPES.includes(f.type))
-    const docs = files.filter((f) => !IMAGE_TYPES.includes(f.type))
-    return { images, docs }
   }
 
   const handleSendMessage = async () => {
@@ -398,12 +397,37 @@ export default function ChatPage() {
       }
     }
 
+    // ─── Classify files dan buat preview base64 untuk images ───
+    const { images, docs } = classifyFiles(files)
+
+    // Buat base64 preview untuk semua image files (untuk tampilan di bubble)
+    const imageBase64Map = {}
+    if (images.length > 0) {
+      const base64Results = await Promise.all(images.map(fileToBase64))
+      images.forEach((img, idx) => {
+        imageBase64Map[img.name + img.size] = base64Results[idx]
+      })
+    }
+
+    // Buat array file metadata untuk userMsg (dengan base64 untuk image)
+    const fileMeta = files.map((f) => {
+      const isImage = IMAGE_TYPES.includes(f.type)
+      return {
+        name: f.name,
+        type: f.type,
+        isImage,
+        // Sertakan base64 hanya untuk image, untuk tampil di bubble
+        base64: isImage ? imageBase64Map[f.name + f.size] : null,
+      }
+    })
+
     const tempId = `temp-${Date.now()}`
     const userMsg = {
       id: tempId,
       role: 'user',
       content: text,
-      files,
+      // fileMeta berisi info file lengkap dengan base64 untuk preview
+      fileMeta,
       annotations: [],
       time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
     }
@@ -422,14 +446,51 @@ export default function ChatPage() {
       let result
 
       if (files.length > 0) {
-        const { images, docs } = classifyFiles(files)
-
         if (docs.length > 0) {
-          // Ada dokumen (PDF/DOC/TXT), dengan atau tanpa gambar → /gff (Vector Store)
+          // Ada dokumen (PDF/DOC/TXT) → /gff (Vector Store)
           result = await sendFileMessage(convId, text, files)
         } else {
-          // Hanya gambar → konversi base64, kirim via /api/chats sebagai vision
-          result = await sendTextMessage(convId, text, contextMessages, images)
+          // Hanya image → kirim base64 via vision
+          // Ambil base64 dari imageBase64Map (sudah di-resolve sebelumnya)
+          const preResolvedBase64 = images.map((img) => imageBase64Map[img.name + img.size])
+          const prevContext = contextMessages.slice(0, -1)
+          const userContentParts = [
+            { type: 'text', text },
+            ...preResolvedBase64.map((b64) => ({
+              type: 'image_url',
+              image_url: { url: b64 },
+            })),
+          ]
+          const messagesPayload = [...prevContext, { role: 'user', content: userContentParts }]
+
+          const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+          const response = await fetch('/api/chats', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+              Accept: 'text/event-stream',
+              'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({
+              providerId: parseInt(selectedAiId),
+              conversationId: convId,
+              message: text,
+              messageToAi: messagesPayload,
+            }),
+            signal: abortRef.current.signal,
+          })
+
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}))
+            throw new Error(err.message || 'Generate gagal')
+          }
+
+          const fullRaw = await readStream(response, (raw) => {
+            setStreamingContent(parseSseContent(raw))
+          })
+
+          result = { content: parseSseContent(fullRaw), annotations: [] }
         }
       } else {
         // Teks murni tanpa file

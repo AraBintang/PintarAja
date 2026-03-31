@@ -7,6 +7,7 @@ export default function DeleteModal({
   loading = false,
   data = '',
   name = '',
+  warning = null,
 }) {
   if (!open) return null
 
@@ -17,15 +18,26 @@ export default function DeleteModal({
           <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
             <AlertTriangle className="w-7 h-7 text-red-500" />
           </div>
-          <div>
+          <div className="w-full">
             <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Hapus {data}</h3>
             <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-1">
               Yakin ingin menghapus{' '}
               <span className="font-semibold text-gray-700 dark:text-gray-200">{name}</span>?
               Tindakan ini tidak dapat dibatalkan.
             </p>
+
+            {/* Warning — hanya muncul kalau ada */}
+            {warning && (
+              <div className="flex items-start gap-2.5 mt-4 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-left">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[12px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                  {warning}
+                </p>
+              </div>
+            )}
           </div>
         </div>
+
         <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
           <button
             onClick={onClose}

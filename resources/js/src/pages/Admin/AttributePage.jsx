@@ -32,18 +32,13 @@ export default function AttributePage() {
   const debouncedSearch = Debounce(searchQuery, 400)
 
   const { papers, pagination, summary, loading, createPaper, updatePaper, deletePaper } = usePapers(
-    {
-      search: debouncedSearch,
-      page,
-      perPage: PAGE_SIZE,
-    },
+    { search: debouncedSearch, page, perPage: PAGE_SIZE },
   )
 
   const handleOpenAdd = () => {
     setEditTarget(null)
     setIsFormOpen(true)
   }
-
   const handleOpenEdit = (paper) => {
     setEditTarget(paper)
     setIsFormOpen(true)
@@ -96,6 +91,10 @@ export default function AttributePage() {
     return pages
   }
 
+  const getPaperTotalPrompts = (item) => {
+    return item?.prompt_count ?? 0
+  }
+
   return (
     <div className="flex-1 h-full bg-[#f7f7f5] dark:bg-[#0f141e] text-gray-600 dark:text-gray-300 overflow-y-auto overflow-x-hidden px-6 pb-6 pt-16 font-sans">
       <div className="max-w-[1200px] mx-auto overflow-hidden">
@@ -112,7 +111,6 @@ export default function AttributePage() {
               Kelola jenis paper dan struktur section dokumen AI
             </p>
           </div>
-
           <button
             onClick={handleOpenAdd}
             className="flex items-center justify-center gap-2 bg-blue-600 dark:bg-orange-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-700 dark:hover:bg-orange-600 hover:shadow-lg hover:shadow-blue-200 dark:hover:shadow-orange-900/30 transition-all hover:-translate-y-0.5 text-[14px] w-full sm:w-auto"
@@ -222,9 +220,16 @@ export default function AttributePage() {
                         {(currentPage - 1) * PAGE_SIZE + index + 1}.
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-[14px] font-semibold text-gray-700 dark:text-gray-300">
-                          {item.name}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[14px] font-semibold text-gray-700 dark:text-gray-300">
+                            {item.name}
+                          </span>
+                          {item.prompt_count > 0 && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-medium border border-blue-100 dark:border-blue-900/30">
+                              {item.prompt_count} prompt
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1.5">
@@ -232,9 +237,15 @@ export default function AttributePage() {
                             item.sections.map((sec, sIdx) => (
                               <span
                                 key={sIdx}
-                                className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 dark:bg-orange-900/20 text-blue-600 dark:text-orange-400 text-[11px] font-medium border border-blue-100 dark:border-orange-900/30"
+                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-orange-900/20 text-blue-600 dark:text-orange-400 text-[11px] font-medium border border-blue-100 dark:border-orange-900/30"
                               >
-                                {sec.name ?? sec}
+                                {sec.name}
+                                {/* Badge prompt count per section */}
+                                {sec.prompt_count > 0 && (
+                                  <span className="bg-blue-200 dark:bg-orange-800 text-blue-700 dark:text-orange-200 text-[9px] font-bold px-1 rounded">
+                                    {sec.prompt_count}
+                                  </span>
+                                )}
                               </span>
                             ))
                           ) : (
@@ -291,7 +302,6 @@ export default function AttributePage() {
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-
               {getPageNumbers().map((p, i) =>
                 p === '...' ? (
                   <span key={`e-${i}`} className="text-gray-400 text-sm px-1">
@@ -311,7 +321,6 @@ export default function AttributePage() {
                   </button>
                 ),
               )}
-
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
@@ -335,13 +344,19 @@ export default function AttributePage() {
         loading={actionLoading}
       />
 
+      {/* DeleteModal dengan warning prompt */}
       <DeleteModal
         open={Boolean(deleteTarget)}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
         loading={actionLoading}
-        data={'Paper'}
+        data="Paper"
         name={deleteTarget?.name ?? ''}
+        warning={
+          getPaperTotalPrompts(deleteTarget) > 0
+            ? `Paper ini digunakan oleh ${getPaperTotalPrompts(deleteTarget)} prompt AI. Data referensi paper/section pada prompt tersebut akan hilang jika dihapus.`
+            : null
+        }
       />
     </div>
   )

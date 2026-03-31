@@ -10,7 +10,7 @@ use PhpOffice\PhpWord\Shared\Html;
 
 class DocumentController extends Controller
 {
-    public function store(Request $request)
+public function store(Request $request)
     {
         $validated = $request->validate([
             'userId' => 'required|integer',
@@ -23,6 +23,9 @@ class DocumentController extends Controller
             'citations.*.file_id' => 'nullable|string',
             'citations.*.filename' => 'nullable|string',
             'citations.*.index' => 'nullable|integer',
+            'citations.*.paper' => 'nullable|string',
+            'citations.*.section' => 'nullable|string',
+            'citations.*.generatedAt' => 'nullable|string',
             'fileInfo' => 'nullable|array',
             'fileInfo.fileName' => 'nullable|string',
             'fileInfo.fileSize' => 'nullable|integer',
@@ -49,7 +52,7 @@ class DocumentController extends Controller
 
         return response()->json([
             'message' => 'Document created',
-            'id'      => $document->M_DocumentID,
+            'id' => $document->M_DocumentID,
         ], 201);
     }
 
@@ -63,10 +66,13 @@ class DocumentController extends Controller
             'promptData' => 'nullable',
             'fullPrompt' => 'nullable|string',
             'result' => 'required|string',
-            'citations'   => 'nullable|array',
+            'citations' => 'nullable|array',
             'citations.*.file_id' => 'nullable|string',
             'citations.*.filename' => 'nullable|string',
             'citations.*.index' => 'nullable|integer',
+            'citations.*.paper'  => 'nullable|string',
+            'citations.*.section' => 'nullable|string',
+            'citations.*.generatedAt' => 'nullable|string',
             'fileInfo' => 'nullable|array',
             'fileInfo.fileName' => 'nullable|string',
             'fileInfo.fileSize' => 'nullable|integer',
@@ -139,14 +145,80 @@ class DocumentController extends Controller
         );
         libxml_clear_errors();
 
-        $tagsToClean = ['li', 'th', 'td', 'tr', 'thead', 'tbody', 'table'];
-        foreach ($tagsToClean as $tag) {
-            foreach ($dom->getElementsByTagName($tag) as $node) {
+        foreach (iterator_to_array($dom->getElementsByTagName('*')) as $el) {
+            $el->removeAttribute('style');
+            $el->removeAttribute('class');
+            $el->removeAttribute('data-colwidth');
+            $el->removeAttribute('colwidth');
+        }
+
+        foreach (['li', 'th', 'td', 'tr', 'thead', 'tbody', 'table'] as $tag) {
+            foreach (iterator_to_array($dom->getElementsByTagName($tag)) as $node) {
                 foreach (iterator_to_array($node->childNodes) as $child) {
                     if ($child->nodeName === 'br') {
                         $node->removeChild($child);
                     }
                 }
+            }
+        }
+
+        foreach (['td', 'th'] as $cellTag) {
+            foreach (iterator_to_array($dom->getElementsByTagName($cellTag)) as $cell) {
+                $hasBlock = false;
+                foreach ($cell->childNodes as $child) {
+                    if ($child->nodeType === XML_ELEMENT_NODE && in_array($child->nodeName, ['p', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])) {
+                        $hasBlock = true;
+                        break;
+                    }
+                }
+                if (!$hasBlock) {
+                    $p = $dom->createElement('p');
+                    foreach (iterator_to_array($cell->childNodes) as $child) {
+                        $cell->removeChild($child);
+                        $p->appendChild($child);
+                    }
+                    $cell->appendChild($p);
+                }
+            }
+        }
+
+        foreach (iterator_to_array($dom->getElementsByTagName('tr')) as $tr) {
+            $hasCells = false;
+            foreach ($tr->childNodes as $child) {
+                if ($child->nodeType === XML_ELEMENT_NODE && in_array($child->nodeName, ['td', 'th'])) {
+                    $hasCells = true;
+                    break;
+                }
+            }
+            if (!$hasCells) {
+                $tr->parentNode?->removeChild($tr);
+            }
+        }
+
+        foreach (['thead', 'tbody', 'tfoot'] as $section) {
+            foreach (iterator_to_array($dom->getElementsByTagName($section)) as $node) {
+                $hasRows = false;
+                foreach ($node->childNodes as $child) {
+                    if ($child->nodeType === XML_ELEMENT_NODE && $child->nodeName === 'tr') {
+                        $hasRows = true;
+                        break;
+                    }
+                }
+                if (!$hasRows) {
+                    $node->parentNode?->removeChild($node);
+                }
+            }
+        }
+
+        foreach (iterator_to_array($dom->getElementsByTagName('table')) as $table) {
+            $hasRows = $table->getElementsByTagName('tr')->length > 0;
+            if (!$hasRows) {
+                $table->parentNode?->removeChild($table);
+            } else {
+                $table->setAttribute('border', '1');
+                $table->setAttribute('cellspacing', '0');
+                $table->setAttribute('cellpadding', '4');
+                $table->setAttribute('width', '100%');
             }
         }
 

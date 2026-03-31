@@ -90,7 +90,7 @@ export default function GipsyAI() {
           {tools.map((tool, i) => (
             <div
               key={i}
-              className={`group bg-[#f8f9fc] dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-8 text-center hover:border-[#4A90D9]/20 hover:bg-white dark:hover:bg-gray-700 hover:shadow-lg transition-all duration-300 relative overflow-hidden ${
+              className={`group bg-[#f8f9fc] dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-8 text-center hover:border-[#4A90D9]/20 hover:bg-white dark:hover:bg-gray-900/60 hover:shadow-lg transition-all duration-300 relative overflow-hidden ${
                 isVisible
                   ? 'opacity-100 translate-y-0 scale-100'
                   : 'opacity-0 translate-y-8 scale-95'

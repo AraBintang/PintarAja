@@ -44,6 +44,7 @@ class ChatController extends Controller
 
         return response()->json($aiProviders);
     }
+
     public function index2(Request $request, $conversationId)
     {
         $cursor = $request->input('cursor');
@@ -123,13 +124,18 @@ class ChatController extends Controller
         $message = $request->message;
         $messages = $request->messageToAi ?? [];
 
-        $lastMsg   = !empty($messages) ? end($messages) : null;
+        $lastMsg = !empty($messages) ? end($messages) : null;
         $hasImages = isset($lastMsg['content']) && is_array($lastMsg['content']);
  
         if ($hasImages) {
             $chatContent = array_values(array_map(function ($part) {
                 if (($part['type'] ?? '') === 'image_url') {
-                    return ['type' => 'image', 'name' => 'gambar'];
+                    $base64 = $part['image_url']['url'] ?? null;
+                    return [
+                        'type' => 'image',
+                        'name' => $part['name'] ?? 'gambar',
+                        'base64' => $base64,
+                    ];
                 }
                 return $part;
             }, $lastMsg['content']));
@@ -142,8 +148,8 @@ class ChatController extends Controller
         } else {
             Chat::create([
                 'T_ChatT_ConversationID' => $conversationId,
-                'T_ChatRole'  => 'user',
-                'T_ChatContent'  => $message,
+                'T_ChatRole' => 'user',
+                'T_ChatContent' => $message,
             ]);
         }
 
@@ -181,27 +187,36 @@ class ChatController extends Controller
             'files' => 'array|max:3',
             'files.*' => 'file|max:10240',
         ]);
-    
+
         $user = $request->user();
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
-    
+
         $provider = $this->resolveProvider($user, $request->providerId);
         if (!$provider) {
             return response()->json(['message' => 'You are not allowed to use this AI provider.'], 403);
         }
-    
+
         $message = $request->message;
         $convId = $request->conversationId;
         $files = $request->file('files', []);
-    
+ 
         $chatContent = [['type' => 'text', 'text' => $message]];
         foreach ($files as $file) {
-            $chatContent[] = [
-                'type' => str_starts_with($file->getMimeType(), 'image/') ? 'image' : 'file',
+            $isImage = str_starts_with($file->getMimeType(), 'image/');
+            $entry = [
+                'type' => $isImage ? 'image' : 'file',
                 'name' => $file->getClientOriginalName(),
             ];
+ 
+            if ($isImage) {
+                $mimeType = $file->getMimeType();
+                $base64Data  = base64_encode(file_get_contents($file->getRealPath()));
+                $entry['base64'] = "data:{$mimeType};base64,{$base64Data}";
+            }
+ 
+            $chatContent[] = $entry;
         }
 
         Chat::create([
@@ -209,16 +224,16 @@ class ChatController extends Controller
             'T_ChatRole' => 'user',
             'T_ChatContent' => json_encode($chatContent),
         ]);
-    
+
         $fileData = array_map(function ($file) {
             return [
                 'name' => $file->getClientOriginalName(),
                 'type' => $file->getMimeType(),
-                'base64'  => base64_encode(file_get_contents($file->getRealPath())),
+                'base64' => base64_encode(file_get_contents($file->getRealPath())),
                 'isImage' => str_starts_with($file->getMimeType(), 'image/'),
             ];
         }, $files);
-    
+
         return match ($provider->M_SettingCode) {
             'SETTING-GPT' => $aiUploadFileService->handleOpenAiFileStream($provider, $message, $fileData, $convId),
             'SETTING-GMN' => $aiUploadFileService->handleGeminiFile($provider, $message, $fileData, $convId),

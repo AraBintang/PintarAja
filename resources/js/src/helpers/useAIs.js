@@ -2,7 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { buildQuery, request } from '@/utils/Http'
 
-export function useAIs({ search = '', page = 1, perPage = 9 } = {}) {
+export function useAIs({
+  search = '',
+  page = 1,
+  perPage = 9,
+  filterCode = '',
+  filterModel = '',
+  filterPlan = '',
+} = {}) {
   const [aiKeys, setAiKeys] = useState([])
   const [pagination, setPagination] = useState(null)
   const [summary, setSummary] = useState({ total: 0, active: 0 })
@@ -13,14 +20,18 @@ export function useAIs({ search = '', page = 1, perPage = 9 } = {}) {
   const fetchAiKeys = useCallback(async () => {
     setLoading(true)
     setError(null)
+
     try {
-      const q = buildQuery({
+      const query = buildQuery({
         per_page: perPage,
         page,
         ...(search && { search }),
+        ...(filterCode && { code: filterCode }),
+        ...(filterModel && { model: filterModel }),
+        ...(filterPlan && { plan_id: filterPlan }),
       })
 
-      const res = await request(`/settings${q}`)
+      const res = await request(`/settings${query}`)
 
       setAiKeys(res.data ?? [])
       setPagination(res.pagination ?? null)
@@ -34,7 +45,7 @@ export function useAIs({ search = '', page = 1, perPage = 9 } = {}) {
     } finally {
       setLoading(false)
     }
-  }, [search, page, perPage])
+  }, [search, page, perPage, filterCode, filterModel, filterPlan])
 
   useEffect(() => {
     fetchAiKeys()
@@ -78,11 +89,11 @@ export function useAIs({ search = '', page = 1, perPage = 9 } = {}) {
     plans,
     loading,
     error,
-    refetch: fetchAiKeys,
     createAiKey,
     updateAiKey,
     activateAiKey,
     deactivateAiKey,
     deleteAiKey,
+    refetch: fetchAiKeys,
   }
 }

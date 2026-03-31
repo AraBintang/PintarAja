@@ -13,13 +13,6 @@ import { memo, useMemo, useState } from 'react'
 import TiptapEditor from '@/components/TiptapEditor'
 import { useSnackbar } from '@/context/SnackbarContext'
 
-function formatFileSize(bytes) {
-  if (!bytes) return ''
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
 const WriterOutput = memo(function WriterOutput({
   editorContent,
   onEditorUpdate,
@@ -216,8 +209,7 @@ const WriterOutput = memo(function WriterOutput({
       {showRefPanel && (
         <div className="mt-4">
           <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-700/30 rounded-2xl overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-purple-100 dark:border-purple-700/20">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-purple-100 dark:border-purple-700/20 bg-purple-100/50 dark:bg-purple-900/10">
               <BookMarked className="w-4 h-4 text-purple-500 dark:text-purple-400 flex-shrink-0" />
               <h3 className="text-[13px] font-semibold text-purple-700 dark:text-purple-300">
                 Referensi File yang Digunakan
@@ -229,81 +221,63 @@ const WriterOutput = memo(function WriterOutput({
               )}
             </div>
 
-            {/* Info file dari history (tidak ada citations detail) */}
-            {!hasCitations && hasSavedFile && (
-              <div className="flex items-center gap-3 px-4 py-3">
-                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-800/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-4 h-4 text-purple-500"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-purple-800 dark:text-purple-200 truncate">
-                    {savedFileInfo.fileName}
-                  </p>
-                  {savedFileInfo.fileSize && (
-                    <p className="text-[11px] text-purple-500 dark:text-purple-400 mt-0.5">
-                      {formatFileSize(savedFileInfo.fileSize)} · File referensi (sudah dihapus dari
-                      server)
-                    </p>
-                  )}
-                </div>
-                <span className="text-[10px] font-medium text-purple-400 dark:text-purple-500 bg-purple-100 dark:bg-purple-800/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                  Arsip
-                </span>
-              </div>
-            )}
-
-            {/* Citations detail (dari generate aktif) */}
+            {/* ── Daftar citasi dengan paper & section ── */}
             {hasCitations && (
               <div className="divide-y divide-purple-100 dark:divide-purple-700/20">
                 {citations.map((cite, idx) => (
-                  <div key={cite.file_id || idx} className="flex items-start gap-3 px-4 py-3">
+                  <div key={idx} className="flex items-start gap-3 px-4 py-3">
+                    {/* Nomor urut */}
                     <div className="w-5 h-5 bg-purple-200 dark:bg-purple-700/40 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300">
                         {idx + 1}
                       </span>
                     </div>
+
                     <div className="min-w-0 flex-1">
+                      {/* Nama file */}
                       <p className="text-[13px] font-semibold text-purple-800 dark:text-purple-200 truncate">
-                        {cite.filename || cite.file_id}
+                        {cite.filename || 'File Referensi'}
                       </p>
-                      {cite.filename && cite.file_id && (
-                        <p className="text-[11px] text-purple-400 dark:text-purple-500 mt-0.5 font-mono truncate">
-                          ID: {cite.file_id}
-                        </p>
-                      )}
+
+                      {/* Metadata baris kedua: paper, section, index, waktu */}
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        {cite.paper && (
+                          <span className="text-[10px] text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-800/20 px-1.5 py-0.5 rounded font-medium">
+                            {cite.paper}
+                          </span>
+                        )}
+                        {cite.section && (
+                          <span className="text-[10px] text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-800/20 px-1.5 py-0.5 rounded font-medium">
+                            {cite.section}
+                          </span>
+                        )}
+                        {cite.index != null && (
+                          <span className="text-[10px] text-purple-400 dark:text-purple-500">
+                            karakter ke-{cite.index.toLocaleString('id-ID')}
+                          </span>
+                        )}
+                        {cite.generatedAt && (
+                          <span className="text-[10px] text-purple-300 dark:text-purple-600 ml-auto whitespace-nowrap">
+                            {cite.generatedAt}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-[11px] font-mono text-purple-400 dark:text-purple-500 bg-purple-100 dark:bg-purple-800/20 px-1.5 py-0.5 rounded flex-shrink-0">
-                      [{idx + 1}]
-                    </span>
                   </div>
                 ))}
               </div>
             )}
 
             {/* Footer */}
-            <div className="px-4 py-2.5 bg-purple-100/50 dark:bg-purple-900/10 border-t border-purple-100 dark:border-purple-700/20">
+            {/* <div className="px-4 py-2.5 bg-purple-100/50 dark:bg-purple-900/10 border-t border-purple-100 dark:border-purple-700/20">
               <p className="text-[11px] text-purple-500 dark:text-purple-400">
                 Tanda{' '}
                 <code className="bg-purple-200/60 dark:bg-purple-700/20 px-1 rounded text-[10px]">
                   [Sumber: nama_file]
                 </code>{' '}
                 dalam teks menunjukkan kutipan dari file referensi yang diunggah.
-                {hasSavedFile && !hasCitations && (
-                  <span className="block mt-1 text-purple-400 dark:text-purple-500">
-                    File asli sudah dihapus dari server — informasi ini hanya untuk catatan arsip.
-                  </span>
-                )}
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       )}
