@@ -336,9 +336,9 @@ class WriterController extends Controller
                                 foreach ($content['annotations'] ?? [] as $ann) {
                                     if (($ann['type'] ?? '') === 'file_citation') {
                                         $annotations[] = [
-                                            'file_id' => $ann['file_id']  ?? '',
+                                            'file_id' => $ann['file_id'] ?? '',
                                             'filename' => $ann['filename'] ?? '',
-                                            'index' => $ann['index']    ?? 0,
+                                            'index' => $ann['index'] ?? 0,
                                         ];
                                     }
                                 }
