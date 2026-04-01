@@ -105,8 +105,7 @@ class PaymentController extends Controller
 
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $apiKey,
-        ])->post('https://tripay.co.id/api-sandbox/transaction/create', $payload);
-        // ])->post('https://tripay.co.id/api/transaction/create', $payload);
+        ])->post('https://tripay.co.id/api/transaction/create', $payload);
 
         if ($response->failed()) {
             \Log::error('Tripay API Error', [

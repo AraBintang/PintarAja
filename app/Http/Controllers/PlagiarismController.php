@@ -156,8 +156,7 @@ class PlagiarismController extends Controller
 
         $tripayResponse = Http::withHeaders([
             'Authorization' => 'Bearer ' . $apiKey,
-        ])->post('https://tripay.co.id/api-sandbox/transaction/create', $payload);
-        // ])->post('https://tripay.co.id/api/transaction/create', $payload);
+        ])->post('https://tripay.co.id/api/transaction/create', $payload);
 
         if ($tripayResponse->failed()) {
             foreach ($storedFiles as $sf) {
