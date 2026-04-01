@@ -32,6 +32,7 @@ class Transaction extends Model
         'T_TransactionCheckoutURL',
         'T_TransactionStep',
         'T_TransactionExpired',
+        'T_TransactionType',
         'T_TransactionCreated',
         'T_TransactionLastUpdated',
     ];

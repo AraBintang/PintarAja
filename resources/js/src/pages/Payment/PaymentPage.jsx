@@ -46,7 +46,6 @@ function AccordionItem({ title, steps, isOpen, onToggle }) {
   const contentRef = useRef(null)
   const [height, setHeight] = useState(0)
 
-  // Ukur height konten setiap isOpen atau steps berubah
   useEffect(() => {
     if (contentRef.current) {
       setHeight(isOpen ? contentRef.current.scrollHeight : 0)
@@ -66,7 +65,6 @@ function AccordionItem({ title, steps, isOpen, onToggle }) {
         />
       </button>
 
-      {/* Animated container */}
       <div
         style={{
           height,
@@ -152,12 +150,15 @@ export default function PaymentPage() {
 
   const state = location.state ?? {}
   const isFromHistory = state.fromHistory ?? false
-  // returnUrl: halaman yang membuka detail ini (dipakai tombol Kembali)
   const returnUrl = state.returnUrl ?? null
 
   const searchParams = new URLSearchParams(location.search)
   const queryReferenceId = searchParams.get('referenceId')
   const referenceId = state.referenceId ?? queryReferenceId
+
+  // transactionType dari state (set saat navigate dari CheckoutPage atau PlagiarismPage)
+  // dipakai untuk redirect setelah sukses sebelum data API ter-fetch
+  const stateTransactionType = state.transactionType ?? null
 
   const seedData = useMemo(
     () =>
@@ -172,6 +173,7 @@ export default function PaymentPage() {
             plan: state.plan,
             price: state.price,
             selectedMethod: state.selectedMethod,
+            transactionType: state.transactionType ?? null,
             statusCode: 0,
           }
         : null,
@@ -186,6 +188,7 @@ export default function PaymentPage() {
       state.plan,
       state.price,
       state.selectedMethod,
+      state.transactionType,
     ],
   )
 
@@ -193,7 +196,6 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(isFromHistory || (!!referenceId && !seedData))
   const [fetching, setFetching] = useState(false)
   const [cooldown, setCooldown] = useState(0)
-  // accordion: index yang sedang terbuka (-1 = semua tutup)
   const [openGroup, setOpenGroup] = useState(0)
 
   const cooldownRef = useRef(null)
@@ -206,6 +208,10 @@ export default function PaymentPage() {
       if (showSpinner) setFetching(true)
       try {
         const res = await request(`/payments/${referenceId}`)
+
+        // Resolve transactionType: prioritaskan dari API, fallback ke state
+        const resolvedType = res.transactionType ?? stateTransactionType ?? null
+
         setTxData((prev) => ({
           payUrl: prev?.payUrl ?? prev?.paymentCode ?? null,
           checkoutUrl: res.checkoutUrl ?? prev?.checkoutUrl ?? null,
@@ -217,7 +223,19 @@ export default function PaymentPage() {
           price: res.amount,
           selectedMethod: res.method,
           statusCode: res.statusCode,
+          transactionType: resolvedType,
         }))
+
+        // Jika sudah sukses (statusCode 1) → redirect sesuai tipe transaksi
+        // if (res.statusCode === 1) {
+        //   clearInterval(autoRef.current)
+        //   setTimeout(() => {
+        //     if (resolvedType === 'plagiarism') {
+        //       navigate('/plagiarism', { replace: true })
+        //     }
+        //     // untuk subscription tidak auto-redirect, biarkan user melihat status
+        //   }, 10000)
+        // }
       } catch {
         showSnackbar('error', 'Gagal memuat data transaksi')
       } finally {
@@ -225,7 +243,7 @@ export default function PaymentPage() {
         setLoading(false)
       }
     },
-    [referenceId, showSnackbar],
+    [referenceId, showSnackbar, stateTransactionType],
   )
 
   /* ─── initial load ─── */
@@ -235,7 +253,7 @@ export default function PaymentPage() {
     }
   }, [isFromHistory, referenceId, seedData, fetchDetail])
 
-  /* ─── auto-refresh setiap 15 detik, stop kalau bukan pending ─── */
+  /* ─── auto-refresh setiap 15 detik ─── */
   useEffect(() => {
     if (!referenceId) return
     autoRef.current = setInterval(() => {
@@ -284,14 +302,22 @@ export default function PaymentPage() {
     showSnackbar('success', 'Disalin ke clipboard')
   }
 
-  /* ─── navigasi balik ke history ─── */
+  /* ─── tombol kembali ─── */
   const handleBack = () => {
+    const txType = txData?.transactionType ?? stateTransactionType
+
     if (isFromHistory && returnUrl) {
-      // Kembali ke halaman asal (mis. /chat) sambil buka settings di tab history
       navigate(`${returnUrl}?settings=true&tab=history`)
-    } else {
-      navigate('/chat', { replace: true })
+      return
     }
+
+    // Jika dari plagiarism → kembali ke /plagiarism
+    if (txType === 'plagiarism') {
+      navigate('/plagiarism', { replace: true })
+      return
+    }
+
+    navigate('/chat', { replace: true })
   }
 
   /* ─── loading / fallback ─── */
@@ -310,7 +336,7 @@ export default function PaymentPage() {
           onClick={handleBack}
           className="py-3 px-6 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold hover:bg-gray-800 dark:hover:bg-gray-100 transition-all"
         >
-          Kembali ke Chat
+          Kembali
         </button>
       </div>
     )
@@ -339,7 +365,7 @@ export default function PaymentPage() {
           onClick={handleBack}
           className="py-3 px-6 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold hover:bg-gray-800 dark:hover:bg-gray-100 transition-all"
         >
-          Kembali ke Chat
+          Kembali
         </button>
       </div>
     )
@@ -355,13 +381,23 @@ export default function PaymentPage() {
     price,
     selectedMethod,
     expiredAt,
+    transactionType,
   } = txData
+
   const cfg = STATUS_CFG[statusCode] ?? STATUS_CFG[0]
   const { Icon: StatusIcon } = cfg
   const methodName = ALL_METHODS.find((m) => m.id === selectedMethod)?.name ?? selectedMethod
   const isPending = statusCode === 0
+  const isPlagiarismTx = transactionType === 'plagiarism'
   const isQris = selectedMethod === 'qris'
   const isEwallet = ['ovo', 'dana', 'shopeepay'].includes(selectedMethod)
+
+  // Label tombol kembali
+  const backLabel = isFromHistory
+    ? 'Back to History'
+    : isPlagiarismTx
+      ? 'Kembali ke Plagiarism'
+      : 'Back to Chat'
 
   return (
     <div
@@ -417,8 +453,8 @@ export default function PaymentPage() {
                 title="Refresh status pembayaran"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold
                 bg-white/70 dark:bg-gray-800/70 backdrop-blur border border-gray-200 dark:border-gray-700
-          text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300
-          transition-all shadow-sm"
+                text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300
+                transition-all shadow-sm"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${fetching ? 'animate-spin' : ''}`} />
                 {cooldown > 0 ? `${cooldown}s` : 'Refresh'}
@@ -427,9 +463,9 @@ export default function PaymentPage() {
             <button
               onClick={toggleTheme}
               className="z-50 w-9 h-9 flex items-center justify-center rounded-xl
-          bg-white/70 dark:bg-gray-800/70 backdrop-blur border border-gray-200 dark:border-gray-700
-          text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300
-          transition-all shadow-sm"
+              bg-white/70 dark:bg-gray-800/70 backdrop-blur border border-gray-200 dark:border-gray-700
+              text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300
+              transition-all shadow-sm"
             >
               {theme === 'light' && <Sun size={15} />}
               {theme === 'dark' && <Moon size={15} />}
@@ -462,6 +498,12 @@ export default function PaymentPage() {
               {isPending && expiredAt && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   Deadline: <span className="font-semibold">{formatExpiry(expiredAt)}</span>
+                </p>
+              )}
+              {/* Info redirect untuk plagiarism yang sudah sukses */}
+              {statusCode === 1 && isPlagiarismTx && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  Redirecting Plagiarism...
                 </p>
               )}
             </div>
@@ -592,6 +634,7 @@ export default function PaymentPage() {
               {[
                 { label: 'Order ID', value: referenceId, mono: true },
                 { label: 'Plan', value: plan?.name },
+                { label: 'Tipe', value: isPlagiarismTx ? 'Plagiarism Check' : 'Subscription' },
                 { label: 'Method', value: methodName, upper: true },
                 { label: 'Total', value: `Rp ${formatPrice(price)}`, bold: true },
                 user?.email ? { label: 'Email', value: user.email } : null,
@@ -616,7 +659,7 @@ export default function PaymentPage() {
             <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl border border-gray-200/80 dark:border-gray-800 overflow-hidden">
               <div className="px-5 pt-4 pb-2">
                 <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                  Pay Intruction
+                  Pay Instruction
                 </p>
               </div>
 
@@ -639,7 +682,7 @@ export default function PaymentPage() {
               className="flex-1 py-3.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900
                 font-bold text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-all active:scale-[0.98]"
             >
-              {isFromHistory ? 'Back to History' : 'Back to Chat'}
+              {backLabel}
             </button>
           </div>
         </div>

@@ -1,6 +1,8 @@
 import {
   Check,
   Clock,
+  Download,
+  FileSearch,
   FileText,
   Hash,
   MessagesSquare,
@@ -33,6 +35,7 @@ const PAGE_CONFIG = {
   '/humanizer': { title: 'History Humanizer AI', icon: Wand2, apiPath: '/humans' },
   '/paraphrase': { title: 'History Paraphrase AI', icon: Hash, apiPath: '/paraps' },
   '/transcribe': { title: 'History Transcribe AI', icon: Mic, apiPath: '/transcribes' },
+  '/plagiarism': { title: 'History Plagiarism', icon: FileSearch, apiPath: '/plagiarism' },
 }
 
 // Which routes support rename (PUT /{id})
@@ -65,6 +68,7 @@ export default function RightSidebar() {
   const [editingValue, setEditingValue] = useState('')
   const [deletingId, setDeletingId] = useState(null)
   const [activeItemId, setActiveItemId] = useState(null)
+  const [downloadingId, setDownloadingId] = useState(null)
 
   const editInputRef = useRef(null)
 
@@ -195,6 +199,16 @@ export default function RightSidebar() {
           return [item, ...prev]
         })
         setActiveItemId(item.id)
+      },
+
+      plagiarismPaid: () => {
+        if (location.pathname !== '/plagiarism') return
+        request('/plagiarism')
+          .then((res) => {
+            const items = Array.isArray(res.data) ? res.data : []
+            setHistoryItems(items)
+          })
+          .catch(() => {})
       },
     }
 
@@ -384,8 +398,6 @@ export default function RightSidebar() {
     }
   }
 
-  // ─── WORKBOOK DELETE ─────────────────────────────────────────
-
   const handleDeleteWorkbook = async (e, wb) => {
     e.preventDefault()
     e.stopPropagation()
@@ -398,8 +410,6 @@ export default function RightSidebar() {
       showSnackbar('error', err?.message || 'Failed to delete workbook.')
     }
   }
-
-  // ─── WORKBOOK ADD ─────────────────────────────────────────────
 
   const [addingWorkbook, setAddingWorkbook] = useState(false)
   const [newWorkbookName, setNewWorkbookName] = useState('')
@@ -414,7 +424,6 @@ export default function RightSidebar() {
         method: 'POST',
         body: { name },
       })
-      // Re-fetch workbooks to get new id
       const updated = await request('/writers')
       setWorkbooks(Array.isArray(updated.workbooks) ? updated.workbooks : workbooks)
       showSnackbar('success', `Workbook "${name}" created!`)
@@ -426,12 +435,31 @@ export default function RightSidebar() {
     }
   }
 
-  // ─── RENDER ──────────────────────────────────────────────────
+  const handleDownload = async (e, item) => {
+    e.stopPropagation()
+    if (downloadingId === item.id) return
+    setDownloadingId(item.id)
+    try {
+      const res = await request(`/plagiarism/${item.id}/download`)
+      if (res.download_url) {
+        window.open(res.download_url, '_blank', 'noreferrer')
+      } else {
+        showSnackbar('error', 'URL download tidak tersedia')
+      }
+    } catch (err) {
+      showSnackbar('error', err?.message || 'Gagal mengambil link download')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
 
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 bg-black/10 z-80 transition-opacity" onClick={close} />
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] md:hidden transition-opacity duration-300"
+          onClick={close}
+        />
       )}
 
       <aside
@@ -589,155 +617,242 @@ export default function RightSidebar() {
             </div>
           ) : (
             filteredItems.map((item) => {
-              const lastChat = item.chats?.at(-1)
-              const chatPreview = lastChat?.content?.slice(0, 70) ?? ''
+              const isPlagiarism = location.pathname === '/plagiarism'
               const isEditing = editingId === item.id
               const isDeleting = deletingId === item.id
               const displayName = item.title || item.name || 'New Conversation'
+              const isDownloading = downloadingId === item.id
+
+              const lastChat = item.chats?.at(-1)
+              const chatPreview = !isPlagiarism ? (lastChat?.content?.slice(0, 70) ?? '') : null
 
               return (
                 <div className="px-2" key={item.id}>
                   <div
-                    onClick={() => handleItemClick(item)}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors group border-b border-gray-50 dark:border-gray-800 last:border-0 cursor-pointer
-                      ${
-                        isDeleting
-                          ? 'bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/30'
-                          : activeItemId === item.id
-                            ? 'bg-[#eeedeb] dark:bg-gray-900'
+                    onClick={() => !isPlagiarism && handleItemClick(item)}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors group border-b border-gray-50 dark:border-gray-800 last:border-0 ${
+                      isPlagiarism ? 'cursor-default' : 'cursor-pointer'
+                    } ${
+                      isDeleting
+                        ? 'bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/30'
+                        : activeItemId === item.id
+                          ? 'bg-[#eeedeb] dark:bg-gray-900'
+                          : isPlagiarism
+                            ? 'hover:bg-gray-50 dark:hover:bg-gray-900/50'
                             : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'
-                      }`}
+                    }`}
                   >
-                    {/* Delete confirm banner */}
-                    {isDeleting ? (
-                      <div
-                        className="flex items-center justify-between gap-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <p className="text-[12px] text-red-600 dark:text-red-400 font-medium flex-1 truncate">
-                          Delete "{displayName}"?
-                        </p>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <button
-                            onClick={(e) => confirmDelete(e, item)}
-                            className="px-2.5 py-1 text-[11px] font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
-                          >
-                            Delete
-                          </button>
-                          <button
-                            onClick={cancelDelete}
-                            className="px-2.5 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          >
-                            Cancel
-                          </button>
+                    {isPlagiarism ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-0.5">
+                              {item.service === 'turnitin' ? 'Turnin' : 'Drillbot AI'}
+                            </p>
+                            <h3 className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate leading-tight">
+                              {displayName}
+                            </h3>
+                          </div>
+
+                          {item.resultUrl && (
+                            <button
+                              onClick={(e) => handleDownload(e, item)}
+                              disabled={isDownloading}
+                              title="Download hasil"
+                              className={`flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                                isDownloading
+                                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-wait'
+                                  : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                              }`}
+                            >
+                              {isDownloading ? (
+                                <span className="w-3 h-3 border border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+                              ) : (
+                                <>
+                                  <Download className="w-3 h-3" /> Unduh
+                                </>
+                              )}
+                            </button>
+                          )}
                         </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                              item.status === 'done'
+                                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                                : item.status === 'processing'
+                                  ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                                  : item.status === 'pending'
+                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                                    : item.status === 'failed'
+                                      ? 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400'
+                                      : item.status === 'cancelled'
+                                        ? 'bg-red-50 dark:bg-red-900/20 text-red-400 dark:text-red-500'
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                item.status === 'done'
+                                  ? 'bg-emerald-400'
+                                  : item.status === 'processing'
+                                    ? 'bg-purple-400 animate-pulse'
+                                    : item.status === 'pending'
+                                      ? 'bg-blue-400'
+                                      : item.status === 'failed'
+                                        ? 'bg-red-400'
+                                        : item.status === 'cancelled'
+                                          ? 'bg-red-300'
+                                          : 'bg-gray-400'
+                              }`}
+                            />
+                            {item.statusLabel || item.status}
+                          </span>
+
+                          <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                            {item.lastUpdated || item.time}
+                          </span>
+                        </div>
+                        {item.isDone && item.completedAt && (
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                            Selesai: {item.completedAt}
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            {/* Workbook tag */}
-                            {(item.workbook_name ??
-                              (typeof item.workbook === 'string'
-                                ? item.workbook
-                                : item.workbook?.name)) && (
-                              <p className="text-[11px] text-gray-400 truncate mb-0.5">
-                                {item.workbook_name ??
+                        {/* Delete confirm banner */}
+                        {isDeleting ? (
+                          <div
+                            className="flex items-center justify-between gap-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <p className="text-[12px] text-red-600 dark:text-red-400 font-medium flex-1 truncate">
+                              Delete "{displayName}"?
+                            </p>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <button
+                                onClick={(e) => confirmDelete(e, item)}
+                                className="px-2.5 py-1 text-[11px] font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                              >
+                                Delete
+                              </button>
+                              <button
+                                onClick={cancelDelete}
+                                className="px-2.5 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                {/* Workbook tag */}
+                                {(item.workbook_name ??
                                   (typeof item.workbook === 'string'
                                     ? item.workbook
-                                    : item.workbook?.name)}
-                              </p>
-                            )}
+                                    : item.workbook?.name)) && (
+                                  <p className="text-[11px] text-gray-400 truncate mb-0.5">
+                                    {item.workbook_name ??
+                                      (typeof item.workbook === 'string'
+                                        ? item.workbook
+                                        : item.workbook?.name)}
+                                  </p>
+                                )}
 
-                            {/* Editable title */}
-                            {isEditing ? (
-                              <div
-                                className="flex items-center gap-1"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <input
-                                  ref={editInputRef}
-                                  value={editingValue}
-                                  onChange={(e) => setEditingValue(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') submitRename(e, item)
-                                    if (e.key === 'Escape') cancelEditing(e)
-                                  }}
-                                  className="flex-1 text-[13px] font-medium bg-white dark:bg-gray-800 border border-[#4A90D9]/40 rounded-md px-2 py-0.5 outline-none text-gray-800 dark:text-gray-200 min-w-0"
-                                />
-                                <button
-                                  onClick={(e) => submitRename(e, item)}
-                                  className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors flex-shrink-0"
-                                >
-                                  <Check className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={cancelEditing}
-                                  className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors flex-shrink-0"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ) : (
-                              <h3
-                                className={`text-[13px] font-medium truncate transition-colors
+                                {/* Editable title */}
+                                {isEditing ? (
+                                  <div
+                                    className="flex items-center gap-1"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <input
+                                      ref={editInputRef}
+                                      value={editingValue}
+                                      onChange={(e) => setEditingValue(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') submitRename(e, item)
+                                        if (e.key === 'Escape') cancelEditing(e)
+                                      }}
+                                      className="flex-1 text-[13px] font-medium bg-white dark:bg-gray-800 border border-[#4A90D9]/40 rounded-md px-2 py-0.5 outline-none text-gray-800 dark:text-gray-200 min-w-0"
+                                    />
+                                    <button
+                                      onClick={(e) => submitRename(e, item)}
+                                      className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors flex-shrink-0"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={cancelEditing}
+                                      className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <h3
+                                    className={`text-[13px] font-medium truncate transition-colors
                                 ${
                                   activeItemId === item.id
                                     ? 'text-[#4A90D9]'
                                     : 'text-gray-800 dark:text-gray-200 group-hover:text-[#4A90D9]'
                                 }`}
-                              >
-                                {displayName}
-                              </h3>
+                                  >
+                                    {displayName}
+                                  </h3>
+                                )}
+                              </div>
+
+                              {/* Right side: timestamp + action buttons */}
+                              {!isEditing && (
+                                <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5">
+                                  {/* Edit button */}
+                                  {canRename && (
+                                    <button
+                                      onClick={(e) => startEditing(e, item)}
+                                      className="p-1 rounded-md text-gray-300 hover:text-[#4A90D9] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all opacity-0 group-hover:opacity-100"
+                                      title="Rename"
+                                    >
+                                      <Pencil className="w-3 h-3" />
+                                    </button>
+                                  )}
+
+                                  {/* Delete button */}
+                                  {canDelete && (
+                                    <button
+                                      onClick={(e) => startDelete(e, item)}
+                                      className="p-1 rounded-md text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
+                                      title="Delete"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Preview */}
+                            {!isEditing && (
+                              <div className="flex justify-between">
+                                <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                                  {chatPreview ||
+                                    (typeof item.data === 'string'
+                                      ? item.data.slice(0, 80)
+                                      : item.preview || '')}
+                                </p>
+
+                                <div>
+                                  {(item.time || item.lastUpdated) && (
+                                    <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap mr-1">
+                                      {item.lastUpdated || item.time}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             )}
-                          </div>
-
-                          {/* Right side: timestamp + action buttons */}
-                          {!isEditing && (
-                            <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5">
-                              {/* Edit button */}
-                              {canRename && (
-                                <button
-                                  onClick={(e) => startEditing(e, item)}
-                                  className="p-1 rounded-md text-gray-300 hover:text-[#4A90D9] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all opacity-0 group-hover:opacity-100"
-                                  title="Rename"
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                </button>
-                              )}
-
-                              {/* Delete button */}
-                              {canDelete && (
-                                <button
-                                  onClick={(e) => startDelete(e, item)}
-                                  className="p-1 rounded-md text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Preview */}
-                        {!isEditing && (
-                          <div className="flex justify-between">
-                            <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                              {chatPreview ||
-                                (typeof item.data === 'string'
-                                  ? item.data.slice(0, 80)
-                                  : item.preview || '')}
-                            </p>
-
-                            <div>
-                              {(item.time || item.lastUpdated) && (
-                                <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap mr-1">
-                                  {item.lastUpdated || item.time}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                          </>
                         )}
                       </>
                     )}

@@ -76,7 +76,10 @@ export default function Hero() {
   }, [displayText, isDeleting, wordIndex])
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-20 overflow-hidden bg-gradient-to-br from-[#f0f4ff] via-[#e8eeff] to-[#f5f0ff] dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+    <section
+      id="hero"
+      className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-20 overflow-hidden bg-gradient-to-br from-[#f0f4ff] via-[#e8eeff] to-[#f5f0ff] dark:from-gray-900 dark:via-gray-900 dark:to-gray-900"
+    >
       <style>{`
         @keyframes float-particle {
           0%, 100% { transform: translate(0, 0); }

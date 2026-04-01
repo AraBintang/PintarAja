@@ -12,6 +12,9 @@ import {
 
 export const WEB_SETTING_KEYS = [
   { key: 'whatsapp_number', label: 'Nomor WhatsApp', placeholder: 'e.g. 628..' },
+  // { key: 'paraphrase_ai_key', label: 'Paraphrase AI Key', placeholder: 'e.g. sk-...' },
+  // { key: 'transcribe_ai_key', label: 'Transcribe AI Key', placeholder: 'e.g. AI...' },
+  // { key: 'Plagiarism_price', label: 'Plagiarism Price', placeholder: 'e.g. 22000' },
   {
     key: 'youtube_embed_url',
     label: 'YouTube Embed URL',

@@ -1,12 +1,10 @@
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { useTheme } from '@/context/ThemeContext'
 
 export default function Navbar() {
-  const navigate = useNavigate()
-
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
@@ -29,14 +27,14 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-[72px]">
         {/* Logo */}
-        <button onClick={() => navigate('/')} className="flex flex-col gap-1 cursor-pointer">
+        <a href="#hero" className="flex flex-col gap-1 cursor-pointer">
           <div className="flex items-end">
             <img src="/p doank.png" alt="Pintaraja" className="w-7 h-7 object-contain" />
             <span className="text-base font-bold text-gray-900 dark:text-white -ml-1 -mb-1">
               intaraja
             </span>
           </div>
-        </button>
+        </a>
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-8">

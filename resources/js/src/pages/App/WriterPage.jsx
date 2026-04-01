@@ -557,7 +557,7 @@ export default function WriterPage() {
       <div className="absolute inset-0 z-0 bg-[#f7f7f5] dark:bg-[#0f141e] pointer-events-none" />
 
       {/* Header */}
-      <div className="max-w-[1200px] mx-auto w-full z-10 text-center my-6">
+      <div className="max-w-[1200px] mx-auto w-full z-10 text-center mt-18 md:my-6">
         <div className="flex flex-col items-center justify-center gap-2">
           <div className="w-12 h-12 bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 rounded-xl flex items-center justify-center">
             <FileText className="w-6 h-6 text-gray-500 dark:text-gray-400" />

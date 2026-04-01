@@ -49,12 +49,7 @@ const PAYMENT_GROUPS = [
     methods: [
       { id: 'dana', name: 'DANA', channel: 'DANA', image: danaImage },
       { id: 'ovo', name: 'OVO', channel: 'OVO', image: ovoImage },
-      {
-        id: 'shopeepay',
-        name: 'ShopeePay',
-        channel: 'SHOPEEPAY',
-        image: shopeePayImage,
-      },
+      { id: 'shopeepay', name: 'ShopeePay', channel: 'SHOPEEPAY', image: shopeePayImage },
     ],
   },
   {
@@ -65,30 +60,15 @@ const PAYMENT_GROUPS = [
       { id: 'bni_va', name: 'BNI VA', channel: 'BNIVA', image: bniImage },
       { id: 'bri_va', name: 'BRI VA', channel: 'BRIVA', image: briImage },
       { id: 'bsi_va', name: 'BSI VA', channel: 'BSIVA', image: bsiImage },
-      {
-        id: 'mandiri_va',
-        name: 'Mandiri VA',
-        channel: 'MANDIRIVA',
-        image: mandiriImage,
-      },
+      { id: 'mandiri_va', name: 'Mandiri VA', channel: 'MANDIRIVA', image: mandiriImage },
     ],
   },
   {
     category: 'Minimarket',
     icon: <Store className="w-3.5 h-3.5" />,
     methods: [
-      {
-        id: 'alfamart',
-        name: 'Alfamart',
-        channel: 'ALFAMART',
-        image: alfamartImage,
-      },
-      {
-        id: 'indomaret',
-        name: 'Indomaret',
-        channel: 'INDOMARET',
-        image: indomaretImage,
-      },
+      { id: 'alfamart', name: 'Alfamart', channel: 'ALFAMART', image: alfamartImage },
+      { id: 'indomaret', name: 'Indomaret', channel: 'INDOMARET', image: indomaretImage },
     ],
   },
 ]
@@ -102,6 +82,10 @@ export default function CheckoutPage() {
   const { showSnackbar } = useSnackbar()
   const { theme, toggleTheme } = useTheme()
 
+  // ── Detect plagiarism flow ───────────────────────────────
+  const isPlagiarism = location.state?.isPlagiarism ?? false
+  const plagiarismData = location.state?.plagiarismData ?? null
+
   const [referralDiscount, setReferralDiscount] = useState(null)
   const [plan, setPlan] = useState(location.state?.plan ?? null)
   const [phone, setPhone] = useState(user?.phone ?? '')
@@ -112,34 +96,38 @@ export default function CheckoutPage() {
   const returnUrl = location.state?.returnUrl || '/chat'
 
   useEffect(() => {
-    if (!plan) navigate(`${returnUrl}`, { replace: true })
+    if (!plan) navigate(returnUrl, { replace: true })
   }, [returnUrl, plan, navigate])
 
+  // Hanya fetch referral discount untuk subscription, bukan plagiarism
   useEffect(() => {
-    if (!plan) return
-
+    if (!plan || isPlagiarism) return
     const fetchDiscount = async () => {
       try {
         const res = await request('/payments/referral-discount')
         setReferralDiscount(res)
       } catch {
-        // abaikan error, checkout tetap bisa jalan tanpa diskon
+        // abaikan error
       }
     }
     fetchDiscount()
-  }, [plan])
+  }, [plan, isPlagiarism])
 
   if (!plan) return null
 
   const price = plan.selectedPrice ?? plan.price?.monthly_final ?? plan.price?.monthly ?? 0
   const selectedMethodObj = ALL_METHODS.find((m) => m.id === selectedMethod)
 
+  // Diskon hanya untuk subscription non-yearly
   const isYearly = plan.selectedPeriod === 'yearly'
   const discountPercent =
-    !isYearly && referralDiscount?.discount_percent ? referralDiscount.discount_percent : 0
+    !isPlagiarism && !isYearly && referralDiscount?.discount_percent
+      ? referralDiscount.discount_percent
+      : 0
   const discountAmount = discountPercent > 0 ? Math.round(price * (discountPercent / 100)) : 0
   const finalPrice = price - discountAmount
 
+  // ── Submit: beda handler untuk plagiarism vs subscription ──
   const handleProceed = async () => {
     if (!phone.trim()) {
       showSnackbar('error', 'Masukkan nomor telepon')
@@ -151,6 +139,64 @@ export default function CheckoutPage() {
     }
 
     setSubmitting(true)
+
+    try {
+      if (isPlagiarism) {
+        await handlePlagiarismSubmit()
+      } else {
+        await handleSubscriptionSubmit()
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // ── Plagiarism submit: kirim FormData ke /plagiarism ─────
+  const handlePlagiarismSubmit = async () => {
+    if (!plagiarismData) {
+      showSnackbar('error', 'Data plagiarism tidak ditemukan')
+      return
+    }
+
+    const fd = new FormData()
+    plagiarismData.files.forEach((f) => fd.append('documents[]', f))
+    fd.append('service_type', plagiarismData.serviceType)
+    fd.append('author_first_name', plagiarismData.authorFirstName)
+    fd.append('author_last_name', plagiarismData.authorLastName)
+    fd.append('whatsapp_phone', plagiarismData.whatsappPhone)
+    fd.append('channel', selectedMethodObj.channel)
+    fd.append('method', selectedMethod)
+    fd.append('phone', phone.trim())
+    if (plagiarismData.excludeBiblio) fd.append('exclude_bibliography', 'true')
+    if (plagiarismData.excludeQuoted) fd.append('exclude_quoted_text', 'true')
+    if (plagiarismData.excludeCited) fd.append('exclude_cited_text', 'true')
+    if (plagiarismData.excludeSmall) fd.append('exclude_small_matches', 'true')
+
+    try {
+      const res = await request('/plagiarism', { method: 'POST', body: fd })
+
+      navigate('/payment', {
+        state: {
+          referenceId: res.referenceId,
+          paymentCode: res.paymentCode,
+          payUrl: res.payUrl,
+          checkoutUrl: res.checkoutUrl,
+          expiredAt: res.expiredAt,
+          instructions: res.instructions ?? [],
+          plan,
+          price: res.amount,
+          selectedMethod,
+          transactionType: 'plagiarism',
+          returnUrl: '/plagiarism',
+        },
+      })
+    } catch (err) {
+      showSnackbar('error', err?.message || 'Gagal membuat order plagiarism')
+    }
+  }
+
+  // ── Subscription submit: logic lama ──────────────────────
+  const handleSubscriptionSubmit = async () => {
     try {
       const res = await request('/payments', {
         method: 'POST',
@@ -175,12 +221,12 @@ export default function CheckoutPage() {
           plan,
           price: finalPrice,
           selectedMethod,
+          transactionType: 'subscription',
+          returnUrl,
         },
       })
     } catch (err) {
       showSnackbar('error', err.message ?? 'Gagal membuat transaksi')
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -202,7 +248,6 @@ export default function CheckoutPage() {
           className="absolute -bottom-20 left-1/3 w-[350px] h-[350px] rounded-full
           bg-violet-200/40 dark:bg-violet-900/15 blur-[100px]"
         />
-
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"
           style={{
@@ -222,12 +267,16 @@ export default function CheckoutPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
+                if (isPlagiarism) {
+                  navigate('/plagiarism')
+                  return
+                }
                 const originSetting = location.state?.fromSettings
                 if (originSetting) {
                   navigate(`${returnUrl}?settings=true&tab=plan&openPlans=true`, { replace: true })
                   return
                 }
-                navigate(`${returnUrl}`)
+                navigate(returnUrl)
               }}
               className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all"
             >
@@ -235,7 +284,9 @@ export default function CheckoutPage() {
             </button>
             <div>
               <h1 className="text-sm font-bold text-gray-900 dark:text-white">Checkout</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Pilih metode pembayaran</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {isPlagiarism ? 'Pilih metode pembayaran dokumen' : 'Pilih metode pembayaran'}
+              </p>
             </div>
           </div>
           <button
@@ -341,22 +392,42 @@ export default function CheckoutPage() {
                       {plan.selectedPeriodSuffix ?? 'Monthly'}
                     </p>
                   </div>
-                  <button
-                    onClick={() => setChangePlanOpen(true)}
-                    className="text-xs font-bold text-blue-600 dark:text-orange-400 hover:underline shrink-0 mt-0.5"
-                  >
-                    Ganti
-                  </button>
+                  {/* Hanya tampilkan tombol ganti plan untuk subscription */}
+                  {!isPlagiarism && (
+                    <button
+                      onClick={() => setChangePlanOpen(true)}
+                      className="text-xs font-bold text-blue-600 dark:text-orange-400 hover:underline shrink-0 mt-0.5"
+                    >
+                      Ganti
+                    </button>
+                  )}
                 </div>
 
                 <div className="p-5 space-y-3">
+                  {/* File list untuk plagiarism */}
+                  {isPlagiarism && plagiarismData?.files?.length > 0 && (
+                    <div className="space-y-1.5 pb-1">
+                      {plagiarismData.files.map((f, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
+                          <span className="truncate">{f.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500 dark:text-gray-400">{plan.name}</span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                       Rp {formatPrice(price)}
                     </span>
                   </div>
-                  {discountPercent > 0 && (
+
+                  {/* Diskon referral — hanya untuk subscription */}
+                  {!isPlagiarism && discountPercent > 0 && (
                     <div className="rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-3 space-y-1.5">
                       <div className="flex items-center gap-1.5">
                         <Gift className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -376,6 +447,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   )}
+
                   <div className="border-t border-gray-100 dark:border-gray-800" />
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-bold text-gray-900 dark:text-white">Total</span>
@@ -418,14 +490,17 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <PlanSelectionModal
-        open={changePlanOpen}
-        onClose={() => setChangePlanOpen(false)}
-        onSelectPlan={(newPlan) => {
-          setPlan(newPlan)
-          setChangePlanOpen(false)
-        }}
-      />
+      {/* Ganti plan modal — hanya untuk subscription */}
+      {!isPlagiarism && (
+        <PlanSelectionModal
+          open={changePlanOpen}
+          onClose={() => setChangePlanOpen(false)}
+          onSelectPlan={(newPlan) => {
+            setPlan(newPlan)
+            setChangePlanOpen(false)
+          }}
+        />
+      )}
 
       <WhatsAppButton />
     </div>

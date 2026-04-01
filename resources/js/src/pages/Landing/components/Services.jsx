@@ -1,14 +1,13 @@
 import Lottie from 'lottie-react'
 import { useEffect, useRef, useState } from 'react'
 
-import lottieAi from '@/assets/lottie/ai.json'
-import useScrollReveal from '@/hooks/useScrollReveal'
-
 import claudeAiIcon from '@/assets/icons/claude-ai-icon.svg'
 import deepseekAiIcon from '@/assets/icons/deepseek-ai-icon.svg'
 import googleGeminiIcon from '@/assets/icons/google-gemini-icon.svg'
 import gptAiIcon from '@/assets/icons/gpt-ai-icon.svg'
 import qwenAiIcon from '@/assets/icons/qwen-ai-icon.svg'
+import lottieAi from '@/assets/lottie/ai.json'
+import useScrollReveal from '@/hooks/useScrollReveal'
 
 const services = [
   {

@@ -17,15 +17,18 @@ use App\Http\Controllers\SettingAiController;
 use App\Http\Controllers\TranscribeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebSettingController;
+use App\Http\Controllers\PlagiarismController;
 use App\Http\Controllers\WorkbookController;
 use App\Http\Controllers\WriterController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/payments/notify', [PaymentController::class, 'notify']);
-
 Route::get('/plans', [PlanController::class, 'index']);
 
 Route::get('/settings/public', [WebSettingController::class, 'public']);
+
+Route::post('/payments/notify', [PaymentController::class, 'notify']);
+
+Route::post('/bepro/callback', [PlagiarismController::class, 'callback']);
 
 Route::middleware('guest:sanctum')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -111,12 +114,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [TranscribeController::class, 'destroy']);
     });
 
-    // Route::prefix('plagiarism')->group(function () {
-    //     Route::get('/', [PlagiarismController::class, 'index']);
-    //     Route::post('/', [PlagiarismController::class, 'detect']);
-    //     Route::put('/{id}', [PlagiarismController::class, 'update']);
-    //     Route::delete('/{id}', [PlagiarismController::class, 'destroy']);  // Coming Soon
-    // });
+    Route::prefix('plagiarism')->group(function () {
+        Route::get('/', [PlagiarismController::class, 'index']);
+        Route::get('/{id}/download', [PlagiarismController::class, 'downloadResult']);
+        Route::get('/pending-payment', [PlagiarismController::class, 'pendingPayment']);
+        Route::post('/', [PlagiarismController::class, 'store']);
+        Route::post('/cancel-payment', [PlagiarismController::class, 'cancelPayment']);
+
+        // Route::get('/services', [PlagiarismController::class, 'services']);
+    });
 
     Route::prefix('payments')->group(function () {
         Route::get('/', [PaymentController::class, 'index']);
