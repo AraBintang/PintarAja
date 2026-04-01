@@ -76,7 +76,7 @@ class PaymentController extends Controller
     
         $user = Auth::user();
     
-        $pendingDiscountPercent = $this->getPendingReferralDiscount($user->M_UserID);
+        $pendingDiscountPercent = $user->getReferralDiscount();
         $originalAmount = (int) $validated['amount'];
         $discountAmount = 0;
         $finalAmount = $originalAmount;
@@ -168,14 +168,6 @@ class PaymentController extends Controller
         ], 200);
     }
 
-    private function getPendingReferralDiscount(int $userID): int
-    {
-        return (int) ReferralUsage::where('T_ReferralUsageOwnerID', $userID)
-            ->where('T_ReferralUsageIsUsed', false)
-            ->where('T_ReferralUsageIsFreeMonth', false)
-            ->sum('T_ReferralUsageDiscountPercent');
-    }
-    
     private function markReferralDiscountsUsed(int $userID): void
     {
         ReferralUsage::where('T_ReferralUsageOwnerID', $userID)
@@ -187,7 +179,7 @@ class PaymentController extends Controller
     public function getReferralDiscount(Request $request)
     {
         $user = Auth::user();
-        $discountPercent = $this->getPendingReferralDiscount($user->M_UserID);
+        $discountPercent = $user->getReferralDiscount();
         $hasFreeMonth = $user->hasPendingFreeMonth();
     
         return response()->json([

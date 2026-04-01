@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Plan;
+use App\Models\ReferralUsage;
+use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -99,6 +101,23 @@ class User extends Authenticatable
     public function referredBy()
     {
         return $this->belongsTo(User::class, 'M_UserReferredBy', 'M_UserID');
+    }
+
+    /**
+     * Hitung diskon referral yang tersedia untuk user ini.
+     * Jika user direferensikan dan belum pernah melakukan transaksi,
+     * dapat tambahan 10% diskon.
+     * Diskon ini bisa ditumpuk dengan pendapatan referral dari orang lain.
+     */
+    public function getReferralDiscount(): int
+    {
+        $discount = $this->getPendingDiscountPercent();
+
+        if ($this->M_UserReferredBy && !Transaction::where('T_TransactionM_UserID', $this->M_UserID)->exists()) {
+            $discount += 10;
+        }
+
+        return $discount;
     }
     
     /**

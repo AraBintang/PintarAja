@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB per file
+const MAX_FILE_SIZE = 10 * 1024 * 1024
 
 const extractErrorMessage = (raw) => {
   try {
@@ -21,16 +21,13 @@ const extractErrorMessage = (raw) => {
 
 const parseSseContent = (raw) => {
   if (!raw.includes('data: ')) return raw
-
   let result = ''
   for (const line of raw.split('\n')) {
     if (!line.startsWith('data: ') || line === 'data: [DONE]') continue
     try {
       const json = JSON.parse(line.slice(6))
-      // Format OpenAI chat/completions
       const delta = json?.choices?.[0]?.delta?.content
       if (delta) result += delta
-      // Format Gemini
       const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
       if (text) result += text
       // eslint-disable-next-line no-unused-vars, no-empty
@@ -39,11 +36,9 @@ const parseSseContent = (raw) => {
   return result || raw
 }
 
-// Format GFF: `data: {"delta":"..."}` dan `data: {"done":true,"annotations":[...]}`
 const parseGffSse = (raw) => {
   let content = ''
   let annotations = []
-
   for (const line of raw.split('\n')) {
     if (!line.startsWith('data: ')) continue
     try {
@@ -60,31 +55,23 @@ const readStream = async (response, onProgress) => {
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let fullRaw = ''
-
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
-
     const chunk = decoder.decode(value, { stream: true })
     fullRaw += chunk
-
-    // Deteksi error JSON non-SSE lebih awal
     const trimmed = fullRaw.trim()
     if (trimmed.startsWith('{') && !trimmed.includes('data: ')) {
       const errMsg = extractErrorMessage(trimmed)
       if (errMsg) throw new Error(errMsg)
     }
-
     onProgress(fullRaw)
   }
-
-  // Cek error di akhir stream
   const trimmed = fullRaw.trim()
   if (trimmed.startsWith('{') && !trimmed.includes('data: ')) {
     const errMsg = extractErrorMessage(trimmed)
     if (errMsg) throw new Error(errMsg)
   }
-
   return fullRaw
 }
 
@@ -93,7 +80,7 @@ const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = () => resolve(reader.result) // returns "data:image/jpeg;base64,..."
+    reader.onload = () => resolve(reader.result)
     reader.onerror = reject
     reader.readAsDataURL(file)
   })
@@ -112,16 +99,13 @@ export default function ChatPage() {
 
   const [aiProviders, setAiProviders] = useState([])
   const [selectedAiId, setSelectedAiId] = useState('')
-
   const [conversationId, setConversationId] = useState(null)
   const [messages, setMessages] = useState([])
   const [streamingContent, setStreamingContent] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
-
   const [nextCursor, setNextCursor] = useState(null)
   const [hasMoreChats, setHasMoreChats] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-
   const [inputValue, setInputValue] = useState('')
   const [attachedFiles, setAttachedFiles] = useState([])
   const [showAttachMenu, setShowAttachMenu] = useState(false)
@@ -162,7 +146,6 @@ export default function ChatPage() {
   const loadConversation = useCallback(async (convId, cursor = null, prepend = false) => {
     const url = cursor ? `/chats/${convId}?cursor=${cursor}` : `/chats/${convId}`
     const res = await request(url)
-
     const incoming = (res.chats ?? []).map((c) => ({
       id: c.id,
       role: c.role,
@@ -171,7 +154,6 @@ export default function ChatPage() {
       annotations: c.annotations ?? [],
       time: c.time,
     }))
-
     if (prepend) {
       const container = scrollRef.current
       const prevHeight = container?.scrollHeight ?? 0
@@ -182,7 +164,6 @@ export default function ChatPage() {
     } else {
       setMessages(incoming)
     }
-
     setNextCursor(res.nextCursor ?? null)
     setHasMoreChats(res.hasMoreChats ?? false)
     return res
@@ -192,16 +173,13 @@ export default function ChatPage() {
     const handler = async (e) => {
       const conv = e.detail
       if (!conv?.id) return
-
       setIsLoadingHistory(true)
       setMessages([])
       setConversationId(conv.id)
-
       if (conv.ai?.length) {
         setAiProviders(conv.ai)
         setSelectedAiId(String(conv.ai[0].id))
       }
-
       if (conv.chats?.length) {
         setMessages(
           conv.chats.map((c) => ({
@@ -218,12 +196,10 @@ export default function ChatPage() {
       } else {
         await loadConversation(conv.id)
       }
-
       setIsLoadingHistory(false)
       suppressScrollRef.current = false
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
     }
-
     window.addEventListener('loadHistoryChat', handler)
     return () => window.removeEventListener('loadHistoryChat', handler)
   }, [loadConversation])
@@ -268,29 +244,8 @@ export default function ChatPage() {
     return () => el.removeEventListener('scroll', onScroll)
   }, [hasMoreChats, isLoadingMore, conversationId, nextCursor, loadConversation])
 
-  const sendTextMessage = async (convId, text, contextMessages, imageFiles = []) => {
+  const sendTextMessage = async (convId, text, contextMessages) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-
-    let messagesPayload
-
-    if (imageFiles.length > 0) {
-      const base64Images = await Promise.all(imageFiles.map(fileToBase64))
-
-      const prevContext = contextMessages.slice(0, -1)
-
-      const userContentParts = [
-        { type: 'text', text },
-        ...base64Images.map((b64) => ({
-          type: 'image_url',
-          image_url: { url: b64 },
-        })),
-      ]
-
-      messagesPayload = [...prevContext, { role: 'user', content: userContentParts }]
-    } else {
-      messagesPayload = contextMessages
-    }
-
     const response = await fetch('/api/chats', {
       method: 'POST',
       headers: {
@@ -303,39 +258,33 @@ export default function ChatPage() {
         providerId: parseInt(selectedAiId),
         conversationId: convId,
         message: text,
-        messageToAi: messagesPayload,
+        messageToAi: contextMessages,
       }),
       signal: abortRef.current.signal,
     })
-
     if (!response.ok) {
       const err = await response.json().catch(() => ({}))
       throw new Error(err.message || 'Generate gagal')
     }
-
     const fullRaw = await readStream(response, (raw) => {
       setStreamingContent(parseSseContent(raw))
     })
-
     return { content: parseSseContent(fullRaw), annotations: [] }
   }
 
   const sendFileMessage = async (convId, text, files) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-
     const oversized = files.filter((f) => f.size > MAX_FILE_SIZE)
     if (oversized.length) {
       throw new Error(
         `File "${oversized[0].name}" melebihi batas ukuran ${MAX_FILE_SIZE / 1024 / 1024}MB`,
       )
     }
-
     const form = new FormData()
     form.append('providerId', selectedAiId)
     form.append('conversationId', convId)
     form.append('message', text)
     files.forEach((f) => form.append('files[]', f))
-
     const response = await fetch('/api/chats/gff', {
       method: 'POST',
       headers: {
@@ -345,14 +294,11 @@ export default function ChatPage() {
       body: form,
       signal: abortRef.current.signal,
     })
-
     if (!response.ok) {
       const err = await response.json().catch(() => ({}))
       throw new Error(err.message || 'Generate gagal')
     }
-
     const contentType = response.headers.get('Content-Type') ?? ''
-
     if (contentType.includes('text/event-stream')) {
       const fullRaw = await readStream(response, (raw) => {
         const { content } = parseGffSse(raw)
@@ -360,8 +306,6 @@ export default function ChatPage() {
       })
       return parseGffSse(fullRaw)
     }
-
-    // Response JSON biasa (Gemini fallback)
     const json = await response.json()
     if (json?.error) throw new Error(json.error.message || 'AI provider error')
     if (!json?.reply && json?.message) throw new Error(json.message)
@@ -397,10 +341,7 @@ export default function ChatPage() {
       }
     }
 
-    // ─── Classify files dan buat preview base64 untuk images ───
     const { images, docs } = classifyFiles(files)
-
-    // Buat base64 preview untuk semua image files (untuk tampilan di bubble)
     const imageBase64Map = {}
     if (images.length > 0) {
       const base64Results = await Promise.all(images.map(fileToBase64))
@@ -409,14 +350,12 @@ export default function ChatPage() {
       })
     }
 
-    // Buat array file metadata untuk userMsg (dengan base64 untuk image)
     const fileMeta = files.map((f) => {
       const isImage = IMAGE_TYPES.includes(f.type)
       return {
         name: f.name,
         type: f.type,
         isImage,
-        // Sertakan base64 hanya untuk image, untuk tampil di bubble
         base64: isImage ? imageBase64Map[f.name + f.size] : null,
       }
     })
@@ -426,7 +365,6 @@ export default function ChatPage() {
       id: tempId,
       role: 'user',
       content: text,
-      // fileMeta berisi info file lengkap dengan base64 untuk preview
       fileMeta,
       annotations: [],
       time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
@@ -447,11 +385,8 @@ export default function ChatPage() {
 
       if (files.length > 0) {
         if (docs.length > 0) {
-          // Ada dokumen (PDF/DOC/TXT) → /gff (Vector Store)
           result = await sendFileMessage(convId, text, files)
         } else {
-          // Hanya image → kirim base64 via vision
-          // Ambil base64 dari imageBase64Map (sudah di-resolve sebelumnya)
           const preResolvedBase64 = images.map((img) => imageBase64Map[img.name + img.size])
           const prevContext = contextMessages.slice(0, -1)
           const userContentParts = [
@@ -462,7 +397,6 @@ export default function ChatPage() {
             })),
           ]
           const messagesPayload = [...prevContext, { role: 'user', content: userContentParts }]
-
           const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
           const response = await fetch('/api/chats', {
             method: 'POST',
@@ -480,20 +414,16 @@ export default function ChatPage() {
             }),
             signal: abortRef.current.signal,
           })
-
           if (!response.ok) {
             const err = await response.json().catch(() => ({}))
             throw new Error(err.message || 'Generate gagal')
           }
-
           const fullRaw = await readStream(response, (raw) => {
             setStreamingContent(parseSseContent(raw))
           })
-
           result = { content: parseSseContent(fullRaw), annotations: [] }
         }
       } else {
-        // Teks murni tanpa file
         result = await sendTextMessage(convId, text, contextMessages)
       }
 
@@ -541,7 +471,8 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-[100vh] bg-[#f7f7f5] dark:bg-[#0f141e] transition-colors duration-300">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto pt-4 md:pt-8 px-6">
+      {/* pb-44 memberi ruang untuk ChatInput yang fixed di bawah */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto pt-4 md:pt-8 px-6 pb-44">
         <ChatMessages
           messages={messages}
           streamingContent={streamingContent}
@@ -555,22 +486,25 @@ export default function ChatPage() {
       </div>
 
       {isInitialLoading ? (
-        <div className="sticky bottom-0 pt-2 bg-[#f7f7f5] dark:bg-[#0f141e] px-4">
-          <div className="max-w-3xl mx-auto w-full bg-white dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50">
-            <div className="px-5 pt-4 pb-2 space-y-2.5">
-              <div className="h-3.5 w-[55%] skeleton rounded-full" />
-              <div className="h-3.5 w-[35%] skeleton rounded-full" />
-            </div>
-            <div className="flex items-center justify-between px-3 pb-3 pt-1">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-full skeleton" />
-                <div className="w-[100px] h-8 rounded-full skeleton" />
+        /* Skeleton juga pakai fixed + max-w-3xl supaya sama posisinya */
+        <div className="fixed bottom-0 inset-x-0 px-4 pb-2">
+          <div className="max-w-3xl mx-auto w-full">
+            <div className="bg-white dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50">
+              <div className="px-5 pt-4 pb-2 space-y-2.5">
+                <div className="h-3.5 w-[55%] skeleton rounded-full" />
+                <div className="h-3.5 w-[35%] skeleton rounded-full" />
               </div>
-              <div className="w-9 h-9 rounded-full skeleton" />
+              <div className="flex items-center justify-between px-3 pb-3 pt-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-full skeleton" />
+                  <div className="w-[100px] h-8 rounded-full skeleton" />
+                </div>
+                <div className="w-9 h-9 rounded-full skeleton" />
+              </div>
             </div>
-          </div>
-          <div className="max-w-3xl mx-auto my-2 flex justify-center">
-            <div className="h-3 w-[280px] skeleton rounded-full" />
+            <div className="my-2 text-center">
+              <div className="h-3 w-[280px] skeleton rounded-full mx-auto" />
+            </div>
           </div>
         </div>
       ) : (

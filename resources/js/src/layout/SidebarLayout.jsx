@@ -19,11 +19,14 @@ function LayoutInner() {
 
   const [planModalOpen, setPlanModalOpen] = useState(false)
 
+  const sidebarW = expanded ? 260 : 64
+
   return (
     <div className="flex min-h-screen bg-[#f7f7f5] dark:bg-[#0f141e] transition-colors duration-300 overflow-x-hidden">
       <Sidebar onUpgradeClick={() => setPlanModalOpen(true)} />
 
       <main
+        style={{ '--sidebar-w': `${sidebarW}px` }}
         className={`relative flex-1 min-w-0 flex flex-col transition-all duration-300 ease-in-out ${expanded ? 'md:ml-[260px]' : 'md:ml-[64px]'}`}
       >
         <TopBar user={user} />

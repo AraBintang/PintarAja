@@ -86,6 +86,10 @@ export default function PromptAIPage() {
     perPage: PAGE_SIZE,
   })
 
+  const filteredSections = filterPaper
+    ? sections.filter((section) => String(section.paper_id) === String(filterPaper))
+    : []
+
   const stats = [
     {
       label: 'Total Prompt',
@@ -247,7 +251,9 @@ export default function PromptAIPage() {
               <Select
                 value={filterPaper}
                 onValueChange={(v) => {
-                  setFilterPaper(v === 'all' ? '' : v)
+                  const nextPaper = v === 'all' ? '' : v
+                  setFilterPaper(nextPaper)
+                  setFilterSection('')
                   setPage(1)
                 }}
               >
@@ -272,14 +278,15 @@ export default function PromptAIPage() {
                   setFilterSection(v === 'all' ? '' : v)
                   setPage(1)
                 }}
+                disabled={!filterPaper}
               >
                 <SelectTrigger className={selectTriggerClass}>
-                  <SelectValue placeholder="Semua Section" />
+                  <SelectValue placeholder={filterPaper ? 'Semua Section' : 'Pilih Paper dulu'} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectGroup>
-                    <SelectItem value="all">Semua Section</SelectItem>
-                    {sections.map((s) => (
+                    {filterPaper && <SelectItem value="all">Semua Section</SelectItem>}
+                    {filteredSections.map((s) => (
                       <SelectItem key={s.id} value={String(s.id)}>
                         {s.name}
                       </SelectItem>
