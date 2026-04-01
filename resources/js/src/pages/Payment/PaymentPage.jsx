@@ -200,6 +200,7 @@ export default function PaymentPage() {
 
   const cooldownRef = useRef(null)
   const autoRef = useRef(null)
+  const hasFetchedPlagiarismRef = useRef(false)
 
   /* ─── fetch detail ─── */
   const fetchDetail = useCallback(
@@ -245,6 +246,13 @@ export default function PaymentPage() {
     },
     [referenceId, showSnackbar, stateTransactionType],
   )
+
+  useEffect(() => {
+    if (txData?.transactionType === 'plagiarism' && !hasFetchedPlagiarismRef.current) {
+      hasFetchedPlagiarismRef.current = true
+      fetchDetail(true)
+    }
+  }, [fetchDetail, txData?.transactionType])
 
   /* ─── initial load ─── */
   useEffect(() => {

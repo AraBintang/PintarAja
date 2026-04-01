@@ -25,7 +25,7 @@ export default function UpgradeBanner({ user, onUpgradeClick }) {
         transform: visible ? 'translateY(0) scale(1)' : 'translateY(-120%) scale(0.2)',
         opacity: visible ? 1 : 0,
         transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
-        zIndex: 70,
+        zIndex: 60,
       }}
       className="absolute top-4 left-1/2 -translate-x-1/2 w-full max-w-2xl mx-auto px-3"
     >

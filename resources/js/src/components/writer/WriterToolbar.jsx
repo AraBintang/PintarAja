@@ -51,7 +51,7 @@ const WriterToolbar = memo(function WriterToolbar({
               </SelectValue>
             </SelectTrigger>
             <SelectContent
-              className="z-50 rounded-2xl min-w-[230px] border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl p-1.5"
+              className="z-50 rounded-2xl w-[380px] border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl p-1.5"
               position="popper"
               side="top"
               sideOffset={8}
@@ -97,13 +97,10 @@ const WriterToolbar = memo(function WriterToolbar({
                           </div>
                           <div className="flex flex-col flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span
-                                className={`text-[13px] font-semibold truncate ${isSelected ? 'text-[#4A90D9]' : 'text-gray-700 dark:text-gray-200'}`}
-                              >
-                                {mapped.label}
-                              </span>
                               {ai.model && (
-                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 truncate">
+                                <span
+                                  className={`text-[13px] font-semibold truncate ${isSelected ? 'text-[#4A90D9]' : 'text-gray-700 dark:text-gray-200'}`}
+                                >
                                   {ai.model}
                                 </span>
                               )}

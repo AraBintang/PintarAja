@@ -589,11 +589,12 @@ function SkeletonMessages() {
 function InitialSkeleton() {
   return (
     <div className="w-full space-y-6">
-      <div className="h-8 w-72 skeleton rounded-xl mx-auto" />
-      <div className="grid grid-cols-2 gap-4 max-w-2xl px-6 mx-auto">
+      <div className="h-8 w-160 skeleton rounded-xl mx-auto" />
+      <div className="grid grid-cols-2 gap-4 max-w-xl px-6 mx-auto">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="h-14 skeleton rounded-xl opacity-50" />
         ))}
+        <div className="h-14 col-span-2 skeleton rounded-xl opacity-50" />
       </div>
     </div>
   )

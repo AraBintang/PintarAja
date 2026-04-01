@@ -298,7 +298,7 @@ export default function ParafrasePage() {
               )}
             </div>
           </div>
-          <div className="flex-1 flex flex-col bg-black/20 dark:bg-gray-900 text-white rounded-b-xl md:rounded-none">
+          <div className="flex-1 flex flex-col bg-black/20 dark:bg-gray-900 text-white rounded-b-3xl md:rounded-none">
             <div className="flex-1 p-6 overflow-y-auto">
               {isProcessing ? (
                 <div className="flex items-center justify-center h-full min-h-[250px] md:min-h-0">
