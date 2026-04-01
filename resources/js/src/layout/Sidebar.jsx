@@ -103,8 +103,14 @@ function UserProfileSection({ expanded, onUpgradeClick }) {
           )}
         </button>
 
-        {user?.plan_id == 1 && expanded && (
-          <div className="mx-1 p-3 border border-gray-100 dark:border-gray-800 rounded-2xl mb-2 bg-[#f7f7f5] dark:bg-[#0f141e]">
+        {user?.plan_id == 1 && (
+          <div
+            className={` border border-gray-100 dark:border-gray-800 rounded-2xl mb-2 bg-[#f7f7f5] dark:bg-[#0f141e] overflow-hidden transition-all duration-300 ${
+              expanded
+                ? 'max-h-[560px] opacity-100 delay-150 mx-1 p-3 '
+                : 'max-h-0 opacity-0 hidden'
+            }`}
+          >
             <p className="text-sm font-bold">Upgrade Plan</p>
             <p className="text-[12px] my-3">
               Upgrade your plan at any time to get more features and benefits.

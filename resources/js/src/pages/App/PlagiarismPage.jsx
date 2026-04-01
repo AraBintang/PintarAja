@@ -185,7 +185,7 @@ function PendingBadge({ files, tx, onCancel, isCancelling, onPayNow }) {
   }, [tx?.expiredAt])
 
   return (
-    <div className="rounded-[28px] border-2 border-amber-200 dark:border-amber-700/50 bg-amber-50/50 dark:bg-amber-900/10 p-8 space-y-6">
+    <div className="rounded-[28px] border-2 border-amber-200 dark:border-amber-700/50 bg-amber-50/50 dark:bg-amber-900/10 p-4 space-y-6">
       {/* Header */}
       <div className="flex items-start gap-4">
         <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
@@ -205,7 +205,7 @@ function PendingBadge({ files, tx, onCancel, isCancelling, onPayNow }) {
       </div>
 
       {/* Detail pembayaran */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3 overflow-auto">
         <div className="rounded-2xl bg-white dark:bg-gray-900 p-4 border border-gray-100 dark:border-gray-800">
           <p className="text-xs uppercase tracking-widest text-gray-400 mb-1.5">Total</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white">{fmt(tx?.amount)}</p>
@@ -215,10 +215,9 @@ function PendingBadge({ files, tx, onCancel, isCancelling, onPayNow }) {
         </div>
         <div className="rounded-2xl bg-white dark:bg-gray-900 p-4 border border-gray-100 dark:border-gray-800">
           <p className="text-xs uppercase tracking-widest text-gray-400 mb-1.5">Metode</p>
-          <p className="font-semibold text-gray-900 dark:text-white">{tx?.method || '-'}</p>
-          {tx?.paymentCode && (
-            <p className="text-xs text-gray-500 mt-1 font-mono truncate">{tx.paymentCode}</p>
-          )}
+          <p className="font-semibold text-gray-900 dark:text-white uppercase">
+            {tx?.method || '-'}
+          </p>
         </div>
         <div className="rounded-2xl bg-white dark:bg-gray-900 p-4 border border-gray-100 dark:border-gray-800">
           <p className="text-xs uppercase tracking-widest text-gray-400 mb-1.5">Sisa Waktu</p>
@@ -510,7 +509,7 @@ export default function PlagiarismPage() {
       <div className="mt-14 md:mt-0 max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="rounded-[28px] border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-8 py-7">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 text-center md:text-start sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-blue-600 dark:text-orange-400 mb-2">
                 Plagiarism Checker
@@ -523,7 +522,7 @@ export default function PlagiarismPage() {
               <button
                 type="button"
                 onClick={openRightSidebar}
-                className="ml-auto inline-flex items-center rounded-full border border-blue-500 bg-blue-50 dark:border-orange-500 dark:bg-orange-500/10 shadow-sm px-3 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100 dark:text-orange-400 dark:hover:bg-orange-500/20"
+                className="mt-2 md:mt-0 mx-auto md:ml-auto inline-flex items-center rounded-full border border-blue-500 bg-blue-50 dark:border-orange-500 dark:bg-orange-500/10 shadow-sm px-3 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100 dark:text-orange-400 dark:hover:bg-orange-500/20"
               >
                 Pantau Hasil
               </button>

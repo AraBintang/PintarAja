@@ -148,6 +148,10 @@ export default function Register() {
     if (e.key === 'Backspace' && !otp[index] && index > 0) inputRefs.current[index - 1]?.focus()
     if (e.key === 'ArrowLeft' && index > 0) inputRefs.current[index - 1]?.focus()
     if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1) inputRefs.current[index + 1]?.focus()
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleVerifyOtp()
+    }
   }
 
   const handleOtpPaste = (e) => {

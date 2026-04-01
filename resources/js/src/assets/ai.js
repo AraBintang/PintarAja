@@ -51,7 +51,7 @@ export const AI_MODELS = {
       desc: 'Most powerful OpenAI model, frontier intelligence & reasoning',
     },
     {
-      value: 'gpt-5-nanp',
+      value: 'gpt-5-nano',
       label: 'GPT-5-nano',
       desc: 'Fastest, most cost-efficient version of GPT-5',
     },
