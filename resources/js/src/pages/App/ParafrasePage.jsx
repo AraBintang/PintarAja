@@ -246,7 +246,7 @@ export default function ParafrasePage() {
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-between md:justify-end gap-3 flex-shrink-0 z-40">
+          <div className="flex items-center justify-between md:justify-end gap-3 flex-shrink-0">
             <LanguageSelector selectedLang={selectedLang} onLangChange={setSelectedLang} />
           </div>
         </div>
