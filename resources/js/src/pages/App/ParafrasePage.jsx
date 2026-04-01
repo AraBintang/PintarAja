@@ -197,20 +197,21 @@ export default function ParafrasePage() {
               <span className="font-semibold text-slate-800 dark:text-gray-200 text-[15px] mr-1">
                 Modes:
               </span>
-              {MODES.map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  className={`px-3 py-2 text-[14px] font-medium rounded-[10px] transition-all duration-200 ${
-                    mode === m
-                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
-
+              <div>
+                {MODES.map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMode(m)}
+                    className={`px-3 py-2 text-[14px] font-medium rounded-[10px] transition-all duration-200 ${
+                      mode === m
+                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setMoreOpen(!moreOpen)}
@@ -221,7 +222,7 @@ export default function ParafrasePage() {
                   }`}
                 >
                   More {MORE_MODES.includes(mode) ? `(${mode})` : ''}{' '}
-                  <ChevronDown className="w-4 h-4 ml-1" />
+                  <ChevronDown className={`w-4 h-4 ml-1 ${moreOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {moreOpen && (
                   <div className="absolute top-full left-0 mt-2 p-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-xl rounded-xl flex flex-col min-w-[160px] z-50 overflow-hidden py-1">

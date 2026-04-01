@@ -30,10 +30,10 @@ export default function CouponForm({ open, onClose, onSubmit, plans = [], loadin
 
   const handleSubmit = () => {
     onSubmit({
-      planId: Number(formData.planId),
-      days: Number(formData.days),
+      planId: formData.planId,
+      days: formData.days,
       expired: formData.expired,
-      count: Number(formData.count),
+      count: formData.countyy,
     })
   }
 

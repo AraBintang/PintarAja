@@ -522,7 +522,7 @@ export default function PlagiarismPage() {
               <button
                 type="button"
                 onClick={openRightSidebar}
-                className="mt-2 md:mt-0 mx-auto md:ml-auto inline-flex items-center rounded-full border border-blue-500 bg-blue-50 dark:border-orange-500 dark:bg-orange-500/10 shadow-sm px-3 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100 dark:text-orange-400 dark:hover:bg-orange-500/20"
+                className="mt-2 md:mt-0 ml-auto mr-auto md:mr-0 md:ml-auto inline-flex items-center rounded-full border border-blue-500 bg-blue-50 dark:border-orange-500 dark:bg-orange-500/10 shadow-sm px-3 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100 dark:text-orange-400 dark:hover:bg-orange-500/20"
               >
                 Pantau Hasil
               </button>

@@ -141,12 +141,26 @@ body[data-scroll-locked] .fixed.inset-0 {
 
 /* Hide scrollbars globally but keep functionality */
 * {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.25) transparent;
 }
 
 *::-webkit-scrollbar {
-    display: none;
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.25);
+  border-radius: 99px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
 }
 
 /* ─── Tiptap Editor Styles ─── */

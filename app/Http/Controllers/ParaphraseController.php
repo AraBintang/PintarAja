@@ -78,7 +78,6 @@ Rules:
 
         $response = $client->responses()->create([
             'model' => 'gpt-5',
-            'temperature' => 0.3,
             'input' => [
                 [
                     'role' => 'system',
@@ -91,9 +90,9 @@ Rules:
             ]
         ]);
 
-        $paraphrase = $response->output[0]->content[0]->text;
+        $paraphrase = $response->outputText ?? data_get($response, 'output.1.content.0.text') ?? data_get($response, 'output.0.content.0.text', '');
 
-        $paraphraseId =Paraphrase::create([
+        $paraphraseId = Paraphrase::create([
             'M_ParaphraseM_UserID' => $user->M_UserID,
             'M_ParaphraseName' => 'Paraphrase ' . now()->format('Y-m-d H:i'),
             'M_ParaphraseOrigin' => $text,

@@ -125,7 +125,6 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
   )
 }
 
-/* ─── Spinner SVG ─── */
 function Spinner() {
   return (
     <svg
@@ -141,7 +140,6 @@ function Spinner() {
   )
 }
 
-/* ─── File Preview Chip ─── */
 function FileChip({ file, index, onRemove, isStreaming }) {
   const [previewUrl, setPreviewUrl] = useState(null)
   const isImage = file.type.startsWith('image/')
@@ -154,7 +152,6 @@ function FileChip({ file, index, onRemove, isStreaming }) {
   }, [file, isImage])
 
   const ext = file.name.split('.').pop().toUpperCase()
-
   const extColorMap = {
     PDF: 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400',
     DOC: 'bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400',
@@ -179,7 +176,6 @@ function FileChip({ file, index, onRemove, isStreaming }) {
         >
           <XIcon className="w-3 h-3" />
         </button>
-        {/* Filename tooltip on hover */}
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 text-white text-[10px] rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none max-w-[120px] truncate">
           {file.name}
         </div>
@@ -231,6 +227,15 @@ export default function ChatInput({
   const imageRef = useRef(null)
   const docRef = useRef(null)
 
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const handler = (e) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
   useEffect(() => {
     const el = textareaRef.current
     if (!el) return
@@ -262,164 +267,168 @@ export default function ChatInput({
   const canAttachFile = !isStreaming && selectedProvider?.code === 'SETTING-GPT'
 
   return (
-    <div className="sticky bottom-0 rounded-[32px] mt-2 mx-4">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (!isStreaming) onSubmit()
-        }}
-        className="max-w-3xl mx-auto w-full bg-white dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50 shadow-sm"
-      >
-        <div className="flex flex-col">
-          {/* File previews */}
-          {attachedFiles.length > 0 && (
-            <div className="px-4 pt-4 flex items-end gap-2 flex-wrap">
-              {attachedFiles.map((f, i) => (
-                <FileChip
-                  key={i}
-                  file={f}
-                  index={i}
-                  onRemove={onRemoveFile}
-                  isStreaming={isStreaming}
+    <div
+      className="fixed bottom-0 right-0 transition-all duration-300 ease-in-out"
+      style={{ left: isMobile ? '0px' : 'var(--sidebar-w, 64px)' }}
+    >
+      <div className="max-w-3xl md:mx-auto w-full bg-[#f7f7f5] dark:bg-[#0f141e] rounded-t-4xl">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!isStreaming) onSubmit()
+          }}
+          className="w-full bg-white -mt-8 dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50 shadow-sm"
+        >
+          <div className="flex flex-col">
+            {attachedFiles.length > 0 && (
+              <div className="px-4 pt-4 flex items-end gap-2 flex-wrap">
+                {attachedFiles.map((f, i) => (
+                  <FileChip
+                    key={i}
+                    file={f}
+                    index={i}
+                    onRemove={onRemoveFile}
+                    isStreaming={isStreaming}
+                  />
+                ))}
+              </div>
+            )}
+
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={inputValue}
+              onChange={handleInput}
+              onKeyDown={handleKeyDown}
+              disabled={isStreaming}
+              placeholder={isStreaming ? 'AI is answering...' : 'Ask anything'}
+              className="w-full px-5 my-4 text-[15px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none bg-transparent resize-none min-h-[35px] max-h-[312px] disabled:cursor-not-allowed transition-colors"
+            />
+
+            <div className="flex items-center justify-between px-3 pb-3">
+              <div className="flex items-center gap-1 relative">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  ref={imageRef}
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
-              ))}
-            </div>
-          )}
-
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={inputValue}
-            onChange={handleInput}
-            onKeyDown={handleKeyDown}
-            disabled={isStreaming}
-            placeholder={isStreaming ? 'AI is answering...' : 'Ask anything'}
-            className="w-full px-5 my-4 text-[15px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none bg-transparent resize-none min-h-[35px] max-h-[312px] disabled:cursor-not-allowed transition-colors"
-          />
-
-          <div className="flex items-center justify-between px-3 pb-3">
-            <div className="flex items-center gap-1 relative">
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                ref={imageRef}
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <input
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx,.txt"
-                ref={docRef}
-                onChange={handleFileChange}
-                className="hidden"
-              />
-
-              <button
-                type="button"
-                onClick={onToggleAttachMenu}
-                className="w-9 h-9 rounded-full border bg-[#eeedeb] dark:bg-black/20 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 transition-colors relative z-30 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Plus
-                  className={`w-4 h-4 transition-transform ${showAttachMenu ? 'rotate-45' : ''}`}
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.txt"
+                  ref={docRef}
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
-              </button>
 
-              {showAttachMenu && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={onToggleAttachMenu} />
-                  <div className="absolute bottom-full mb-2 p-1 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-20 w-48">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!canAttachImage) return
-                        imageRef.current?.click()
-                        onToggleAttachMenu()
-                      }}
-                      disabled={!canAttachImage}
-                      title={
-                        !canAttachImage
-                          ? 'Upload gambar tidak tersedia untuk model Deepseek'
-                          : undefined
-                      }
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors ${!canAttachImage ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'}`}
-                    >
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!canAttachImage ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600'}`}
+                <button
+                  type="button"
+                  onClick={onToggleAttachMenu}
+                  className="w-9 h-9 rounded-full border bg-[#eeedeb] dark:bg-black/20 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 transition-colors relative z-30 flex-shrink-0"
+                >
+                  <Plus
+                    className={`w-4 h-4 transition-transform ${showAttachMenu ? 'rotate-45' : ''}`}
+                  />
+                </button>
+
+                {showAttachMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={onToggleAttachMenu} />
+                    <div className="absolute bottom-full mb-2 p-1 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-20 w-48">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!canAttachImage) return
+                          imageRef.current?.click()
+                          onToggleAttachMenu()
+                        }}
+                        disabled={!canAttachImage}
+                        title={
+                          !canAttachImage
+                            ? 'Upload gambar tidak tersedia untuk model Deepseek'
+                            : undefined
+                        }
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors ${!canAttachImage ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'}`}
                       >
-                        <Image className="w-4 h-4" />
-                      </div>
-                      <div className="text-left">
-                        <p
-                          className={`font-semibold leading-tight ${!canAttachImage ? 'text-gray-400 dark:text-gray-500' : ''}`}
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!canAttachImage ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600'}`}
                         >
-                          Image
-                        </p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">JPG, PNG, GIF</p>
-                      </div>
-                    </button>
+                          <Image className="w-4 h-4" />
+                        </div>
+                        <div className="text-left">
+                          <p
+                            className={`font-semibold leading-tight ${!canAttachImage ? 'text-gray-400 dark:text-gray-500' : ''}`}
+                          >
+                            Image
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">JPG, PNG, GIF</p>
+                        </div>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!canAttachFile) return
-                        docRef.current?.click()
-                        onToggleAttachMenu()
-                      }}
-                      disabled={!canAttachFile}
-                      title={
-                        !canAttachFile
-                          ? 'Upload file hanya tersedia untuk model OpenAI (GPT)'
-                          : undefined
-                      }
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors ${!canAttachFile ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'}`}
-                    >
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!canAttachFile ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600'}`}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!canAttachFile) return
+                          docRef.current?.click()
+                          onToggleAttachMenu()
+                        }}
+                        disabled={!canAttachFile}
+                        title={
+                          !canAttachFile
+                            ? 'Upload file hanya tersedia untuk model OpenAI (GPT)'
+                            : undefined
+                        }
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors ${!canAttachFile ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'}`}
                       >
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <div className="text-left">
-                        <p
-                          className={`font-semibold leading-tight ${!canAttachFile ? 'text-gray-400 dark:text-gray-500' : ''}`}
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!canAttachFile ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600'}`}
                         >
-                          File
-                        </p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">PDF, DOC, TXT</p>
-                      </div>
-                    </button>
-                  </div>
-                </>
-              )}
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div className="text-left">
+                          <p
+                            className={`font-semibold leading-tight ${!canAttachFile ? 'text-gray-400 dark:text-gray-500' : ''}`}
+                          >
+                            File
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">PDF, DOC, TXT</p>
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                )}
 
-              <div className="flex items-center ml-1 bg-[#eeedeb] dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full">
-                <ModelSelect
-                  value={selectedAiId}
-                  onChange={onAiChange}
-                  aiProviders={aiProviders}
-                  disabled={isStreaming}
-                />
+                <div className="flex items-center ml-1 bg-[#eeedeb] dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full">
+                  <ModelSelect
+                    value={selectedAiId}
+                    onChange={onAiChange}
+                    aiProviders={aiProviders}
+                    disabled={isStreaming}
+                  />
+                </div>
+              </div>
+
+              <div className="pr-1">
+                <button
+                  type="submit"
+                  disabled={!canSend}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isStreaming ? 'bg-black dark:bg-white text-white dark:text-black cursor-not-allowed' : canSend ? 'bg-black dark:bg-white text-white dark:text-black hover:scale-105' : 'bg-[#eeedeb] dark:bg-black/20 text-gray-400 dark:text-[#555]'}`}
+                >
+                  {isStreaming ? <Spinner /> : <ArrowUp className="w-[18px] h-[18px]" />}
+                </button>
               </div>
             </div>
-
-            <div className="pr-1">
-              <button
-                type="submit"
-                disabled={!canSend}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isStreaming ? 'bg-black dark:bg-white text-white dark:text-black cursor-not-allowed' : canSend ? 'bg-black dark:bg-white text-white dark:text-black hover:scale-105' : 'bg-[#eeedeb] dark:bg-black/20 text-gray-400 dark:text-[#555]'}`}
-              >
-                {isStreaming ? <Spinner /> : <ArrowUp className="w-[18px] h-[18px]" />}
-              </button>
-            </div>
           </div>
-        </div>
-      </form>
+        </form>
 
-      <div className="max-w-3xl mx-auto my-2 text-center px-4">
-        <p className="text-[11px] text-gray-400 dark:text-gray-500">
-          Pintaraja dapat membuat kesalahan. Harap cek kembali informasi yang didapat.
-        </p>
+        <div className="py-2 text-center">
+          <p className="text-[11px] text-gray-400 dark:text-gray-500">
+            Pintaraja dapat membuat kesalahan. Harap cek kembali informasi yang didapat.
+          </p>
+        </div>
       </div>
     </div>
   )

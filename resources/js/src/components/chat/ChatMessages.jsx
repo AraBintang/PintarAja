@@ -612,7 +612,7 @@ export default function ChatMessages({
   endRef,
 }) {
   return (
-    <div className="max-w-3xl mx-auto w-full space-y-8 pt-14 md:pt-0">
+    <div className="max-w-3xl mx-auto w-full space-y-8 md:px-4 pt-14 md:pt-0">
       {isLoadingMore && (
         <div className="flex justify-center py-3">
           {[0, 150, 300].map((d) => (
