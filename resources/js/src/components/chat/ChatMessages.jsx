@@ -492,7 +492,7 @@ function MessageBubble({ msg }) {
   } catch (_) {}
 
   return (
-    <div className={`flex flex-col w-full ${isUser ? 'items-end' : 'items-start'}`}>
+    <div className={`flex flex-col w-full mb-4 ${isUser ? 'items-end' : 'items-start'}`}>
       {/* ─── Attachment preview DI ATAS bubble (hanya untuk user) ─── */}
       {isUser && fileMeta.length > 0 && <AttachmentPreview fileMeta={fileMeta} />}
 
@@ -611,7 +611,7 @@ export default function ChatMessages({
   endRef,
 }) {
   return (
-    <div className="max-w-3xl mx-auto w-full space-y-8 pt-6 md:pt-0 pb-4">
+    <div className="max-w-3xl mx-auto w-full space-y-8 pt-14 md:pt-0">
       {isLoadingMore && (
         <div className="flex justify-center py-3">
           {[0, 150, 300].map((d) => (

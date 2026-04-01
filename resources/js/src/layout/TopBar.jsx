@@ -11,8 +11,7 @@ export default function TopBar({ user }) {
   const { toggle: toggleLeft } = useSidebar()
   const { theme, toggleTheme } = useTheme()
 
-  const isComingSoonPage =
-    location.pathname.startsWith('/humanize') || location.pathname.startsWith('/plagiarism')
+  const isComingSoonPage = location.pathname.startsWith('/humanize')
   const isAdminPage = location.pathname.startsWith('/admin')
   const isChatPage = location.pathname === '/chat' || location.pathname === '/new'
 

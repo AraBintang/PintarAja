@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\PlagiarismController;
+use App\Models\Plagiarism;
 use App\Models\ReferralUsage;
 use App\Models\Transaction;
 use App\Models\User;
@@ -58,7 +60,7 @@ class PaymentController extends Controller
         $apiKey = config('services.tripay.api_key');
         $privateKey = config('services.tripay.private_key');
         $merchantCode = config('services.tripay.merchant_code');
-    
+
         $validated = $request->validate([
             'planId' => 'required',
             'amount' => 'required|numeric|min:1000',
@@ -131,6 +133,7 @@ class PaymentController extends Controller
         $tx = Transaction::create([
             'T_TransactionM_UserID' => $user->M_UserID,
             'T_TransactionM_PlanID' => $validated['planId'],
+            'T_TransactionType' => 'subscription',
             'T_TransactionIdResult' => $data['reference'],
             'T_TransactionIdRefrence' => $data['merchant_ref'],
             'T_TransactionQR' => $paymentCode,
@@ -208,7 +211,7 @@ class PaymentController extends Controller
         return [
             'type' => 'discount',
             'remaining' => $remainingToFree - 1,
-            'message'   => ($remainingToFree - 1) . ' orang lagi untuk free 1 bulan',
+            'message' => ($remainingToFree - 1) . ' orang lagi untuk free 1 bulan',
         ];
     }
 
@@ -231,7 +234,7 @@ class PaymentController extends Controller
 
         $tx->update(['T_TransactionStatus' => $statusCode]);
 
-        if ($statusCode === 1) {
+        if ($statusCode === 1 && $tx->T_TransactionType !== 'plagiarism') {
             $daysMap = ['Weekly' => 7, 'Monthly' => 30, 'Yearly' => 365];
             $suffix = trim(Str::afterLast($tx->T_TransactionItem, '-'));
             $days = $daysMap[$suffix] ?? 0;
@@ -249,9 +252,27 @@ class PaymentController extends Controller
             }
         }
 
+        if ($statusCode === 1 && $tx->T_TransactionType === 'plagiarism') {
+            try {
+                $plagiarismController = new PlagiarismController();
+                $plagiarismController->pushFilesToBepro($tx);
+            } catch (\Exception $e) {
+                \Log::error('Failed to push files to BePro after payment', [
+                    'transaction_id' => $tx->T_TransactionID,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if (in_array($statusCode, [2, 3]) && $tx->T_TransactionType === 'plagiarism') {
+            Plagiarism::where('M_PlagiarismTransactionID', $tx->T_TransactionID)
+                ->where('M_PlagiarismStatus', 'waiting_payment')
+                ->update(['M_PlagiarismStatus' => 'cancelled']);
+        }
+ 
         return response()->json(['message' => 'Callback processed successfully']);
     }
-
+ 
     private function formatTransaction(Transaction $tx, bool $withDetail = false): array
     {
         $labels = [
@@ -274,6 +295,7 @@ class PaymentController extends Controller
             'channel' => $tx->T_TransactionChannel,
             'expiredAt' => $tx->T_TransactionExpired,
             'createdAt' => $tx->T_TransactionCreated,
+            'transactionType' => $tx->T_TransactionType,
         ];
 
         if ($withDetail) {

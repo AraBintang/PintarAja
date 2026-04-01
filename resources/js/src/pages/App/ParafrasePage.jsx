@@ -177,7 +177,7 @@ export default function ParafrasePage() {
 
   return (
     <div className="flex flex-col h-full bg-[#f7f7f5] dark:bg-[#0f141e] overflow-y-auto overflow-x-hidden pt-0 pb-10 px-6 max-w-full">
-      <div className="max-w-[1200px] mx-auto w-full z-10 text-center my-6">
+      <div className="max-w-[1200px] mx-auto w-full z-10 text-center mt-18 md:my-6">
         <div className="flex flex-col items-center justify-center gap-2">
           <div className="w-12 h-12 bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 rounded-xl flex items-center justify-center">
             <Hash className="w-6 h-6 text-gray-500 dark:text-gray-400" />
@@ -190,7 +190,7 @@ export default function ParafrasePage() {
           Susun ulang teks Anda untuk meningkatkan keterbacaan dan menghindari plagiarisme.
         </p>
       </div>
-      <div className="max-w-[1200px] mx-auto w-full flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-800 overflow-visible min-h-[600px] mb-28 md:mb-8 shadow-sm">
+      <div className="max-w-[1200px] mx-auto w-full flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-3xl overflow-visible min-h-[600px] mb-28 md:mb-8 shadow-sm">
         <div className="px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto overflow-visible">
             <div className="flex flex-wrap items-center gap-1.5 md:gap-2 w-full lg:w-auto pl-1 pt-1">

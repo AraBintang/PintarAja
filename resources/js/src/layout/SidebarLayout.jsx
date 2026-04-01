@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
+import PlanSelectionModal from '@/components/plan/PlanSelectionModal'
 import UpgradeBanner from '@/components/UpgradeBanner'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import { useAuth } from '@/context/AuthContext'
 import { RightSidebarProvider } from '@/context/RightSidebarContext'
 import { SidebarProvider, useSidebar } from '@/context/SidebarContext'
 import SettingsModal from '@/pages/Settings/SettingsModal'
-import PlanSelectionModal from '@/components/plan/PlanSelectionModal'
 
 import RightSidebar from './RightSidebar'
 import Sidebar from './Sidebar'

@@ -52,7 +52,7 @@ function TranscriptionResultView({ transcriptionResult, handleReset, handleExpor
     <div className="flex flex-col items-center max-w-5xl w-full relative pt-12 md:pt-0">
       <div
         key={`back-${animKey}`}
-        className="absolute top-16 md:top-4 left-0 animate-[slideUp_0.3s_ease-out_both]"
+        className="absolute top-18 md:top-4 left-0 animate-[slideUp_0.3s_ease-out_both]"
       >
         <button
           onClick={handleReset}
@@ -66,7 +66,7 @@ function TranscriptionResultView({ transcriptionResult, handleReset, handleExpor
       <div
         key={`card-${animKey}`}
         ref={cardRef}
-        className="w-full mt-18 mb-6 bg-white dark:bg-gray-800 rounded-[24px] shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row animate-[slideUp_0.45s_ease-out_both]"
+        className="w-full mt-20 md:mt-18 mb-6 bg-white dark:bg-gray-800 rounded-[24px] shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row animate-[slideUp_0.45s_ease-out_both]"
       >
         {/* ── Left panel ── */}
         <div className="w-full md:w-1/3 p-6 sm:p-8 bg-gray-50/50 dark:bg-gray-800/50 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700">

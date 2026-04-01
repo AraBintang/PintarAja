@@ -59,4 +59,10 @@ return [
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
     ],
+
+    'bepro' => [
+        'api_key' => env('BEPRO_API_KEY'),
+        'secret' => env('BEPRO_SECRET'),
+        'webhook_secret' => env('BEPRO_WEBHOOK_SECRET'),
+    ],
 ];
