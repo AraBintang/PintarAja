@@ -269,7 +269,7 @@ export default function ChatInput({
   return (
     <div
       className="fixed bottom-0 right-0 transition-all duration-300 ease-in-out"
-      style={{ left: isMobile ? '8px' : 'var(--sidebar-w, 64px)', right: isMobile ? '8px' : '' }}
+      style={{ left: isMobile ? '10px' : 'var(--sidebar-w, 64px)', right: isMobile ? '10px' : '' }}
     >
       <div className="max-w-3xl md:mx-auto w-full bg-[#f7f7f5] dark:bg-[#0f141e] rounded-t-4xl">
         <form
