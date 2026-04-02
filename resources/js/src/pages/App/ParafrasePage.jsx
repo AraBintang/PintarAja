@@ -369,7 +369,7 @@ export default function ParafrasePage() {
           <div className="hidden sm:block w-[130px]" />
         </div>
       </div>
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 px-4 pt-3 pb-5 z-[30] transition-all duration-300 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 pt-3 pb-5 z-[30] transition-all duration-300 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
@@ -391,11 +391,11 @@ export default function ParafrasePage() {
               {mode}
             </span>
           </div>
-          <div>
+          <div className="px-4">
             <button
               onClick={handleParaphrase}
               disabled={!canParaphrase}
-              className={`w-full py-3 text-[15px] font-bold rounded-full transition-all l ${
+              className={`w-full py-3 px-4 text-[15px] font-bold rounded-full transition-all ${
                 canParaphrase
                   ? 'bg-blue-600 dark:bg-orange-500 text-white active:scale-95'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
