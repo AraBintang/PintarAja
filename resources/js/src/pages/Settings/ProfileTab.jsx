@@ -98,9 +98,10 @@ export default function ProfileTab() {
             {!isEditingProfile && (
               <button
                 onClick={() => setIsEditingProfile(true)}
-                className="text-[12px] font-semibold text-[#2686D4] dark:text-[#F2901E] hover:underline"
+                className="text-[12px] mb-auto flex row gap-1 font-semibold text-[#2686D4] dark:text-[#F2901E] hover:underline"
               >
-                <Pencil className="w-4 h-4" />
+                Edit
+                <Pencil className="w-3 h-4" />
               </button>
             )}
           </div>

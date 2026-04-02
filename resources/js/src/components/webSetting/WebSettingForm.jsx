@@ -101,22 +101,21 @@ export default function WebSettingForm({
             {isEdit ? (
               <div className="w-full bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 h-11 flex items-center">
                 <code className="text-[13px] text-blue-600 dark:text-orange-400 font-mono">
-                  {key}
+                  {label}
                 </code>
               </div>
             ) : (
               <Select value={key} onValueChange={handleKeyChange}>
                 <SelectTrigger className="w-full h-11 rounded-xl border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
-                  <SelectValue placeholder="Pilih key setting..." />
+                  <SelectValue placeholder="Pilih setting..." />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
                     {WEB_SETTING_KEYS.map((k) => (
                       <SelectItem key={k.key} value={k.key}>
                         <span className="font-mono text-[12px] text-blue-600 dark:text-orange-400 mr-2">
-                          {k.key}
+                          {k.label}
                         </span>
-                        <span className="text-gray-500 text-[12px]">— {k.label}</span>
                       </SelectItem>
                     ))}
                   </SelectGroup>

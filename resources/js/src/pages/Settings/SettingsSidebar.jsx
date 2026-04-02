@@ -11,7 +11,7 @@ const TABS = [
   { key: 'Profile', label: 'Profile', Icon: User },
   { key: 'Plan', label: 'Plan', Icon: CreditCard },
   { key: 'Referral', label: 'Referral', Icon: Users },
-  { key: 'History', label: 'Order History', Icon: ShoppingCart },
+  { key: 'History', label: 'History', Icon: ShoppingCart },
 ]
 
 export default function SettingsSidebar({ activeTab, setActiveTab }) {
@@ -37,8 +37,9 @@ export default function SettingsSidebar({ activeTab, setActiveTab }) {
   }
 
   return (
-    <div className="w-full md:w-[220px] flex md:flex-col border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 shrink-0">
-      <div className="flex md:flex-col flex-1 px-3 py-2 md:p-3 gap-0.5 overflow-x-auto md:overflow-x-visible no-scrollbar">
+    <>
+      {/* ── MOBILE: fixed bottom bar ── */}
+      <div className="flex md:hidden absolute bottom-0 left-0 right-0 z-10 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-b-2xl overflow-hidden">
         {TABS.map(({ key, label, Icon }) => {
           const isActive = activeTab === key
           return (
@@ -46,38 +47,73 @@ export default function SettingsSidebar({ activeTab, setActiveTab }) {
               key={key}
               onClick={() => setActiveTab(key)}
               className={`
-                flex-shrink-0 md:w-full flex items-center gap-2.5
-                px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150
-                border-l-[2.5px] md:border-l-[2.5px] border-b-0
+                flex-1 flex flex-col items-center justify-center gap-1
+                py-2.5 text-[10px] font-medium transition-all duration-150
                 ${
                   isActive
-                    ? 'bg-[#eeedeb] dark:bg-gray-800 text-gray-900 dark:text-white border-[#2686D4] dark:border-[#F2901E]'
-                    : 'bg-transparent text-gray-500 dark:text-gray-400 border-transparent hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-300'
+                    ? 'text-[#2686D4] dark:text-[#F2901E]'
+                    : 'text-gray-400 dark:text-gray-500'
                 }
               `}
             >
-              <Icon size={15} className="shrink-0" />
-              <span
-                className={`whitespace-nowrap ${isActive ? 'block md:block' : ' hidden md:block'}`}
-              >
-                {label}
-              </span>
+              <Icon size={18} strokeWidth={isActive ? 2.2 : 1.8} />
+              <span>{label}</span>
+              {isActive && (
+                <span className="absolute bottom-0 h-[2.5px] w-8 rounded-full bg-[#2686D4] dark:bg-[#F2901E]" />
+              )}
             </button>
           )
         })}
 
-        <div className="hidden md:block border-t border-gray-100 dark:border-gray-800 my-2" />
-        <div className="md:hidden self-stretch w-px bg-gray-200 dark:bg-gray-700 mx-1" />
-
+        {/* Sign Out */}
         <button
           onClick={handleLogout}
           disabled={loading}
-          className="flex-shrink-0 md:w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 border-l-[2.5px] border-transparent text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 disabled:opacity-40"
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium text-red-400 hover:text-red-500 disabled:opacity-40 transition-all duration-150"
         >
-          <LogOut size={15} className="shrink-0" />
-          <span className="whitespace-nowrap">Sign Out</span>
+          <LogOut size={18} strokeWidth={1.8} />
+          <span>Sign Out</span>
         </button>
       </div>
-    </div>
+
+      {/* ── DESKTOP: vertical sidebar ── */}
+      <div className="hidden md:flex flex-col w-[220px] flex-shrink-0 border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40">
+        <div className="flex flex-col flex-1 p-3 gap-0.5">
+          {TABS.map(({ key, label, Icon }) => {
+            const isActive = activeTab === key
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`
+                  w-full flex items-center gap-2.5
+                  px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150
+                  border-l-[2.5px]
+                  ${
+                    isActive
+                      ? 'bg-[#eeedeb] dark:bg-gray-800 text-gray-900 dark:text-white border-[#2686D4] dark:border-[#F2901E]'
+                      : 'bg-transparent text-gray-500 dark:text-gray-400 border-transparent hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:text-gray-700 dark:hover:text-gray-300'
+                  }
+                `}
+              >
+                <Icon size={15} className="shrink-0" />
+                <span>{label}</span>
+              </button>
+            )
+          })}
+
+          <div className="border-t border-gray-100 dark:border-gray-800 my-2" />
+
+          <button
+            onClick={handleLogout}
+            disabled={loading}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 border-l-[2.5px] border-transparent text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 disabled:opacity-40"
+          >
+            <LogOut size={15} className="shrink-0" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+    </>
   )
 }
