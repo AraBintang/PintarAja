@@ -268,6 +268,7 @@ CREATE TABLE `m_user` (
   `M_UserIsActive` char(1) NOT NULL DEFAULT 'Y',
   `M_UserRole` char(1) NOT NULL DEFAULT 'U',
   `M_UserPlan` int(11) NOT NULL DEFAULT 1,
+  `M_UserQuota` int(11) NOT NULL DEFAULT 0,
   `M_UserSubsExp` datetime DEFAULT NULL,
   `M_UserCreated` datetime NOT NULL DEFAULT current_timestamp(),
   `M_UserLastUpdated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),

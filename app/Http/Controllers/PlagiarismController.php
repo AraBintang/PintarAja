@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Plagiarism;
 use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +25,7 @@ class PlagiarismController extends Controller
         $status = $request->input('status');
 
         $query = Plagiarism::where('M_PlagiarismUserID', $user->M_UserID)
-            ->whereNotIn('M_PlagiarismStatus', ['waiting_payment', 'cancelled'])
+            ->whereNotIn('M_PlagiarismStatus', ['waiting_payment'])
             ->when($status, fn($q) => $q->where('M_PlagiarismStatus', $status))
             ->orderByDesc('M_PlagiarismCreated');
 
@@ -118,7 +120,10 @@ class PlagiarismController extends Controller
 
         $files = $request->file('documents');
         $fileCount = count($files);
-        $totalAmount = $fileCount * self::PRICE_PER_FILE;
+        $availableQuota = max(0, (int) $user->M_UserQuota);
+        $quotaUsed = min($availableQuota, $fileCount);
+        $remainingFiles = $fileCount - $quotaUsed;
+        $totalAmount = $remainingFiles * self::PRICE_PER_FILE;
 
         $storedFiles = [];
         foreach ($files as $file) {
@@ -139,98 +144,197 @@ class PlagiarismController extends Controller
         $merchantRef = 'PLG-' . time() . '-' . rand(1000, 9999);
         $itemName = 'Plagiarism Check - ' . $fileCount . ' file';
 
-        $payload = [
-            'method' => $validated['channel'],
-            'merchant_ref' => $merchantRef, 
-            'amount' => $totalAmount,
-            'customer_name' => $user->M_UserFullName,
-            'customer_email' => $user->M_UserEmail,
-            'customer_phone' => $validated['phone'],
-            'order_items' => [[
-                'name' => $itemName,
-                'price' => $totalAmount,
-                'quantity' => 1,
-            ]],
-            'signature' => hash_hmac('sha256', $merchantCode . $merchantRef . $totalAmount, $privateKey),
-        ];
-
-        $tripayResponse = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $apiKey,
-        ])->post('https://tripay.co.id/api/transaction/create', $payload);
-
-        if ($tripayResponse->failed()) {
-            foreach ($storedFiles as $sf) {
-                Storage::disk('local')->delete($sf['path']);
-            }
-            Log::error('Tripay API Error (Plagiarism)', [
-                'status' => $tripayResponse->status(),
-                'body' => $tripayResponse->body(),
-            ]);
-            return response()->json(['error' => 'Gagal membuat pembayaran'], 500);
-        }
-
-        $tripayData = $tripayResponse['data'];
+        $tripayData = null;
+        $paymentCode = null;
+        $instructions = [];
+        $checkoutUrl = null;
         $isQris = strtolower($validated['channel']) === 'qris2' || strtolower($validated['method']) === 'qris';
 
-        $paymentCode = null;
-        if ($isQris) {
-            $paymentCode = $tripayData['qr_url'] ?? null;
-        } elseif (!empty($tripayData['pay_code'])) {
-            $paymentCode = $tripayData['pay_code'];
-        } elseif (!empty($tripayData['pay_url'])) {
-            $paymentCode = $tripayData['pay_url'];
+        if ($totalAmount > 0) {
+            $payload = [
+                'method' => $validated['channel'],
+                'merchant_ref' => $merchantRef,
+                'amount' => $totalAmount,
+                'customer_name' => $user->M_UserFullName,
+                'customer_email' => $user->M_UserEmail,
+                'customer_phone' => $validated['phone'],
+                'order_items' => [[
+                    'name' => $itemName,
+                    'price' => $totalAmount,
+                    'quantity' => 1,
+                ]],
+                'signature' => hash_hmac('sha256', $merchantCode . $merchantRef . $totalAmount, $privateKey),
+            ];
+
+            $tripayResponse = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+            ])->post('https://tripay.co.id/api/transaction/create', $payload);
+
+            if ($tripayResponse->failed()) {
+                foreach ($storedFiles as $sf) {
+                    Storage::disk('local')->delete($sf['path']);
+                }
+                Log::error('Tripay API Error (Plagiarism)', [
+                    'status' => $tripayResponse->status(),
+                    'body' => $tripayResponse->body(),
+                ]);
+                return response()->json(['error' => 'Gagal membuat pembayaran'], 500);
+            }
+
+            $tripayData = $tripayResponse['data'];
+            if ($isQris) {
+                $paymentCode = $tripayData['qr_url'] ?? null;
+            } elseif (!empty($tripayData['pay_code'])) {
+                $paymentCode = $tripayData['pay_code'];
+            } elseif (!empty($tripayData['pay_url'])) {
+                $paymentCode = $tripayData['pay_url'];
+            }
+
+            $instructions = $tripayData['instructions'] ?? [];
+            $checkoutUrl = $tripayData['checkout_url'] ?? null;
+        } else {
+            $tripayData = [
+                'reference' => $merchantRef,
+                'merchant_ref' => $merchantRef,
+                'pay_url' => null,
+                'checkout_url' => null,
+                'expired_time' => time(),
+                'instructions' => [],
+                'qr_url' => null,
+            ];
         }
 
-        $instructions = $tripayData['instructions'] ?? [];
-        $checkoutUrl = $tripayData['checkout_url'] ?? null;
+        $quotaFiles = array_slice($storedFiles, 0, $quotaUsed);
+        $paidFiles = array_slice($storedFiles, $quotaUsed);
 
-        $tx = Transaction::create([
-            'T_TransactionM_UserID' => $user->M_UserID,
-            'T_TransactionM_PlanID' => 0,
-            'T_TransactionType' => 'plagiarism',
-            'T_TransactionIdResult' => $tripayData['reference'],
-            'T_TransactionIdRefrence' => $tripayData['merchant_ref'],
-            'T_TransactionQR' => $paymentCode,
-            'T_TransactionItem' => $itemName,
-            'T_TransactionAmount' => $totalAmount,
-            'T_TransactionStatus' => 0,
-            'T_TransactionMethod' => $validated['method'],
-            'T_TransactionChannel' => $validated['channel'],
-            'T_TransactionCheckoutURL'=> $checkoutUrl,
-            'T_TransactionStep' => json_encode($instructions),
-            'T_TransactionExpired' => $tripayData['expired_time'] ?? (time() + 86400),
-        ]);
+        $quotaTx = null;
+        $paidTx = null;
 
-        foreach ($storedFiles as $sf) {
-            Plagiarism::create([
-                'M_PlagiarismUserID' => $user->M_UserID,
-                'M_PlagiarismTransactionID' => $tx->T_TransactionID,
-                'M_PlagiarismFileName' => $sf['original_name'],
-                'M_PlagiarismServiceType' => $validated['service_type'],
-                'M_PlagiarismAuthorFirst' => $validated['author_first_name'],
-                'M_PlagiarismAuthorLast' => $validated['author_last_name'],
-                'M_PlagiarismWhatsApp' => $validated['whatsapp_phone'],
-                'M_PlagiarismExtRef' => $validated['external_reference_id'] ?? null,
-                'M_PlagiarismExclBiblio' => !empty($validated['exclude_bibliography']),
-                'M_PlagiarismExclCited' => !empty($validated['exclude_cited_text']),
-                'M_PlagiarismExclQuoted' => !empty($validated['exclude_quoted_text']),
-                'M_PlagiarismExclSmall' => !empty($validated['exclude_small_matches']),
-                'M_PlagiarismStatus' => 'waiting_payment',
-                'M_PlagiarismPrice' => self::PRICE_PER_FILE,
-                'M_PlagiarismAdminNotes' => json_encode(['temp_path' => $sf['path']]),
-            ]);
+        DB::transaction(function () use (
+            $user,
+            $validated,
+            $quotaUsed,
+            $remainingFiles,
+            $totalAmount,
+            $merchantRef,
+            $itemName,
+            $paymentCode,
+            $checkoutUrl,
+            $instructions,
+            $storedFiles,
+            $quotaFiles,
+            $paidFiles,
+            $tripayData,
+            &$quotaTx,
+            &$paidTx
+        ) {
+            if ($quotaUsed > 0) {
+                $user->decrement('M_UserQuota', $quotaUsed);
+
+                $quotaTx = Transaction::create([
+                    'T_TransactionM_UserID' => $user->M_UserID,
+                    'T_TransactionM_PlanID' => 0,
+                    'T_TransactionType' => 'plagiarism',
+                    'T_TransactionIdResult' => $merchantRef . '-Q',
+                    'T_TransactionIdRefrence' => $merchantRef . '-Q',
+                    'T_TransactionQR' => null,
+                    'T_TransactionItem' => 'Plagiarism Check - ' . $quotaUsed . ' file (Kuota)',
+                    'T_TransactionAmount' => 0,
+                    'T_TransactionStatus' => 1,
+                    'T_TransactionMethod' => 'quota',
+                    'T_TransactionChannel' => 'quota',
+                    'T_TransactionCheckoutURL' => null,
+                    'T_TransactionStep' => json_encode([]),
+                    'T_TransactionExpired' => time(),
+                ]);
+
+                foreach ($quotaFiles as $sf) {
+                    Plagiarism::create([
+                        'M_PlagiarismUserID' => $user->M_UserID,
+                        'M_PlagiarismTransactionID' => $quotaTx->T_TransactionID,
+                        'M_PlagiarismFileName' => $sf['original_name'],
+                        'M_PlagiarismServiceType' => $validated['service_type'],
+                        'M_PlagiarismAuthorFirst' => $validated['author_first_name'],
+                        'M_PlagiarismAuthorLast' => $validated['author_last_name'],
+                        'M_PlagiarismWhatsApp' => $validated['whatsapp_phone'],
+                        'M_PlagiarismExtRef' => $validated['external_reference_id'] ?? null,
+                        'M_PlagiarismExclBiblio' => !empty($validated['exclude_bibliography']),
+                        'M_PlagiarismExclCited' => !empty($validated['exclude_cited_text']),
+                        'M_PlagiarismExclQuoted' => !empty($validated['exclude_quoted_text']),
+                        'M_PlagiarismExclSmall' => !empty($validated['exclude_small_matches']),
+                        'M_PlagiarismStatus' => 'waiting_payment',
+                        'M_PlagiarismPrice' => 0,
+                        'M_PlagiarismAdminNotes' => json_encode(['temp_path' => $sf['path']]),
+                    ]);
+                }
+            }
+
+            if ($remainingFiles > 0) {
+                $paidTx = Transaction::create([
+                    'T_TransactionM_UserID' => $user->M_UserID,
+                    'T_TransactionM_PlanID' => 0,
+                    'T_TransactionType' => 'plagiarism',
+                    'T_TransactionIdResult' => $tripayData['reference'],
+                    'T_TransactionIdRefrence' => $tripayData['merchant_ref'],
+                    'T_TransactionQR' => $paymentCode,
+                    'T_TransactionItem' => 'Plagiarism Check - ' . $remainingFiles . ' file',
+                    'T_TransactionAmount' => $totalAmount,
+                    'T_TransactionStatus' => 0,
+                    'T_TransactionMethod' => $validated['method'],
+                    'T_TransactionChannel' => $validated['channel'],
+                    'T_TransactionCheckoutURL'=> $checkoutUrl,
+                    'T_TransactionStep' => json_encode($instructions),
+                    'T_TransactionExpired' => $tripayData['expired_time'] ?? (time() + 86400),
+                ]);
+
+                foreach ($paidFiles as $sf) {
+                    Plagiarism::create([
+                        'M_PlagiarismUserID' => $user->M_UserID,
+                        'M_PlagiarismTransactionID' => $paidTx->T_TransactionID,
+                        'M_PlagiarismFileName' => $sf['original_name'],
+                        'M_PlagiarismServiceType' => $validated['service_type'],
+                        'M_PlagiarismAuthorFirst' => $validated['author_first_name'],
+                        'M_PlagiarismAuthorLast' => $validated['author_last_name'],
+                        'M_PlagiarismWhatsApp' => $validated['whatsapp_phone'],
+                        'M_PlagiarismExtRef' => $validated['external_reference_id'] ?? null,
+                        'M_PlagiarismExclBiblio' => !empty($validated['exclude_bibliography']),
+                        'M_PlagiarismExclCited' => !empty($validated['exclude_cited_text']),
+                        'M_PlagiarismExclQuoted' => !empty($validated['exclude_quoted_text']),
+                        'M_PlagiarismExclSmall' => !empty($validated['exclude_small_matches']),
+                        'M_PlagiarismStatus' => 'waiting_payment',
+                        'M_PlagiarismPrice' => self::PRICE_PER_FILE,
+                        'M_PlagiarismAdminNotes' => json_encode(['temp_path' => $sf['path']]),
+                    ]);
+                }
+            }
+        });
+
+        if ($quotaTx) {
+            $this->pushFilesToBepro($quotaTx);
+        }
+
+        if ($paidTx) {
+            return response()->json([
+                'status' => 'success',
+                'referenceId' => $tripayData['merchant_ref'],
+                'paymentCode' => $paymentCode,
+                'payUrl' => $tripayData['pay_url'] ?? null,
+                'checkoutUrl' => $checkoutUrl,
+                'expiredAt' => $tripayData['expired_time'] ?? null,
+                'instructions' => $instructions,
+                'total_files' => $fileCount,
+                'amount' => $totalAmount,
+                'quota_used' => $quotaUsed,
+                'quota_remaining' => max(0, $availableQuota - $quotaUsed),
+            ], 201);
         }
 
         return response()->json([
             'status' => 'success',
-            'referenceId' => $tripayData['merchant_ref'],
-            'paymentCode' => $paymentCode,
-            'payUrl' => $tripayData['pay_url'] ?? null,
-            'checkoutUrl' => $checkoutUrl,
-            'expiredAt' => $tripayData['expired_time'] ?? null,
-            'instructions' => $instructions,
+            'message' => 'File dikirim menggunakan kuota',
             'total_files' => $fileCount,
-            'amount' => $totalAmount,
+            'quota_used' => $quotaUsed,
+            'quota_remaining' => max(0, $availableQuota - $quotaUsed),
         ], 201);
     }
 
@@ -413,18 +517,18 @@ class PlagiarismController extends Controller
             $updateData['M_PlagiarismCompletedAt'] = now();
         }
 
+        $shouldRewardQuota = $newStatus === 'cancelled' && $plagiarism->M_PlagiarismStatus !== 'cancelled';
+
         if ($newStatus === 'cancelled' && !empty($order['admin_notes'])) {
             $updateData['M_PlagiarismAdminNotes'] = $order['admin_notes'];
         }
 
         $plagiarism->update($updateData);
 
-        Log::info('BePro webhook processed', [
-            'event' => $event,
-            'bepro_order' => $beproOrderId,
-            'plagiarism_id' => $plagiarism->M_PlagiarismID,
-            'new_status' => $newStatus,
-        ]);
+        if ($shouldRewardQuota) {
+            User::where('M_UserID', $plagiarism->M_PlagiarismUserID)
+                ->increment('M_UserQuota', 1);
+        }
 
         return response()->json(['received' => true]);
     }

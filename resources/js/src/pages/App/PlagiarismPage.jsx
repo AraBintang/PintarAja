@@ -20,7 +20,6 @@ import { useRightSidebar } from '@/context/RightSidebarContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
 
-// ─── Constants ────────────────────────────────────────────────
 const PRICE_PER_FILE = 22000
 const ACCEPTED_TYPES = '.doc,.docx,.pdf,.txt,.rtf,.odt'
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -309,7 +308,7 @@ function PendingBadge({ files, tx, onCancel, isCancelling, onPayNow }) {
 
 // ─── Main Page ────────────────────────────────────────────────
 export default function PlagiarismPage() {
-  const { user } = useAuth()
+  const { user, me } = useAuth()
   const { open: openRightSidebar } = useRightSidebar()
   const { showSnackbar } = useSnackbar()
   const navigate = useNavigate()
@@ -317,6 +316,7 @@ export default function PlagiarismPage() {
   // Loading states
   const [pageLoading, setPageLoading] = useState(true)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Pending payment state
   const [pendingTx, setPendingTx] = useState(null)
@@ -438,6 +438,11 @@ export default function PlagiarismPage() {
   const handleProceedToCheckout = () => {
     if (!validateForm()) return
 
+    if (shouldUseQuotaDirectly) {
+      handleSubmitWithQuota()
+      return
+    }
+
     navigate('/checkout', {
       state: {
         isPlagiarism: true,
@@ -458,8 +463,9 @@ export default function PlagiarismPage() {
           name: 'Plagiarism Check',
           tagLine: selectedFiles.length + ' file dokumen',
           selectedPeriodSuffix: SERVICES.find((s) => s.id === serviceType)?.name ?? serviceType,
-          selectedPrice: selectedFiles.length * PRICE_PER_FILE,
+          selectedPrice: totalAmount,
           itemName: `Plagiarism Check - ${selectedFiles.length} file`,
+          quotaUsed,
         },
         returnUrl: '/plagiarism',
       },
@@ -501,7 +507,42 @@ export default function PlagiarismPage() {
     }
   }
 
-  const totalAmount = selectedFiles.length * PRICE_PER_FILE
+  const availableQuota = user?.quota ?? 0
+  const quotaUsed = Math.min(availableQuota, selectedFiles.length)
+  const remainingFiles = selectedFiles.length - quotaUsed
+  const totalAmount = remainingFiles * PRICE_PER_FILE
+  const shouldUseQuotaDirectly = selectedFiles.length > 0 && remainingFiles === 0
+
+  const handleSubmitWithQuota = async () => {
+    if (!validateForm()) return
+
+    const fd = new FormData()
+    selectedFiles.forEach((file) => fd.append('documents[]', file))
+    fd.append('service_type', serviceType)
+    fd.append('author_first_name', authorFirstName.trim())
+    fd.append('author_last_name', authorLastName.trim())
+    fd.append('whatsapp_phone', whatsappPhone.trim())
+    fd.append('channel', 'quota')
+    fd.append('method', 'quota')
+    fd.append('phone', whatsappPhone.trim() || user?.phone || '')
+    if (excludeBiblio) fd.append('exclude_bibliography', 'true')
+    if (excludeQuoted) fd.append('exclude_quoted_text', 'true')
+    if (excludeCited) fd.append('exclude_cited_text', 'true')
+    if (excludeSmall) fd.append('exclude_small_matches', 'true')
+
+    setIsSubmitting(true)
+    try {
+      await request('/plagiarism', { method: 'POST', body: fd })
+      setSelectedFiles([])
+      await checkPending()
+      if (me) await me()
+      showSnackbar('success', 'File berhasil dikirim menggunakan kuota')
+    } catch (err) {
+      showSnackbar('error', err?.message || 'Gagal mengirim dengan kuota')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   // ── Render ────────────────────────────────────────────────
   return (
@@ -749,10 +790,21 @@ export default function PlagiarismPage() {
                 <button
                   type="button"
                   onClick={handleProceedToCheckout}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 dark:bg-orange-500 hover:bg-blue-700 dark:hover:bg-orange-400 px-8 py-3.5 text-sm font-semibold text-white transition-all shadow-sm shadow-blue-200 dark:shadow-orange-900/30"
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 dark:bg-orange-500 hover:bg-blue-700 dark:hover:bg-orange-400 px-8 py-3.5 text-sm font-semibold text-white transition-all shadow-sm shadow-blue-200 dark:shadow-orange-900/30 disabled:opacity-60"
                 >
-                  Lanjut ke Pembayaran
-                  <ChevronRight className="w-4 h-4" />
+                  {shouldUseQuotaDirectly ? (
+                    isSubmitting ? (
+                      'Mengirim...'
+                    ) : (
+                      'Gunakan Kuota & Submit'
+                    )
+                  ) : (
+                    <>
+                      Lanjut ke Pembayaran
+                      <ChevronRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -763,6 +815,29 @@ export default function PlagiarismPage() {
                 <Shield className="w-4 h-4 text-blue-600 dark:text-orange-400" />
                 Ringkasan Order
               </div>
+
+              {availableQuota > 0 && (
+                <div className="rounded-2xl border border-blue-100 dark:border-orange-700/60 bg-blue-50 dark:bg-orange-950/20 p-4 text-sm text-blue-700 dark:text-orange-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold">Kuota tersedia</span>
+                    <span>{availableQuota} file</span>
+                  </div>
+                  <div className="space-y-1 text-gray-600 dark:text-gray-300 text-sm">
+                    {selectedFiles.length > 0 ? (
+                      <>
+                        <p>Dipakai: {quotaUsed} file</p>
+                        <p>
+                          {remainingFiles > 0
+                            ? `Bayar sisa ${remainingFiles} file (${fmt(totalAmount)})`
+                            : 'Semua file akan diproses dengan kuota'}
+                        </p>
+                      </>
+                    ) : (
+                      <p>Pilih file untuk melihat berapa kuota yang akan dipakai.</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="rounded-2xl bg-gray-50 dark:bg-gray-900 p-4 space-y-3">
                 <div className="flex justify-between text-sm">
