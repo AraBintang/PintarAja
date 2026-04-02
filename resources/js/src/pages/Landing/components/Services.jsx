@@ -35,6 +35,11 @@ const services = [
     desc: 'Ubah rekaman wawancara, seminar, atau materi kuliah menjadi teks secara akurat. Mendukung format audio dengan speaker labels dan timestamps.',
     badge: 'BARU',
   },
+  {
+    title: 'Check Plagiarism',
+    desc: 'Deteksi plagiarisme dalam dokumen Anda dengan akurasi tinggi. Mendukung berbagai format file dan memberikan laporan detail.',
+    badge: 'BARU',
+  },
 ]
 
 export default function Services() {

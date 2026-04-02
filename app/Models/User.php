@@ -35,6 +35,7 @@ class User extends Authenticatable
         'M_UserIsActive',
         'M_UserRole',
         'M_UserPlan',
+        'M_UserQuota',
         'M_UserReferralCode',
         'M_UserReferredBy',
         'M_UserSubsExp',
@@ -79,6 +80,7 @@ class User extends Authenticatable
             'M_UserSubsExp' => 'datetime',
             'M_UserCreated' => 'datetime',
             'M_UserLastUpdated' => 'datetime',
+            'M_UserQuota' => 'integer',
         ];
     }
 

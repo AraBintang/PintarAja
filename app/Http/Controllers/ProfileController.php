@@ -31,6 +31,7 @@ class ProfileController extends Controller
             'image' => $user->M_UserImage,
             'phone' => $user->M_UserPhone,
             'role' => $user->M_UserRole,
+            'quota' => $user->M_UserQuota ?? 0,
 
             'plan_id' => $user->M_UserPlan,
             'plan_name' => $user->plan?->M_PlanName,
