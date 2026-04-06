@@ -9,6 +9,7 @@ import {
   Mic,
   PanelRight,
   Plus,
+  ScrollText,
   Settings,
   Settings2,
   Sparkles,
@@ -34,7 +35,7 @@ const menuItems = [
 ]
 
 const adminMenuItems = [
-  { label: 'Attribute AI', icon: Zap, to: '/admin/attribute' },
+  { label: 'Paper AI', icon: ScrollText, to: '/admin/paper' },
   { label: 'Prompt AI', icon: Library, to: '/admin/prompt' },
   { label: 'AI', icon: Cpu, to: '/admin/ai' },
   { label: 'Plan Setting', icon: Sparkles, to: '/admin/plan' },
@@ -75,6 +76,7 @@ function UserProfileSection({ expanded, onUpgradeClick }) {
   const userName = user?.name
   const userEmail = user?.email
   const userInitial = userName?.charAt(0).toUpperCase()
+  const userImage = user?.image
 
   return (
     <div className="relative">
@@ -84,10 +86,24 @@ function UserProfileSection({ expanded, onUpgradeClick }) {
       <div className="px-2">
         <button
           onClick={openSettings}
-          className={`w-full rounded-xl flex items-center gap-3 transition-colors hover:bg-[#eeedeb] dark:hover:bg-gray-900 ${expanded ? 'px-3 py-2 my-2' : ' my-4 px-0 justify-center'}`}
+          className={`w-full rounded-xl flex items-center gap-3 transition-colors hover:bg-[#eeedeb] dark:hover:bg-gray-900 ${expanded ? 'px-3 py-2 my-2' : 'my-4 px-0 justify-center'}`}
         >
-          <div className="w-9 h-9 rounded-full bg-[#2686D4] dark:bg-[#F2901E] flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-[14px] font-semibold">{userInitial}</span>
+          {/* Avatar — image ditumpuk di atas initial */}
+          <div className="relative w-9 h-9 flex-shrink-0">
+            {/* Layer bawah: initial (selalu ada) */}
+            <div className="absolute inset-0 rounded-full bg-[#2686D4] dark:bg-[#F2901E] flex items-center justify-center">
+              <span className="text-white text-[14px] font-semibold">{userInitial}</span>
+            </div>
+
+            {/* Layer atas: foto profile, kalau ada */}
+            {userImage && (
+              <img
+                src={userImage}
+                alt={userName}
+                referrerPolicy="no-referrer"
+                className="absolute inset-0 w-full h-full rounded-full object-cover"
+              />
+            )}
           </div>
 
           {expanded && (
@@ -105,10 +121,8 @@ function UserProfileSection({ expanded, onUpgradeClick }) {
 
         {user?.plan_id == 1 && (
           <div
-            className={` border border-gray-100 dark:border-gray-800 rounded-2xl mb-2 bg-[#f7f7f5] dark:bg-[#0f141e] overflow-hidden transition-all duration-300 ${
-              expanded
-                ? 'max-h-[560px] opacity-100 delay-150 mx-1 p-3 '
-                : 'max-h-0 opacity-0 hidden'
+            className={`border border-gray-100 dark:border-gray-800 rounded-2xl mb-2 bg-[#f7f7f5] dark:bg-[#0f141e] overflow-hidden transition-all duration-300 ${
+              expanded ? 'max-h-[560px] opacity-100 delay-150 mx-1 p-3' : 'max-h-0 opacity-0 hidden'
             }`}
           >
             <p className="text-sm font-bold">Upgrade Plan</p>

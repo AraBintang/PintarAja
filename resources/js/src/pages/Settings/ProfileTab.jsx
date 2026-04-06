@@ -1,4 +1,4 @@
-import { Check, Eye, EyeOff, Pencil } from 'lucide-react'
+import { Check, Eye, EyeOff, Pencil, User } from 'lucide-react'
 import { useState } from 'react'
 
 import { useAuth } from '@/context/AuthContext'
@@ -21,14 +21,38 @@ export default function ProfileTab() {
   const [phone, setPhone] = useState(user?.phone || '')
   const [editedPhone, setEditedPhone] = useState(user?.phone || '')
 
-  const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' })
-  const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false })
+  const [passwords, setPasswords] = useState({
+    current: '',
+    new: '',
+    confirm: '',
+  })
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  })
 
   const passwordRequirements = [
-    { id: 'length', text: 'Minimum 8 characters', check: (pwd) => pwd.length >= 8 },
-    { id: 'uppercase', text: 'Uppercase', check: (pwd) => /[A-Z]/.test(pwd) },
-    { id: 'lowercase', text: 'lowercase', check: (pwd) => /[a-z]/.test(pwd) },
-    { id: 'number', text: 'Contains number', check: (pwd) => /[0-9]/.test(pwd) },
+    {
+      id: 'length',
+      text: 'Minimum 8 characters',
+      check: (pwd) => pwd.length >= 8,
+    },
+    {
+      id: 'uppercase',
+      text: 'Uppercase',
+      check: (pwd) => /[A-Z]/.test(pwd),
+    },
+    {
+      id: 'lowercase',
+      text: 'lowercase',
+      check: (pwd) => /[a-z]/.test(pwd),
+    },
+    {
+      id: 'number',
+      text: 'Contains number',
+      check: (pwd) => /[0-9]/.test(pwd),
+    },
   ]
 
   const userEmail = user?.email
@@ -41,7 +65,10 @@ export default function ProfileTab() {
     if (loadingProfile) return
     setLoadingProfile(true)
     try {
-      await request('/profiles', { method: 'PUT', body: { name: editedName, phone: editedPhone } })
+      await request('/profiles', {
+        method: 'PUT',
+        body: { name: editedName, phone: editedPhone },
+      })
       setUserName(editedName)
       setPhone(editedPhone)
       showSnackbar('success', 'Profil berhasil diperbarui')
@@ -54,8 +81,10 @@ export default function ProfileTab() {
     }
   }
 
+  const hasPassword = user?.havePassword
+
   const handleChangePassword = async () => {
-    if (!passwords.current) {
+    if (hasPassword && !passwords.current) {
       showSnackbar('error', 'Masukkan password lama')
       return
     }
@@ -72,7 +101,10 @@ export default function ProfileTab() {
     try {
       await request('/profiles/password', {
         method: 'PUT',
-        body: { password_old: passwords.current, password: passwords.new },
+        body: {
+          ...(hasPassword ? { password_old: passwords.current } : {}),
+          password: passwords.new,
+        },
       })
       showSnackbar('success', 'Password berhasil diubah')
       setPasswords({ current: '', new: '', confirm: '' })
@@ -91,7 +123,10 @@ export default function ProfileTab() {
       <div className="px-6 md:px-10 py-8 space-y-10">
         {/* ── Profile Section ── */}
         <section>
-          <div className="flex items-center gap-3 mb-5">
+          <div className="flex items-center gap-3 sm:gap-4 mb-5">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 dark:bg-orange-500/10 dark:border-orange-500/20 flex items-center justify-center">
+              <User className="w-4.5 h-4.5 text-blue-500 dark:text-orange-400" />
+            </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
               Profile
             </h2>
@@ -207,7 +242,7 @@ export default function ProfileTab() {
               {/* Password lama */}
               <div>
                 <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Old Password
+                  Old Password {hasPassword ? '' : '(Optional)'}
                 </label>
                 <div className="relative">
                   <input
@@ -215,17 +250,30 @@ export default function ProfileTab() {
                     className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3.5 py-2.5 font-mono text-[13px] text-gray-900 dark:text-white pr-10 outline-none focus:border-indigo-400 transition-colors"
                     placeholder="••••••••"
                     value={passwords.current}
-                    onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+                    onChange={(e) =>
+                      setPasswords({
+                        ...passwords,
+                        current: e.target.value,
+                      })
+                    }
                   />
                   <button
                     onClick={() =>
-                      setShowPassword({ ...showPassword, current: !showPassword.current })
+                      setShowPassword({
+                        ...showPassword,
+                        current: !showPassword.current,
+                      })
                     }
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword.current ? <Eye size={15} /> : <EyeOff size={15} />}
                   </button>
                 </div>
+                {!hasPassword && (
+                  <p className="text-[11px] text-gray-400 mt-2">
+                    Kamu belum pernah mengatur password. Old password tidak diperlukan.
+                  </p>
+                )}
               </div>
 
               {/* Password baru */}
@@ -239,10 +287,20 @@ export default function ProfileTab() {
                     className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3.5 py-2.5 font-mono text-[13px] text-gray-900 dark:text-white pr-10 outline-none focus:border-indigo-400 transition-colors"
                     placeholder="Minimum 8 characters"
                     value={passwords.new}
-                    onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                    onChange={(e) =>
+                      setPasswords({
+                        ...passwords,
+                        new: e.target.value,
+                      })
+                    }
                   />
                   <button
-                    onClick={() => setShowPassword({ ...showPassword, new: !showPassword.new })}
+                    onClick={() =>
+                      setShowPassword({
+                        ...showPassword,
+                        new: !showPassword.new,
+                      })
+                    }
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword.new ? <Eye size={15} /> : <EyeOff size={15} />}
@@ -284,7 +342,12 @@ export default function ProfileTab() {
                   }`}
                   placeholder="••••••••"
                   value={passwords.confirm}
-                  onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                  onChange={(e) =>
+                    setPasswords({
+                      ...passwords,
+                      confirm: e.target.value,
+                    })
+                  }
                 />
                 {passwords.confirm && passwords.new !== passwords.confirm && (
                   <p className="text-[11px] text-red-400 mt-1">Password tidak cocok</p>

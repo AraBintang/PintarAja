@@ -25,6 +25,7 @@ const WriterOutput = memo(function WriterOutput({
   onSave,
   onRegenerate,
   onReset,
+  onToggleCollapse,
 }) {
   const { showSnackbar } = useSnackbar()
   const [copied, setCopied] = useState(false)
@@ -52,10 +53,12 @@ const WriterOutput = memo(function WriterOutput({
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ content: editorContent }),
       })
+
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || 'Error downloading document!')
       }
+
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -143,7 +146,11 @@ const WriterOutput = memo(function WriterOutput({
 
           <div className="relative">
             <button
-              onClick={() => setDownloadOpen(!downloadOpen)}
+              onClick={() => {
+                setDownloadOpen(!downloadOpen)
+                onToggleCollapse()
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
               className="flex items-center justify-center px-3 py-1.5 md:px-3 md:py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-[10px] md:rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
             >
               <Download className="w-3.5 h-3.5" />

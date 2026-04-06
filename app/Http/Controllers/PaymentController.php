@@ -147,10 +147,6 @@ class PaymentController extends Controller
             'T_TransactionCheckoutURL' => $checkoutUrl,
         ]);
     
-        if ($pendingDiscountPercent > 0) {
-            $this->markReferralDiscountsUsed($user->M_UserID);
-        }
-    
         return response()->json([
             'status' => 'success',
             'referenceId' => $data['merchant_ref'],
@@ -174,6 +170,44 @@ class PaymentController extends Controller
             ->where('T_ReferralUsageIsUsed', false)
             ->where('T_ReferralUsageIsFreeMonth', false)
             ->update(['T_ReferralUsageIsUsed' => true]);
+    }
+
+    private function createReferralUsageForFirstPaidTransaction(Transaction $tx): void
+    {
+        $user = User::find($tx->T_TransactionM_UserID);
+        if (!$user || !$user->M_UserReferredBy) {
+            return;
+        }
+
+        if (ReferralUsage::where('T_ReferralUsageUserID', $user->M_UserID)->exists()) {
+            return;
+        }
+
+        $hasPaidBefore = Transaction::where('T_TransactionM_UserID', $user->M_UserID)
+            ->where('T_TransactionStatus', 1)
+            ->where('T_TransactionID', '<>', $tx->T_TransactionID)
+            ->exists();
+
+        if ($hasPaidBefore) {
+            return;
+        }
+
+        $ownerID = $user->M_UserReferredBy;
+        $totalReferrals = ReferralUsage::where('T_ReferralUsageOwnerID', $ownerID)->count();
+        $sequence = $totalReferrals + 1;
+        $positionInCycle = (($sequence - 1) % 7) + 1;
+        $isFreeMonth = ($positionInCycle === 7);
+        $discountPercent = $isFreeMonth ? 0 : 10;
+
+        ReferralUsage::create([
+            'T_ReferralUsageOwnerID' => $ownerID,
+            'T_ReferralUsageUserID' => $user->M_UserID,
+            'T_ReferralUsageSequence' => $sequence,
+            'T_ReferralUsageDiscountPercent' => $discountPercent,
+            'T_ReferralUsageIsFreeMonth' => $isFreeMonth,
+            'T_ReferralUsageIsUsed' => false,
+            'T_ReferralUsageCreated' => now(),
+        ]);
     }
 
     public function getReferralDiscount(Request $request)
@@ -224,7 +258,13 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Transaction not found'], 404);
         }
 
+        $wasPaidAlready = $tx->T_TransactionStatus === 1;
         $tx->update(['T_TransactionStatus' => $statusCode]);
+
+        if ($statusCode === 1 && !$wasPaidAlready) {
+            $this->markReferralDiscountsUsed($tx->T_TransactionM_UserID);
+            $this->createReferralUsageForFirstPaidTransaction($tx);
+        }
 
         if ($statusCode === 1 && $tx->T_TransactionType !== 'plagiarism') {
             $daysMap = ['Weekly' => 7, 'Monthly' => 30, 'Yearly' => 365];

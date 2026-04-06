@@ -1,4 +1,4 @@
-import { CreditCard, LogOut, ShoppingCart, User, Users } from 'lucide-react'
+import { CreditCard, Folder, LogOut, ShoppingCart, User, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,6 +10,7 @@ import { request } from '@/utils/Http'
 const TABS = [
   { key: 'Profile', label: 'Profile', Icon: User },
   { key: 'Plan', label: 'Plan', Icon: CreditCard },
+  { key: 'Files', label: 'Files', Icon: Folder },
   { key: 'Referral', label: 'Referral', Icon: Users },
   { key: 'History', label: 'History', Icon: ShoppingCart },
 ]

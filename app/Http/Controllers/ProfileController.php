@@ -29,6 +29,7 @@ class ProfileController extends Controller
             'email' => $user->M_UserEmail,
             'name' => $user->M_UserFullName,
             'image' => $user->M_UserImage,
+            'havePassword' => !empty($user->M_UserPassword),
             'phone' => $user->M_UserPhone,
             'role' => $user->M_UserRole,
             'quota' => $user->M_UserQuota ?? 0,

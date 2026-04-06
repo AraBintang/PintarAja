@@ -5,6 +5,7 @@ import {
   Clock,
   RefreshCw,
   ShoppingBag,
+  ShoppingCart,
   XCircle,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -126,10 +127,15 @@ export default function OrderHistoryTab() {
     <div className="flex-1 bg-white dark:bg-gray-900 p-6 md:p-10 overflow-y-auto">
       <div className="max-w-2xl space-y-6">
         {/* Header */}
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-            Order History
-          </h2>
+        <div className="flex flex-col gap-x-3 gap-y-2">
+          <div className="flex gap-3 item-center">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 dark:bg-orange-500/10 dark:border-orange-500/20 flex items-center justify-center">
+              <ShoppingCart className="w-4.5 h-4.5 text-blue-500 dark:text-orange-400" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+              Order History
+            </h2>
+          </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             Riwayat seluruh pembayaran Anda
           </p>

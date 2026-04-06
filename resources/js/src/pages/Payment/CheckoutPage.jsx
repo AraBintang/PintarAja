@@ -88,7 +88,7 @@ export default function CheckoutPage() {
 
   const [referralDiscount, setReferralDiscount] = useState(null)
   const [plan, setPlan] = useState(location.state?.plan ?? null)
-  const [phone, setPhone] = useState(user?.phone ?? '')
+  const [phone, setPhone] = useState(plagiarismData?.whatsappPhone ?? user?.phone ?? '')
   const [selectedMethod, setSelectedMethod] = useState(null)
   const [changePlanOpen, setChangePlanOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -202,7 +202,7 @@ export default function CheckoutPage() {
         method: 'POST',
         body: {
           planId: plan.id,
-          amount: finalPrice,
+          amount: price,
           channel: selectedMethodObj.channel,
           method: selectedMethod,
           item: plan.itemName ?? `${plan.name} - ${plan.selectedPeriodSuffix ?? 'Monthly'}`,

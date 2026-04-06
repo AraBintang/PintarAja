@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Document;
 use Illuminate\Http\Request;
-use PhpOffice\PhpWord\PhpWord;
-use PhpOffice\PhpWord\Shared\Html;
 
 class DocumentController extends Controller
 {
@@ -117,125 +115,40 @@ public function store(Request $request)
             return response()->json(['error' => 'Content is empty'], 400);
         }
 
-        $content = $this->sanitizeForPhpWord($content);
-        $phpWord = new PhpWord();
-        $section = $phpWord->addSection();
-        Html::addHtml($section, $content);
+        $htmlFile = tempnam(sys_get_temp_dir(), 'pandoc_') . '.html';
+        $docxFile = tempnam(sys_get_temp_dir(), 'pandoc_') . '.docx';
+
+        $fullHtml = '<!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"></head>
+    <body>' . $content . '</body>
+    </html>';
+
+        file_put_contents($htmlFile, $fullHtml);
+
+        $command = sprintf(
+            'pandoc %s -f html -t docx -o %s 2>&1',
+            escapeshellarg($htmlFile),
+            escapeshellarg($docxFile)
+        );
+
+        exec($command, $output, $exitCode);
+
+        unlink($htmlFile);
+
+        if ($exitCode !== 0 || !file_exists($docxFile)) {
+            \Log::error('Pandoc failed', ['output' => $output, 'exit' => $exitCode]);
+            return response()->json(['error' => 'Conversion failed', 'detail' => $output], 500);
+        }
 
         $fileName = 'GeneratedDocument_' . time() . '.docx';
-        $tempFile = tempnam(sys_get_temp_dir(), 'phpword');
-        $phpWord->save($tempFile, 'Word2007');
 
-        return response()->streamDownload(function () use ($tempFile) {
-            readfile($tempFile);
-            unlink($tempFile);
+        return response()->streamDownload(function () use ($docxFile) {
+            readfile($docxFile);
+            unlink($docxFile);
         }, $fileName, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
         ]);
-    }
-
-    private function sanitizeForPhpWord(string $html): string
-    {
-        libxml_use_internal_errors(true);
-        $dom = new \DOMDocument('1.0', 'UTF-8');
-        $dom->loadHTML(
-            '<html><body>' . $html . '</body></html>',
-            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
-        );
-        libxml_clear_errors();
-
-        foreach (iterator_to_array($dom->getElementsByTagName('*')) as $el) {
-            $el->removeAttribute('style');
-            $el->removeAttribute('class');
-            $el->removeAttribute('data-colwidth');
-            $el->removeAttribute('colwidth');
-        }
-
-        foreach (['li', 'th', 'td', 'tr', 'thead', 'tbody', 'table'] as $tag) {
-            foreach (iterator_to_array($dom->getElementsByTagName($tag)) as $node) {
-                foreach (iterator_to_array($node->childNodes) as $child) {
-                    if ($child->nodeName === 'br') {
-                        $node->removeChild($child);
-                    }
-                }
-            }
-        }
-
-        foreach (['td', 'th'] as $cellTag) {
-            foreach (iterator_to_array($dom->getElementsByTagName($cellTag)) as $cell) {
-                $hasBlock = false;
-                foreach ($cell->childNodes as $child) {
-                    if ($child->nodeType === XML_ELEMENT_NODE && in_array($child->nodeName, ['p', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])) {
-                        $hasBlock = true;
-                        break;
-                    }
-                }
-                if (!$hasBlock) {
-                    $p = $dom->createElement('p');
-                    foreach (iterator_to_array($cell->childNodes) as $child) {
-                        $cell->removeChild($child);
-                        $p->appendChild($child);
-                    }
-                    $cell->appendChild($p);
-                }
-            }
-        }
-
-        foreach (iterator_to_array($dom->getElementsByTagName('tr')) as $tr) {
-            $hasCells = false;
-            foreach ($tr->childNodes as $child) {
-                if ($child->nodeType === XML_ELEMENT_NODE && in_array($child->nodeName, ['td', 'th'])) {
-                    $hasCells = true;
-                    break;
-                }
-            }
-            if (!$hasCells) {
-                $tr->parentNode?->removeChild($tr);
-            }
-        }
-
-        foreach (['thead', 'tbody', 'tfoot'] as $section) {
-            foreach (iterator_to_array($dom->getElementsByTagName($section)) as $node) {
-                $hasRows = false;
-                foreach ($node->childNodes as $child) {
-                    if ($child->nodeType === XML_ELEMENT_NODE && $child->nodeName === 'tr') {
-                        $hasRows = true;
-                        break;
-                    }
-                }
-                if (!$hasRows) {
-                    $node->parentNode?->removeChild($node);
-                }
-            }
-        }
-
-        foreach (iterator_to_array($dom->getElementsByTagName('table')) as $table) {
-            $hasRows = $table->getElementsByTagName('tr')->length > 0;
-            if (!$hasRows) {
-                $table->parentNode?->removeChild($table);
-            } else {
-                $table->setAttribute('border', '1');
-                $table->setAttribute('cellspacing', '0');
-                $table->setAttribute('cellpadding', '4');
-                $table->setAttribute('width', '100%');
-            }
-        }
-
-        foreach (iterator_to_array($dom->getElementsByTagName('p')) as $p) {
-            $inner = trim($p->textContent);
-            $hasBrOnly = $p->childNodes->length === 1 && $p->childNodes->item(0)->nodeName === 'br';
-            if ($inner === '' || $hasBrOnly) {
-                $p->parentNode?->removeChild($p);
-            }
-        }
-
-        $body = $dom->getElementsByTagName('body')->item(0);
-        $result = '';
-        foreach ($body->childNodes as $child) {
-            $result .= $dom->saveHTML($child);
-        }
-
-        return $result;
     }
 }

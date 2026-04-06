@@ -16,12 +16,16 @@ function buildPrompt({
   bahasa,
   jumlah,
   panjang,
-  hasFile,
-  fileName,
+  files, // FileRef[]
 }) {
-  const fileNote = hasFile
-    ? `\nReferensi File: Gunakan dokumen referensi yang telah diunggah ("${fileName}") sebagai sumber utama. Sertakan kutipan relevan dari dokumen tersebut dan tandai dengan format [Sumber: ${fileName}] di akhir kalimat yang dikutip.\n`
-    : ''
+  const fileNote =
+    files.length > 0
+      ? `\nReferensi File: Gunakan dokumen-dokumen referensi berikut sebagai sumber utama:\n${files
+          .map((f, i) => `${i + 1}. "${f.fileName}"`)
+          .join(
+            '\n',
+          )}\nSertakan kutipan relevan dari dokumen-dokumen tersebut dan tandai dengan format [Sumber: NamaFile] di akhir kalimat yang dikutip.\n`
+      : ''
 
   return `Kamu adalah asisten akademik profesional. Tulis konten karya tulis ilmiah dengan ketentuan berikut:
 
@@ -63,10 +67,9 @@ export default function WriterPage() {
   const [jumlah, setJumlah] = useState(1)
   const [panjang, setPanjang] = useState(500)
 
-  /* ─── File / Vector Store state ─── */
-  const [uploadedFile, setUploadedFile] = useState(null)
-  const [isUploadingFile, setIsUploadingFile] = useState(false)
-  const [isDeletingFile, setIsDeletingFile] = useState(false)
+  /* ─── Multi-file state ─── */
+  // FileRef: { source: 'saved'|'new', id?, fileId, vectorStoreId, fileName, fileSize }
+  const [selectedFiles, setSelectedFiles] = useState([])
 
   /* ─── UI state ─── */
   const [promptOpen, setPromptOpen] = useState(false)
@@ -80,21 +83,20 @@ export default function WriterPage() {
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('')
   const [currentDocId, setCurrentDocId] = useState(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const [showFileCleanupNotice, setShowFileCleanupNotice] = useState(false)
 
   const abortRef = useRef(null)
 
   /* ─── beforeunload guard ─── */
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (hasUnsavedChanges || uploadedFile) {
+      if (hasUnsavedChanges || selectedFiles.length > 0) {
         e.preventDefault()
         e.returnValue = ''
       }
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [hasUnsavedChanges, uploadedFile])
+  }, [hasUnsavedChanges, selectedFiles])
 
   const handleEditorUpdate = useCallback(
     (content) => {
@@ -140,8 +142,7 @@ export default function WriterPage() {
       setCurrentDocId(doc.id)
       setIsGenerated(true)
       setHasUnsavedChanges(false)
-      setShowFileCleanupNotice(false)
-      setUploadedFile(null)
+      setSelectedFiles([])
 
       try {
         const c = typeof doc.citations === 'string' ? JSON.parse(doc.citations) : doc.citations
@@ -186,77 +187,6 @@ export default function WriterPage() {
     return () => window.removeEventListener('loadHistoryWriter', handleLoadDoc)
   }, [papers, allSections])
 
-  /* ─── Upload File ─── */
-  const handleUploadFile = useCallback(
-    async (file) => {
-      if (!selectedAiId) return
-      setIsUploadingFile(true)
-      setShowFileCleanupNotice(false)
-      try {
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-        const formData = new FormData()
-        formData.append('providerId', selectedAiId)
-        formData.append('file', file)
-
-        const res = await fetch('/api/writers/upload-file', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'X-Requested-With': 'XMLHttpRequest' },
-          body: formData,
-        })
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ message: 'Upload gagal' }))
-          throw new Error(err.message || 'Upload gagal')
-        }
-        const data = await res.json()
-        setUploadedFile({
-          fileId: data.fileId,
-          vectorStoreId: data.vectorStoreId,
-          fileName: data.fileName,
-          fileSize: data.fileSize,
-        })
-        showSnackbar('success', `File "${data.fileName}" siap digunakan sebagai referensi`)
-      } catch (err) {
-        showSnackbar('error', err.message || 'Gagal upload file')
-      } finally {
-        setIsUploadingFile(false)
-      }
-    },
-    [selectedAiId, showSnackbar],
-  )
-
-  /* ─── Delete File ─── */
-  const handleDeleteFile = useCallback(async () => {
-    if (!uploadedFile) return
-    setIsDeletingFile(true)
-    try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-      const res = await fetch('/api/writers/delete-file', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify({
-          providerId: parseInt(selectedAiId),
-          fileId: uploadedFile.fileId,
-          vectorStoreId: uploadedFile.vectorStoreId,
-        }),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: 'Hapus gagal' }))
-        throw new Error(err.message || 'Hapus file gagal')
-      }
-      setUploadedFile(null)
-      setShowFileCleanupNotice(false)
-      showSnackbar('success', 'File referensi berhasil dihapus dari server')
-    } catch (err) {
-      showSnackbar('error', err.message || 'Gagal menghapus file')
-    } finally {
-      setIsDeletingFile(false)
-    }
-  }, [uploadedFile, selectedAiId, showSnackbar])
-
   const handleReset = useCallback(() => {
     if (abortRef.current) abortRef.current.abort()
     setIsGenerated(false)
@@ -268,7 +198,7 @@ export default function WriterPage() {
     setCitations([])
     setSavedFileInfo(null)
     setHasUnsavedChanges(false)
-    setShowFileCleanupNotice(false)
+    setSelectedFiles([])
   }, [])
 
   useEffect(() => {
@@ -297,7 +227,6 @@ export default function WriterPage() {
       const existingContent = editorContent.trim()
       setIsGenerated(false)
       setInputCollapsed(true)
-      setShowFileCleanupNotice(false)
       if (!regenerate) setCurrentDocId(null)
 
       const fullPrompt = buildPrompt({
@@ -308,14 +237,17 @@ export default function WriterPage() {
         bahasa,
         jumlah,
         panjang,
-        hasFile: !!uploadedFile,
-        fileName: uploadedFile?.fileName || '',
+        files: selectedFiles,
       })
 
       try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-        const body = { providerId: parseInt(selectedAiId), message: fullPrompt }
-        if (uploadedFile?.vectorStoreId) body.vectorStoreId = uploadedFile.vectorStoreId
+        // pass all vector store ids
+        const body = {
+          providerId: parseInt(selectedAiId),
+          message: fullPrompt,
+          vectorStoreIds: selectedFiles.map((f) => f.vectorStoreId).filter(Boolean),
+        }
 
         const res = await fetch('/api/writers', {
           method: 'POST',
@@ -350,14 +282,12 @@ export default function WriterPage() {
             const m = chunk.match(/<!--CITATIONS:(.*?)-->/)
             if (m) {
               try {
-                // ─── Append semua citasi baru (termasuk duplikat) ke existing ───
                 const newCitations = JSON.parse(m[1]).map((c) => ({
                   ...c,
                   paper: selectedPaperName,
                   section: selectedSectionName,
                   generatedAt: new Date().toLocaleString('id-ID'),
                 }))
-
                 setCitations((prev) => [...prev, ...newCitations])
                 // eslint-disable-next-line no-empty, no-unused-vars
               } catch (_) {}
@@ -370,7 +300,6 @@ export default function WriterPage() {
         }
 
         setHasUnsavedChanges(true)
-        if (uploadedFile) setShowFileCleanupNotice(true)
       } catch (err) {
         if (err.name === 'AbortError') return
         showSnackbar('error', err.message || 'Gagal generate konten')
@@ -390,7 +319,7 @@ export default function WriterPage() {
       bahasa,
       jumlah,
       panjang,
-      uploadedFile,
+      selectedFiles,
       showSnackbar,
       editorContent,
     ],
@@ -412,13 +341,14 @@ export default function WriterPage() {
         const promptData = buildPromptData(promptParams)
         const fullPrompt = buildPrompt({
           ...promptParams,
-          hasFile: !!uploadedFile,
-          fileName: uploadedFile?.fileName || '',
+          files: selectedFiles,
         })
 
-        const fileInfoForDb = uploadedFile
-          ? { fileName: uploadedFile.fileName, fileSize: uploadedFile.fileSize }
-          : savedFileInfo || null
+        // Store a summary of files used
+        const fileInfoForDb =
+          selectedFiles.length > 0
+            ? selectedFiles.map((f) => ({ fileName: f.fileName, fileSize: f.fileSize }))
+            : savedFileInfo || null
 
         const saveBody = {
           workbookId: parseInt(targetWorkbookId),
@@ -474,8 +404,6 @@ export default function WriterPage() {
         setSaveSuccessMsg(`Disimpan ke "${wbName}"`)
         setHasUnsavedChanges(false)
         setTimeout(() => setSaveSuccessMsg(''), 4000)
-
-        if (uploadedFile) setShowFileCleanupNotice(true)
       } catch (err) {
         showSnackbar('error', err.message || 'Gagal menyimpan dokumen')
         throw err
@@ -493,7 +421,7 @@ export default function WriterPage() {
       editorContent,
       workbooks,
       user,
-      uploadedFile,
+      selectedFiles,
       savedFileInfo,
       citations,
       showSnackbar,
@@ -575,9 +503,8 @@ export default function WriterPage() {
         </p>
       </div>
 
-      {/* ── Banner Stack ── */}
+      {/* ── Banners ── */}
       <div className="w-full max-w-3xl z-10 space-y-2 mb-2">
-        {/* Unsaved changes */}
         {hasUnsavedChanges && !saveSuccessMsg && (
           <div className="flex items-center justify-between px-4 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-full text-amber-700 dark:text-amber-400 text-[13px] font-medium">
             <span className="flex items-center gap-2">
@@ -593,89 +520,12 @@ export default function WriterPage() {
           </div>
         )}
 
-        {/* File aktif */}
-        {uploadedFile && !showFileCleanupNotice && (
+        {selectedFiles.length > 0 && (
           <div className="flex items-center px-4 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 rounded-full text-blue-700 dark:text-blue-400 text-[13px] font-medium">
             <span className="flex items-center gap-2">
               <span className="w-2 h-2 bg-blue-400 rounded-full" />
-              File referensi aktif — hapus file sebelum berpindah halaman
+              {selectedFiles.length} file referensi aktif — hapus sebelum berpindah halaman
             </span>
-          </div>
-        )}
-
-        {/* Notifikasi cleanup file */}
-        {showFileCleanupNotice && uploadedFile && (
-          <div className="flex flex-col gap-2.5 px-4 py-3.5 bg-orange-50 dark:bg-orange-900/15 border border-orange-200 dark:border-orange-700/40 rounded-2xl">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-orange-100 dark:bg-orange-800/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg
-                  className="w-4 h-4 text-orange-500"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-orange-800 dark:text-orange-300">
-                  Hapus file referensi untuk menjaga stabilitas server
-                </p>
-                <p className="text-[12px] text-orange-600 dark:text-orange-400 mt-1 leading-relaxed">
-                  File <strong>"{uploadedFile.fileName}"</strong> masih tersimpan di server dan
-                  menggunakan kuota penyimpanan. Setelah dokumen disimpan, file referensi tidak lagi
-                  dibutuhkan — harap segera dihapus.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 pl-11">
-              <button
-                onClick={handleDeleteFile}
-                disabled={isDeletingFile}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 dark:border-red-700/30 dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isDeletingFile ? (
-                  <>
-                    <svg
-                      className="w-3.5 h-3.5 animate-spin"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M21 12a9 9 0 11-6.219-8.56" />
-                    </svg>
-                    Menghapus...
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="w-3.5 h-3.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6l-1 14H6L5 6" />
-                      <path d="M10 11v6" />
-                      <path d="M14 11v6" />
-                      <path d="M9 6V4h6v2" />
-                    </svg>
-                    Hapus File Sekarang
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => setShowFileCleanupNotice(false)}
-                className="text-[12px] text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium transition-colors"
-              >
-                Nanti saja
-              </button>
-            </div>
           </div>
         )}
       </div>
@@ -708,11 +558,8 @@ export default function WriterPage() {
           onGenerate={handleGenerate}
           onPromptLibraryOpen={() => setPromptOpen(true)}
           isGptProvider={isGptProvider}
-          uploadedFile={uploadedFile}
-          isUploadingFile={isUploadingFile}
-          isDeletingFile={isDeletingFile}
-          onUploadFile={handleUploadFile}
-          onDeleteFile={handleDeleteFile}
+          selectedFiles={selectedFiles}
+          onFilesChange={setSelectedFiles}
         />
 
         {isGenerating && !isGenerated && (
@@ -729,7 +576,10 @@ export default function WriterPage() {
                   ))}
                 </div>
                 <span className="text-[13px] font-medium text-gray-500 dark:text-gray-400">
-                  AI sedang menulis{uploadedFile ? ' dengan referensi file...' : '...'}
+                  AI sedang menulis
+                  {selectedFiles.length > 0
+                    ? ` dengan ${selectedFiles.length} referensi file...`
+                    : '...'}
                 </span>
               </div>
               <div className="p-8 space-y-3 animate-pulse">
@@ -756,6 +606,7 @@ export default function WriterPage() {
             onSave={() => setSaveModalOpen(true)}
             onRegenerate={handleGenerate}
             onReset={handleReset}
+            onToggleCollapse={() => setInputCollapsed(true)}
           />
         )}
       </div>

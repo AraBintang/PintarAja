@@ -2,8 +2,8 @@ import { createBrowserRouter } from 'react-router-dom'
 
 import SidebarLayout from '@/layout/SidebarLayout'
 import AdminAIPage from '@/pages/Admin/AIPage'
-import AdminAttributePage from '@/pages/Admin/AttributePage'
 import CouponPage from '@/pages/Admin/CouponPage'
+import AdminPaperPage from '@/pages/Admin/PaperPage'
 import AdminPlanPage from '@/pages/Admin/PlanPage'
 import PromptAIPage from '@/pages/Admin/PromptAIPage'
 import AdminUserPage from '@/pages/Admin/UserPage'
@@ -61,7 +61,7 @@ export const router = createBrowserRouter([
           {
             element: <AdminRoute />,
             children: [
-              { path: 'admin/attribute', element: <AdminAttributePage /> },
+              { path: 'admin/paper', element: <AdminPaperPage /> },
               { path: 'admin/prompt', element: <PromptAIPage /> },
               { path: 'admin/ai', element: <AdminAIPage /> },
               { path: 'admin/plan', element: <AdminPlanPage /> },
