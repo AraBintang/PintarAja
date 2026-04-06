@@ -117,6 +117,15 @@ export default function ChatPage() {
   const abortRef = useRef(null)
   const suppressScrollRef = useRef(false)
 
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const handler = (e) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
   useEffect(() => {
     request('/chats')
       .then((res) => {
@@ -139,6 +148,7 @@ export default function ChatPage() {
       setAttachedFiles([])
       navigate('/chat', { replace: true })
     }
+
     const t = setTimeout(() => setIsInitialLoading(false), 200)
     return () => clearTimeout(t)
   }, [location.pathname, navigate])
@@ -487,7 +497,13 @@ export default function ChatPage() {
 
       {isInitialLoading ? (
         /* Skeleton juga pakai fixed + max-w-3xl supaya sama posisinya */
-        <div className="fixed bottom-0 inset-x-0 px-4 pb-2">
+        <div
+          className="fixed bottom-0 right-0 transition-all duration-300 ease-in-out"
+          style={{
+            left: isMobile ? '10px' : 'var(--sidebar-w, 64px)',
+            right: isMobile ? '10px' : '',
+          }}
+        >
           <div className="max-w-3xl mx-auto w-full">
             <div className="bg-white dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50">
               <div className="px-5 pt-4 pb-2 space-y-2.5">

@@ -8,7 +8,6 @@ use App\Models\ReferralUsage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-
 class ReferralController extends Controller
 {
     public function index(Request $request)

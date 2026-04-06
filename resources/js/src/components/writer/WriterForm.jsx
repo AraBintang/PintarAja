@@ -1,14 +1,5 @@
-import {
-  BookOpen,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  Paperclip,
-  Sparkles,
-  Trash2,
-  X,
-} from 'lucide-react'
-import { memo, useRef } from 'react'
+import { BookOpen, ChevronDown, ChevronUp, Loader2, Paperclip, Sparkles, X } from 'lucide-react'
+import { memo, useState } from 'react'
 
 import { LANGUAGES } from '@/assets/languages'
 import {
@@ -21,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+import FilePickerModal from './FilePickerModal'
 import WriterToolbar from './WriterToolbar'
 
 function formatFileSize(bytes) {
@@ -30,16 +22,32 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Ekstensi yang diizinkan OpenAI file search
-const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.pptx']
-const ALLOWED_MIME = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/msword',
-  'text/plain',
-  'text/markdown',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-]
+function FileTypeIcon({ fileName, className = 'w-4 h-4' }) {
+  const ext = fileName?.split('.').pop()?.toLowerCase()
+  const colorMap = {
+    pdf: 'text-red-500',
+    docx: 'text-blue-600',
+    doc: 'text-blue-600',
+    txt: 'text-gray-500',
+    md: 'text-purple-500',
+    pptx: 'text-orange-500',
+  }
+  return (
+    <svg
+      className={`${className} ${colorMap[ext] || 'text-gray-500'}`}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="10 9 9 9 8 9" />
+    </svg>
+  )
+}
 
 const WriterForm = memo(function WriterForm({
   // data
@@ -71,42 +79,15 @@ const WriterForm = memo(function WriterForm({
   onToggleCollapse,
   onGenerate,
   onPromptLibraryOpen,
-  // file props
+  // file props — now array-based
   isGptProvider,
-  uploadedFile,
-  isUploadingFile,
-  isDeletingFile,
-  onUploadFile,
-  onDeleteFile,
+  selectedFiles,
+  onFilesChange,
 }) {
-  const fileInputRef = useRef(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validasi tipe file
-    const ext = '.' + file.name.split('.').pop().toLowerCase()
-    if (!ALLOWED_EXTENSIONS.includes(ext) && !ALLOWED_MIME.includes(file.type)) {
-      alert(`Format file tidak didukung. Gunakan: ${ALLOWED_EXTENSIONS.join(', ')}`)
-      e.target.value = ''
-      return
-    }
-
-    // Validasi ukuran (max 20MB)
-    if (file.size > 20 * 1024 * 1024) {
-      alert('Ukuran file maksimal 20MB')
-      e.target.value = ''
-      return
-    }
-
-    onUploadFile(file)
-    e.target.value = '' // Reset input
-  }
-
-  const handleClickUpload = () => {
-    if (isUploadingFile || isDeletingFile || uploadedFile) return
-    fileInputRef.current?.click()
+  const handleRemoveFile = (fileId) => {
+    onFilesChange(selectedFiles.filter((f) => f.fileId !== fileId))
   }
 
   return (
@@ -136,53 +117,31 @@ const WriterForm = memo(function WriterForm({
         {/* Topic Card */}
         <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[20px] md:rounded-[24px] shadow-sm hover:shadow-md transition-shadow overflow-hidden mb-4 md:mb-6">
           <div className="p-4 md:p-6">
-            {/* Header baris: label + tombol upload (hanya GPT) */}
+            {/* Header row */}
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <label className="text-[12px] md:text-[13px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 Research Topics
               </label>
 
-              {/* Upload button — tampil hanya saat GPT dipilih */}
+              {/* File picker button — only for GPT */}
               {isGptProvider && (
-                <div className="flex items-center gap-2">
-                  {!uploadedFile ? (
-                    <button
-                      type="button"
-                      onClick={handleClickUpload}
-                      disabled={isUploadingFile || isGenerating}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] md:text-[12px] font-semibold rounded-lg md:rounded-xl border transition-colors
-                        ${
-                          isUploadingFile
-                            ? 'border-blue-200 bg-blue-50 text-blue-400 dark:border-blue-700/30 dark:bg-blue-900/10 dark:text-blue-500 cursor-wait'
-                            : 'border-blue-200 bg-blue-50 text-[#2686D4] dark:text-[#60a5fa] hover:bg-blue-100 dark:border-blue-700/30 dark:bg-blue-900/10 dark:hover:bg-blue-900/20 cursor-pointer'
-                        } disabled:opacity-60 disabled:cursor-not-allowed`}
-                    >
-                      {isUploadingFile ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Mengupload...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Paperclip className="w-3.5 h-3.5" />
-                          <span>Tambah Referensi</span>
-                        </>
-                      )}
-                    </button>
-                  ) : null}
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept={ALLOWED_EXTENSIONS.join(',')}
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  disabled={isGenerating}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] md:text-[12px] font-semibold rounded-lg md:rounded-xl border border-blue-200 bg-blue-50 text-[#2686D4] dark:text-[#60a5fa] hover:bg-blue-100 dark:border-blue-700/30 dark:bg-blue-900/10 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <Paperclip className="w-3.5 h-3.5" />
+                  <span>
+                    {selectedFiles.length > 0
+                      ? `${selectedFiles.length} Referensi`
+                      : 'Tambah Referensi'}
+                  </span>
+                </button>
               )}
             </div>
 
-            {/* Textarea topik */}
+            {/* Textarea */}
             <textarea
               value={topik}
               onChange={(e) => onTopikChange(e.target.value)}
@@ -199,70 +158,48 @@ const WriterForm = memo(function WriterForm({
               </span>
             </div>
 
-            {/* ── File Badge — muncul di bawah textarea saat file terupload ── */}
-            {uploadedFile && (
-              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/15 border border-blue-200 dark:border-blue-700/40 rounded-xl">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    {/* File icon warna sesuai ekstensi */}
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-800/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <FileTypeIcon fileName={uploadedFile.fileName} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-blue-800 dark:text-blue-300 truncate max-w-[200px] md:max-w-[340px]">
-                        {uploadedFile.fileName}
-                      </p>
-                      <p className="text-[11px] text-blue-500 dark:text-blue-400 mt-0.5">
-                        {formatFileSize(uploadedFile.fileSize)} · Referensi aktif
-                        <span className="ml-1.5 inline-flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block animate-pulse" />
-                          <span className="text-green-600 dark:text-green-400">Siap digunakan</span>
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Tombol hapus file */}
-                  <button
-                    type="button"
-                    onClick={onDeleteFile}
-                    disabled={isDeletingFile || isGenerating}
-                    title="Hapus file referensi"
-                    className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 dark:border-red-700/30 dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+            {/* Selected files list */}
+            {selectedFiles.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                {selectedFiles.map((file) => (
+                  <div
+                    key={file.fileId}
+                    className="flex items-center justify-between gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/15 border border-blue-200 dark:border-blue-700/40 rounded-xl"
                   >
-                    {isDeletingFile ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <>
-                        <Trash2 className="w-3 h-3" />
-                        <span>Hapus</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-800/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <FileTypeIcon fileName={file.fileName} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-blue-800 dark:text-blue-300 truncate max-w-[180px] md:max-w-[320px]">
+                          {file.fileName}
+                        </p>
+                        <p className="text-[11px] text-blue-500 dark:text-blue-400 mt-0.5">
+                          {formatFileSize(file.fileSize)}
+                          <span className="ml-1.5 inline-flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block animate-pulse" />
+                            <span className="text-green-600 dark:text-green-400">Aktif</span>
+                          </span>
+                        </p>
+                      </div>
+                    </div>
 
-                {/* Keterangan: tidak bisa pindah halaman */}
-                <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 px-1">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(file.fileId)}
+                      disabled={isGenerating}
+                      title="Hapus dari seleksi"
+                      className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 dark:border-red-700/30 dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 px-1 pt-1">
                   <X className="w-3 h-3 flex-shrink-0" />
                   Hapus file referensi sebelum berpindah ke halaman lain
                 </p>
-              </div>
-            )}
-
-            {/* Upload progress indicator */}
-            {isUploadingFile && (
-              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                <div className="flex items-center gap-3 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/15 border border-blue-200 dark:border-blue-700/40 rounded-xl">
-                  <Loader2 className="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-blue-700 dark:text-blue-300">
-                      Memproses file referensi...
-                    </p>
-                    <p className="text-[11px] text-blue-500 dark:text-blue-400 mt-0.5">
-                      Mengupload ke server & membangun indeks pencarian
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
           </div>
@@ -352,7 +289,7 @@ const WriterForm = memo(function WriterForm({
           </div>
         </div>
 
-        {/* Instruksi Tambahan */}
+        {/* Additional Instructions */}
         <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[24px] p-4 md:p-6 mb-4 md:mb-6 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3 md:mb-4">
             <label className="text-[11px] md:text-[12px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2 md:mb-3 block">
@@ -394,17 +331,13 @@ const WriterForm = memo(function WriterForm({
         <div className="flex mb-6 px-1">
           <button
             onClick={onGenerate}
-            disabled={isGenerating || !topik.trim() || !selectedAiId || isUploadingFile}
+            disabled={isGenerating || !topik.trim() || !selectedAiId}
             className="relative group w-full py-3.5 md:py-4 text-white text-[14px] md:text-[15px] font-bold rounded-xl md:rounded-2xl shadow-md transition-all overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] hover:from-[#3f86cc] hover:to-[#2f6fb8] dark:from-orange-500 dark:to-orange-600 dark:hover:from-orange-400 dark:hover:to-orange-500"
           >
             <span className="relative z-10 flex items-center justify-center gap-2">
               {isGenerating ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" /> Generating...
-                </>
-              ) : isUploadingFile ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" /> Memproses file...
                 </>
               ) : (
                 <>
@@ -419,9 +352,9 @@ const WriterForm = memo(function WriterForm({
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                   </svg>
                   Generate Now
-                  {uploadedFile && (
+                  {selectedFiles.length > 0 && (
                     <span className="ml-1 text-[12px] font-normal opacity-80">
-                      · dengan referensi
+                      · {selectedFiles.length} referensi
                     </span>
                   )}
                 </>
@@ -430,38 +363,17 @@ const WriterForm = memo(function WriterForm({
           </button>
         </div>
       </div>
+
+      {/* File Picker Modal */}
+      <FilePickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        selectedAiId={selectedAiId}
+        selectedFiles={selectedFiles}
+        onConfirm={onFilesChange}
+      />
     </>
   )
 })
-
-/** Ikon tipe file sesuai ekstensi */
-function FileTypeIcon({ fileName }) {
-  const ext = fileName?.split('.').pop()?.toLowerCase()
-  const colorMap = {
-    pdf: 'text-red-500',
-    docx: 'text-blue-600',
-    doc: 'text-blue-600',
-    txt: 'text-gray-500',
-    md: 'text-purple-500',
-    pptx: 'text-orange-500',
-  }
-  const color = colorMap[ext] || 'text-gray-500'
-
-  return (
-    <svg
-      className={`w-4 h-4 ${color}`}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <polyline points="10 9 9 9 8 9" />
-    </svg>
-  )
-}
 
 export default WriterForm

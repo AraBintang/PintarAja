@@ -115,7 +115,7 @@ class User extends Authenticatable
     {
         $discount = $this->getPendingDiscountPercent();
 
-        if ($this->M_UserReferredBy && !Transaction::where('T_TransactionM_UserID', $this->M_UserID)->exists()) {
+        if ($this->M_UserReferredBy && !Transaction::where('T_TransactionM_UserID', $this->M_UserID)->where('T_TransactionStatus', 1)->exists()) {
             $discount += 10;
         }
 
@@ -126,13 +126,17 @@ class User extends Authenticatable
      * Generate kode referral unik untuk user ini.
      * Format: 8 karakter alfanumerik uppercase, contoh: "AB3X9K2M"
      */
-    public function generateReferralCode(): string
+    private function generateReferralCode(): string
     {
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        
         do {
-            $code = strtoupper(substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 8));
-        } while (static::where('M_UserReferralCode', $code)->exists());
-    
-        $this->update(['M_UserReferralCode' => $code]);
+            $code = '';
+            for ($i = 0; $i < 8; $i++) {
+                $code .= $chars[random_int(0, strlen($chars) - 1)];
+            }
+        } while (User::where('M_UserReferralCode', $code)->exists());
+
         return $code;
     }
     

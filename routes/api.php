@@ -74,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('writers')->group(function () {
         Route::get('/', [WriterController::class, 'index']);
+        Route::get('/files', [WriterController::class, 'files']);
         Route::post('/', [WriterController::class, 'generate']);
         Route::post('/upload-file', [WriterController::class, 'uploadFile']);
         Route::delete('/delete-file', [WriterController::class, 'deleteFile']);

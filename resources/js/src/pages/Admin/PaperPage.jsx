@@ -7,7 +7,6 @@ import {
   Search,
   TextSelect,
   Trash2,
-  Zap,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -19,7 +18,7 @@ import { Debounce } from '@/utils/Debounce'
 
 const PAGE_SIZE = 10
 
-export default function AttributePage() {
+export default function PaperPage() {
   const { showSnackbar } = useSnackbar()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -103,9 +102,9 @@ export default function AttributePage() {
           <div>
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2.5">
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-600 dark:bg-orange-500 flex items-center justify-center shadow-lg shadow-blue-200 dark:shadow-orange-900/30 shrink-0">
-                <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <ScrollText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              Data Attribute AI
+              Data Paper AI
             </h1>
             <p className="text-gray-500 dark:text-gray-400 text-[12px] sm:text-sm mt-1">
               Kelola jenis paper dan struktur section dokumen AI

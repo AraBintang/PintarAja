@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Mail\OtpMail;
 use App\Models\Otp;
 use App\Models\Plan;
-use App\Models\ReferralUsage;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -117,7 +116,7 @@ class AuthController extends Controller
         return response()->json(['status' => 'OTP Send to email']);
     }
 
-   public function verifyOtp(Request $request)
+    public function verifyOtp(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
@@ -150,16 +149,12 @@ class AuthController extends Controller
             'M_UserReferralCode' => $referralCode,
         ]);
     
-        if ($user->M_UserReferredBy) {
-            $this->processReferralReward($user);
-        }
-    
         $token = $user->createToken('auth')->plainTextToken;
     
         return response()->json([
             'token' => $token,
             'user' => [
-                'email'  => $user->M_UserEmail,
+                'email' => $user->M_UserEmail,
                 'full_name' => $user->M_UserFullName,
                 'image' => $user->M_UserImage,
                 'phone' => $user->M_UserPhone,
@@ -195,36 +190,18 @@ class AuthController extends Controller
 
     private function generateUniqueReferralCode(): string
     {
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        
         do {
-            $code = strtoupper(substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 8));
+            $code = '';
+            for ($i = 0; $i < 8; $i++) {
+                $code .= $chars[random_int(0, strlen($chars) - 1)];
+            }
         } while (User::where('M_UserReferralCode', $code)->exists());
-    
+
         return $code;
     }
  
-    private function processReferralReward(User $newUser): void
-    {
-        $ownerID = $newUser->M_UserReferredBy;
-    
-        $totalReferrals = ReferralUsage::where('T_ReferralUsageOwnerID', $ownerID)->count();
-        $sequence = $totalReferrals + 1;
-    
-        $positionInCycle = (($sequence - 1) % 7) + 1;
-    
-        $isFreeMonth      = ($positionInCycle === 7);
-        $discountPercent  = $isFreeMonth ? 0 : 10;
-    
-        ReferralUsage::create([
-            'T_ReferralUsageOwnerID' => $ownerID,
-            'T_ReferralUsageUserID' => $newUser->M_UserID,
-            'T_ReferralUsageSequence'  => $sequence,
-            'T_ReferralUsageDiscountPercent' => $discountPercent,
-            'T_ReferralUsageIsFreeMonth' => $isFreeMonth,
-            'T_ReferralUsageIsUsed' => false,
-            'T_ReferralUsageCreated' => now(),
-        ]);
-    }
-
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
-use App\Models\ReferralUsage;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -104,40 +102,19 @@ class GoogleController extends Controller
             'M_UserReferralCode' => $newReferralCode,
             'M_UserReferredBy' => $referredByUser?->M_UserID,
         ]);
- 
-        if ($referredByUser) {
-            $this->processReferralReward($user);
-        }
-    }
- 
-    private function processReferralReward(User $newUser): void
-    {
-        $ownerID = $newUser->M_UserReferredBy;
- 
-        $totalReferrals = ReferralUsage::where('T_ReferralUsageOwnerID', $ownerID)->count();
-        $sequence = $totalReferrals + 1;
-        $positionInCycle = (($sequence - 1) % 7) + 1;
- 
-        $isFreeMonth = ($positionInCycle === 7);
-        $discountPercent = $isFreeMonth ? 0 : 10;
- 
-        ReferralUsage::create([
-            'T_ReferralUsageOwnerID' => $ownerID,
-            'T_ReferralUsageUserID' => $newUser->M_UserID,
-            'T_ReferralUsageSequence' => $sequence,
-            'T_ReferralUsageDiscountPercent' => $discountPercent,
-            'T_ReferralUsageIsFreeMonth' => $isFreeMonth,
-            'T_ReferralUsageIsUsed' => false,
-            'T_ReferralUsageCreated' => now(),
-        ]);
     }
  
     private function generateUniqueReferralCode(): string
     {
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        
         do {
-            $code = strtoupper(substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 8));
+            $code = '';
+            for ($i = 0; $i < 8; $i++) {
+                $code .= $chars[random_int(0, strlen($chars) - 1)];
+            }
         } while (User::where('M_UserReferralCode', $code)->exists());
- 
+
         return $code;
     }
 }

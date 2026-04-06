@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { useSettingsModal } from '@/context/SettingsModalContext'
 
+import FilesTab from './FilesTab'
 import OrderHistoryTab from './OrderHistoryTab'
 import PlanTab from './PlanTab'
 import ProfileTab from './ProfileTab'
@@ -93,6 +94,7 @@ export default function SettingsModal() {
           >
             {activeTab === 'Profile' && <ProfileTab setActiveTab={setActiveTab} />}
             {activeTab === 'Plan' && <PlanTab />}
+            {activeTab === 'Files' && <FilesTab />}
             {activeTab === 'Referral' && <ReferralTab />}
             {activeTab === 'History' && <OrderHistoryTab />}
           </div>

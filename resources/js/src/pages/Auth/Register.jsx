@@ -313,7 +313,7 @@ export default function Register() {
                 className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm font-mono placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 dark:focus:border-blue-500 transition-all uppercase"
                 style={{ textTransform: 'uppercase' }}
               />
-              {formData.referralCode && (
+              {formData.referralCode && formData.referralCode.length >= 8 && (
                 <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <span>✓</span> Referral code will be applied
                 </p>
