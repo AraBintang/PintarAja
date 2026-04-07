@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 
 import SidebarLayout from '@/layout/SidebarLayout'
 import AdminAIPage from '@/pages/Admin/AIPage'
+import BlogPage from '@/pages/Admin/BlogPage'
 import CouponPage from '@/pages/Admin/CouponPage'
 import AdminPaperPage from '@/pages/Admin/PaperPage'
 import AdminPlanPage from '@/pages/Admin/PlanPage'
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
           {
             element: <AdminRoute />,
             children: [
+              { path: 'admin/blog', element: <BlogPage /> },
               { path: 'admin/paper', element: <AdminPaperPage /> },
               { path: 'admin/prompt', element: <PromptAIPage /> },
               { path: 'admin/ai', element: <AdminAIPage /> },

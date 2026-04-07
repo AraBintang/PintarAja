@@ -48,7 +48,7 @@ export default function AuthLayout({ lottieData, lottieText, lottieSub, children
 
         <div className="mt-6 text-center max-w-sm lg:ml-30">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-            {lottieText ?? 'Selamat datang di Pintaraja AI'}
+            {lottieText ?? 'Selamat datang di Pintaraja'}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
             {lottieSub ?? 'Platform AI untuk belajar lebih cerdas dan efisien.'}

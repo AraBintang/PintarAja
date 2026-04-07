@@ -35,6 +35,7 @@ const menuItems = [
 ]
 
 const adminMenuItems = [
+  { label: 'Blog', icon: FileText, to: '/admin/blog' },
   { label: 'Paper AI', icon: ScrollText, to: '/admin/paper' },
   { label: 'Prompt AI', icon: Library, to: '/admin/prompt' },
   { label: 'AI', icon: Cpu, to: '/admin/ai' },

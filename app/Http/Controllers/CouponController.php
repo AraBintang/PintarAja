@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Models\CouponRedemption;
 use App\Models\Coupons;
 use App\Models\Plan;
 use Illuminate\Http\Request;
@@ -21,6 +22,10 @@ class CouponController extends Controller
         $query = Coupon::query()
             ->leftJoin('m_user', 'm_coupon.M_CouponM_UserID', '=', 'm_user.M_UserID')
             ->leftJoin('m_plan', 'm_coupon.M_CouponM_PlanID', '=', 'm_plan.M_PlanID')
+            ->leftJoin(
+                DB::raw('(SELECT M_RedemptionCouponID, COUNT(*) as redeem_count FROM m_coupon_redemption GROUP BY M_RedemptionCouponID) as r'),
+                'r.M_RedemptionCouponID', '=', 'm_coupon.M_CouponID'
+            )
             ->select([
                 'm_coupon.M_CouponID as id',
                 'm_coupon.M_CouponCode as code',
@@ -29,14 +34,16 @@ class CouponController extends Controller
                 'm_coupon.M_CouponUsedDate as usedDate',
                 'm_coupon.M_CouponExpired as expired',
                 'm_coupon.M_CouponCreated as createdAt',
+                'm_coupon.M_CouponMaxUses as maxUses',
                 'm_user.M_UserEmail as userEmail',
                 'm_plan.M_PlanID as planId',
-                'm_plan.M_PlanName as planName'
+                'm_plan.M_PlanName as planName',
+                DB::raw('COALESCE(r.redeem_count, 0) as usedCount'),
             ])
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($qq) use ($search) {
                     $qq->where('m_coupon.M_CouponCode', 'like', "%{$search}%")
-                       ->orWhere('m_user.M_UserEmail', 'like', "%{$search}%");
+                       ->orWhere('m_user.M_UserEmail',  'like', "%{$search}%");
                 });
             })
             ->orderBy('m_coupon.M_CouponID', 'desc');
@@ -53,19 +60,39 @@ class CouponController extends Controller
 
         $summary = [
             'total' => Coupon::count(),
-            'used' => Coupon::where('M_CouponUsed', 'Y')->count(),
-           'active' => Coupon::where('M_CouponUsed', 'N')
-                ->where(function ($q) {
+ 
+            'used' => Coupon::whereNull('M_CouponMaxUses')
+                ->where('M_CouponUsed', 'Y')
+                ->count(),
+ 
+            'exhausted' => Coupon::whereNotNull('M_CouponMaxUses')
+                ->whereRaw('(SELECT COUNT(*) FROM m_coupon_redemption WHERE M_RedemptionCouponID = m_coupon.M_CouponID) >= m_coupon.M_CouponMaxUses')
+                ->count(),
+ 
+            'active' => Coupon::where(function ($q) {
                     $q->whereNull('M_CouponExpired')
                       ->orWhereDate('M_CouponExpired', '>=', now());
                 })
+                ->where(function ($q) {
+                    $q->where(function ($qq) {
+                        $qq->whereNull('M_CouponMaxUses')
+                           ->where('M_CouponUsed', 'N');
+                    })
+                    ->orWhere(function ($qq) {
+                        $qq->whereNotNull('M_CouponMaxUses')
+                           ->whereRaw('(SELECT COUNT(*) FROM m_coupon_redemption WHERE M_RedemptionCouponID = m_coupon.M_CouponID) < m_coupon.M_CouponMaxUses');
+                    })
+                    ->orWhere(function ($qq) {
+                        $qq->where('M_CouponMaxUses', 0);
+                    });
+                })
                 ->count(),
-           'expired' => Coupon::where('M_CouponUsed', 'N')
-                ->whereNotNull('M_CouponExpired')
+ 
+            'expired' => Coupon::whereNotNull('M_CouponExpired')
                 ->whereDate('M_CouponExpired', '<', now())
                 ->count(),
         ];
-
+ 
         return response()->json([
             'data' => $paginated->items(),
             'plans' => $plans,
@@ -74,117 +101,138 @@ class CouponController extends Controller
                 'current_page' => $paginated->currentPage(),
                 'per_page' => $paginated->perPage(),
                 'total' => $paginated->total(),
-                'last_page' => $paginated->lastPage()
-            ]
-        ]);
-    }
-
-    public function generateOneMillion()
-    {
-        $totalCoupons = 10000; 
-        $batchSize = 1000;
-        $coupons = [];
-        $generatedCodes = [];
-
-        $startTime = microtime(true);
-
-        for ($i = 0; $i < $totalCoupons; $i++) {
-            do {
-                $code = strtoupper(Str::random(10));
-            } while (isset($generatedCodes[$code]));
-
-            $generatedCodes[$code] = true;
-
-            $coupons[] = [
-                'M_CouponsCode' => $code,
-                'M_CouponsUsed' => 'N',
-            ];
-
-            if (count($coupons) >= $batchSize) {
-                Coupons::query()->insert($coupons);
-                $coupons = [];
-            }
-        }
-
-        if (!empty($coupons)) {
-            Coupons::query()->insert($coupons);
-        }
-
-        $endTime = microtime(true);
-        $duration = round($endTime - $startTime, 2);
-
-        return response()->json([
-            'message' => 'Successfully generate 10.000 coupons!',
-            'duration_seconds' => $duration,
+                'last_page' => $paginated->lastPage(),
+            ],
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'planId' => 'required|integer',
-            'days' => 'required|integer',
-            'expired' => 'required|date',
-            'count' => 'required|integer|min:1'
+            'planId' => 'required|integer|exists:m_plan,M_PlanID',
+            'days' => 'required|integer|min:1',
+            'expired' => 'required|date|after:today',
+            'codeMode' => 'required|in:auto,custom',
+            'customCode' => 'required_if:codeMode,custom|nullable|string|max:32|alpha_num',
+            'count' => 'required_if:codeMode,auto|nullable|integer|min:1|max:500',
+            'maxUses' => 'nullable|integer|min:1',
         ]);
-
+ 
         DB::beginTransaction();
-
+ 
         try {
-            $codes = Coupons::where('M_CouponsUsed', 'N')
-                ->limit($validated['count'])
-                ->get();
-
-            if ($codes->isEmpty()) {
-                return response()->json(['message' => 'No available coupon codes'], 400);
-            }
-
-            $insert = [];
-            $updateIds = [];
-
-            foreach ($codes as $code) {
-                $insert[] = [
+            if ($validated['codeMode'] === 'custom') {
+                $code = strtoupper(trim($validated['customCode']));
+ 
+                $existsInPool = Coupons::where('M_CouponsCode', $code)->exists();
+                $existsActive = Coupon::where('M_CouponCode', $code)->exists();
+ 
+                if ($existsInPool || $existsActive) {
+                    return response()->json([
+                        'message' => "Kode kupon \"{$code}\" sudah pernah digunakan sebelumnya. Gunakan kode yang berbeda agar tidak terjadi konflik.",
+                    ], 422);
+                }
+ 
+                Coupon::create([
                     'M_CouponM_PlanID' => $validated['planId'],
                     'M_CouponDays' => $validated['days'],
-                    'M_CouponCode' => $code->M_CouponsCode,
-                    'M_CouponExpired' => $validated['expired']
-                ];
-
-                $updateIds[] = $code->M_CouponsID;
+                    'M_CouponCode' => $code,
+                    'M_CouponExpired' => $validated['expired'],
+                    'M_CouponMaxUses' => $validated['maxUses'] ?? null,
+                    'M_CouponUsed' => 'N',
+                ]);
+ 
+            } else {
+                $count = $validated['count'] ?? 1;
+ 
+                $codes = Coupons::where('M_CouponsUsed', 'N')
+                    ->limit($count)
+                    ->get();
+ 
+                if ($codes->isEmpty()) {
+                    return response()->json([
+                        'message' => 'Stok kode kupon habis. Harap generate ulang pool kode terlebih dahulu.',
+                    ], 400);
+                }
+ 
+                $insert    = [];
+                $updateIds = [];
+ 
+                foreach ($codes as $poolCode) {
+                    $insert[] = [
+                        'M_CouponM_PlanID' => $validated['planId'],
+                        'M_CouponDays' => $validated['days'],
+                        'M_CouponCode' => $poolCode->M_CouponsCode,
+                        'M_CouponExpired' => $validated['expired'],
+                        'M_CouponMaxUses' => $validated['maxUses'] ?? null,
+                        'M_CouponUsed' => 'N',
+                    ];
+                    $updateIds[] = $poolCode->M_CouponsID;
+                }
+ 
+                Coupon::insert($insert);
+                Coupons::whereIn('M_CouponsID', $updateIds)->update(['M_CouponsUsed' => 'Y']);
             }
-
-            Coupon::insert($insert);
-
-            Coupons::whereIn('M_CouponsID', $updateIds)->update(['M_CouponsUsed' => 'Y']);
-
+ 
             DB::commit();
-
-            return response()->json([
-                'message' => 'Coupons generated successfully'
-            ]);
+ 
+            return response()->json(['message' => 'Kupon berhasil dibuat.']);
+ 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            return response()->json([
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
+ 
     public function destroy($id)
     {
         $coupon = Coupon::findOrFail($id);
-
-        Coupons::where('M_CouponsCode', $coupon->M_CouponCode)
-            ->update([
-                'M_CouponsUsed' => 'N',
-                'M_CouponsLastUpdated' => now()
-            ]);
-
+ 
+        $inPool = Coupons::where('M_CouponsCode', $coupon->M_CouponCode)->exists();
+        if ($inPool) {
+            Coupons::where('M_CouponsCode', $coupon->M_CouponCode)
+                ->update([
+                    'M_CouponsUsed'        => 'N',
+                    'M_CouponsLastUpdated'  => now(),
+                ]);
+        }
+ 
+        CouponRedemption::where('M_RedemptionCouponID', $coupon->M_CouponID)->delete();
+ 
         $coupon->delete();
+ 
+        return response()->json(['message' => 'Kupon berhasil dihapus.']);
+    }
 
+    public function generateOneMillion()
+    {
+        $totalCoupons = 10000;
+        $batchSize = 1000;
+        $coupons = [];
+        $generatedCodes = [];
+        $startTime = microtime(true);
+ 
+        for ($i = 0; $i < $totalCoupons; $i++) {
+            do {
+                $code = strtoupper(Str::random(10));
+            } while (isset($generatedCodes[$code]));
+ 
+            $generatedCodes[$code] = true;
+            $coupons[] = ['M_CouponsCode' => $code, 'M_CouponsUsed' => 'N'];
+ 
+            if (count($coupons) >= $batchSize) {
+                Coupons::query()->insert($coupons);
+                $coupons = [];
+            }
+        }
+ 
+        if (!empty($coupons)) {
+            Coupons::query()->insert($coupons);
+        }
+ 
         return response()->json([
-            'message' => 'Coupon deleted'
+            'message' => 'Successfully generated 10,000 coupon codes!',
+            'duration_seconds' => round(microtime(true) - $startTime, 2),
         ]);
     }
 }
