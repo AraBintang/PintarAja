@@ -42,11 +42,11 @@ export default function Login() {
     <AuthLayout
       lottieData={lottieAI}
       lottieText="Masuk dan mulai eksplorasi"
-      lottieSub="Tanyakan apa saja ke Pintaraja AI — dari pelajaran sulit hingga ide kreatif."
+      lottieSub="Tanyakan apa saja ke Pintaraja — dari pelajaran sulit hingga ide kreatif."
     >
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Welcome back</h1>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-7">
-        Sign in to continue using Pintaraja AI
+        Sign in to continue using Pintaraja
       </p>
 
       {error && (
