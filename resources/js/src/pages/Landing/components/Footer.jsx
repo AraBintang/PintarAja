@@ -67,6 +67,14 @@ export default function Footer() {
                   </a>
                 </li>
               ))}
+              <li>
+                <a
+                  href="/blog"
+                  className="text-[14px] text-gray-600 dark:text-gray-400 hover:text-[#4A90D9] transition-colors"
+                >
+                  Blog
+                </a>
+              </li>
             </ul>
           </div>
 

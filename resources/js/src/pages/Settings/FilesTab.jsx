@@ -213,10 +213,10 @@ export default function FilesTab() {
           files.map((file) => (
             <div
               key={file.id}
-              className="group flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-white/[0.06] hover:border-indigo-500/30 dark:hover:bg-gray-900/80 transition-all duration-150"
+              className="group flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-100 dark:border-white/[0.06] hover:border-blue-500/30 dark:hover:border-orange-500/30 dark:hover:bg-gray-900/80 transition-all duration-150"
             >
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-indigo-400" />
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 dark:bg-orange-500/10 dark:border-orange-500/20 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-blue-500 dark:text-orange-400" />
               </div>
 
               <div className="min-w-0 flex-1">

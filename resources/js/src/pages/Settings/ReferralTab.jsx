@@ -75,8 +75,8 @@ export default function ReferralTab() {
     if (!data?.referral_link) return
     if (navigator.share) {
       navigator.share({
-        title: 'Pintaraja AI',
-        text: `Coba Pintaraja AI dengan kode referral aku: ${data.referral_code}`,
+        title: 'Pintaraja',
+        text: `Coba Pintaraja dengan kode referral aku: ${data.referral_code}`,
         url: data.referral_link,
       })
     } else {

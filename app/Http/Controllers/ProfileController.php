@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Models\CouponRedemption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +45,7 @@ class ProfileController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:20',
+            'name' => 'required|string|max:50',
             'phone' => 'nullable|string|max:45'
         ]);
 
@@ -104,58 +105,97 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function redeemCoupon(Request $request)
+   public function redeemCoupon(Request $request)
     {
         $request->validate([
-            'code' => 'required|string'
+            'code' => 'required|string',
         ]);
-
+    
         $user = $request->user();
-
+    
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => 'User tidak ditemukan.'], 404);
         }
-
-        $coupon = Coupon::where('M_CouponCode', $request->code)
-            ->where('M_CouponUsed', 'N')
-            ->whereDate('M_CouponExpired', '>=', now())
+    
+        $coupon = Coupon::where('M_CouponCode', strtoupper(trim($request->code)))
+            ->where(function ($q) {
+                $q->whereNull('M_CouponExpired')
+                  ->orWhereDate('M_CouponExpired', '>=', now());
+            })
             ->first();
-
+    
         if (!$coupon) {
             return response()->json([
-                'message' => 'Coupon invalid or already used'
+                'message' => 'Kode kupon tidak valid atau sudah kedaluwarsa.',
             ], 400);
         }
-
+    
+        $maxUses = $coupon->M_CouponMaxUses;
+        $isMulti = $maxUses !== null;
+    
+        $alreadyRedeemed = CouponRedemption::where('M_RedemptionCouponID', $coupon->M_CouponID)
+            ->where('M_RedemptionUserID', $user->M_UserID)
+            ->exists();
+    
+        if ($alreadyRedeemed) {
+            return response()->json([
+                'message' => 'Kamu sudah pernah menggunakan kupon ini sebelumnya.',
+            ], 400);
+        }
+    
+        if ($isMulti) {
+            $usedCount = CouponRedemption::where('M_RedemptionCouponID', $coupon->M_CouponID)->count();
+    
+            if ($maxUses > 0 && $usedCount >= $maxUses) {
+                return response()->json([
+                    'message' => 'Kupon ini sudah mencapai batas maksimal pengguna dan tidak dapat digunakan lagi.',
+                ], 400);
+            }
+        } else {
+            if ($coupon->M_CouponUsed === 'Y' || $coupon->M_CouponM_UserID) {
+                return response()->json([
+                    'message' => 'Kode kupon tidak valid atau sudah digunakan oleh pengguna lain.',
+                ], 400);
+            }
+        }
+    
         $days = $coupon->M_CouponDays;
-
+    
         $currentExpiry = $user->M_UserSubsExp
             ? Carbon::parse($user->M_UserSubsExp)
             : now();
-
+    
         $newExpiry = $currentExpiry->isPast()
             ? now()->addDays($days)
-            : $currentExpiry->addDays($days);
-
-        DB::transaction(function () use ($user, $coupon, $newExpiry) {
-
+            : $currentExpiry->copy()->addDays($days);
+    
+        DB::transaction(function () use ($user, $coupon, $newExpiry, $isMulti) {
+    
             $user->update([
                 'M_UserPlan' => $coupon->M_CouponM_PlanID,
                 'M_UserSubsExp' => $newExpiry,
-                'M_UserLastUpdated' => now()
+                'M_UserLastUpdated' => now(),
             ]);
-
-            $coupon->update([
-                'M_CouponUsed' => 'Y',
-                'M_CouponUsedDate' => now(),
-                'M_CouponM_UserID' => $user->M_UserID,
-                'M_CouponLastUpdated' => now()
+    
+            CouponRedemption::create([
+                'M_RedemptionCouponID' => $coupon->M_CouponID,
+                'M_RedemptionUserID' => $user->M_UserID,
+                'M_RedemptionDate' => now(),
             ]);
+    
+            if (!$isMulti) {
+                $coupon->update([
+                    'M_CouponUsed' => 'Y',
+                    'M_CouponUsedDate' => now(),
+                    'M_CouponM_UserID' => $user->M_UserID,
+                    'M_CouponLastUpdated' => now(),
+                ]);
+            }
         });
-
+    
         return response()->json([
-            'message' => 'Coupon redeemed successfully',
-            'expired_at' => $newExpiry
+            'message' => 'Kupon berhasil digunakan!',
+            'expired_at' => $newExpiry,
         ]);
     }
 }

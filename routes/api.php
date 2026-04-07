@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\CouponController;
@@ -134,6 +135,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Route Admin Only
     Route::middleware('role:A')->group(function () {
+        Route::prefix('blogs')->group(function () {
+            Route::get('/', [BlogController::class, 'adminIndex']);
+            Route::post('/', [BlogController::class, 'store']);
+            Route::put('/{id}', [BlogController::class, 'update']);
+            Route::delete('/{id}', [BlogController::class, 'destroy']);
+        });
+
         Route::prefix('papers')->group(function () {
             Route::get('/', [PaperController::class, 'index']);
             Route::post('/', [PaperController::class, 'store']);

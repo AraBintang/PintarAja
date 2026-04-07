@@ -21,6 +21,10 @@ export default function ProfileTab() {
   const [phone, setPhone] = useState(user?.phone || '')
   const [editedPhone, setEditedPhone] = useState(user?.phone || '')
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSaveProfile()
+  }
+
   const [passwords, setPasswords] = useState({
     current: '',
     new: '',
@@ -152,6 +156,7 @@ export default function ProfileTab() {
                   type="text"
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   className="w-full bg-white dark:bg-gray-800 border border-[#2686D4] dark:border-[#F2901E] rounded-lg px-3.5 py-2.5 text-[14px] text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />
               ) : (
@@ -171,6 +176,7 @@ export default function ProfileTab() {
                   type="text"
                   value={editedPhone}
                   onChange={(e) => setEditedPhone(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder="08xxxxxxxxxx"
                   className="w-full bg-white dark:bg-gray-800 border border-[#2686D4] dark:border-[#F2901E] rounded-lg px-3.5 py-2.5 text-[14px] text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />

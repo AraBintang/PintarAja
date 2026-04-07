@@ -210,7 +210,7 @@ export default function Register() {
           lottieSub: `Kode OTP sudah dikirim ke ${formData.email}. Berlaku 5 menit.`,
         }
       : {
-          lottieText: 'Bergabung dengan Pintaraja AI',
+          lottieText: 'Bergabung dengan Pintaraja',
           lottieSub: 'Daftar gratis dan mulai belajar lebih cerdas hari ini.',
         }
 
@@ -221,7 +221,7 @@ export default function Register() {
         <>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Create account</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-7">
-            Join Pintaraja AI and start exploring smarter learning
+            Join Pintaraja and start exploring smarter learning
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

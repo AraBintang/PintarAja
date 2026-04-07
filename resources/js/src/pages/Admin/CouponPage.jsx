@@ -7,12 +7,13 @@ import {
   Crown,
   Diamond,
   Filter,
+  Infinity,
   Plus,
   Search,
   Sparkles,
-  Tag,
   Ticket,
   Trash2,
+  Users,
   XCircle,
   Zap,
 } from 'lucide-react'
@@ -34,6 +35,28 @@ import { Debounce } from '@/utils/Debounce'
 
 const PAGE_SIZE = 10
 
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+function deriveCouponStatus(coupon) {
+  const isExpiredDate =
+    coupon.expired &&
+    coupon.expired !== '-' &&
+    coupon.expired !== '~' &&
+    new Date(coupon.expired) < new Date()
+
+  if (isExpiredDate) return 'expired'
+
+  const maxUses = coupon.maxUses ?? null
+  const usedCount = coupon.usedCount ?? 0
+
+  if (maxUses !== null && usedCount >= maxUses) return 'exhausted'
+
+  // single-use legacy: used = 'Y' and no maxUses set
+  if (maxUses === null && (coupon.used === 'Y' || coupon.userEmail)) return 'used'
+
+  return 'active'
+}
+
 function getStatusConfig(status) {
   switch (status) {
     case 'active':
@@ -52,6 +75,15 @@ function getStatusConfig(status) {
         text: 'text-blue-700 dark:text-orange-400',
         border: 'border-blue-100 dark:border-orange-900/30',
         dot: 'bg-blue-500 dark:bg-orange-400',
+        pulse: false,
+      }
+    case 'exhausted':
+      return {
+        label: 'Exhausted',
+        bg: 'bg-rose-50 dark:bg-rose-900/20',
+        text: 'text-rose-600 dark:text-rose-400',
+        border: 'border-rose-100 dark:border-rose-900/30',
+        dot: 'bg-rose-500',
         pulse: false,
       }
     default:
@@ -96,13 +128,65 @@ function getTypeBadge(planDays = '') {
   }
 }
 
-function deriveCouponStatus(coupon) {
-  if (coupon.used === 'Y' || coupon.userEmail) return 'used'
-  if (coupon.expired && coupon.expired !== '-' && coupon.expired !== '~') {
-    if (new Date(coupon.expired) < new Date()) return 'expired'
+// ─── UsageCell ─────────────────────────────────────────────────────────────────
+
+function UsageCell({ coupon }) {
+  const maxUses = coupon.maxUses ?? null
+  const usedCount = coupon.usedCount ?? 0
+  const isMulti = maxUses !== null || usedCount > 1
+
+  // Single-use legacy
+  if (!isMulti) {
+    return (
+      <span className="text-[13px] text-gray-500 dark:text-gray-400 truncate max-w-[180px] block">
+        {coupon.userEmail ?? '—'}
+      </span>
+    )
   }
-  return 'active'
+
+  // Multi-use with limit
+  if (maxUses !== null) {
+    const pct = Math.min((usedCount / maxUses) * 100, 100)
+    const remaining = maxUses - usedCount
+    const isExhausted = remaining <= 0
+
+    return (
+      <div className="space-y-1.5 min-w-[140px]">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] font-semibold text-gray-700 dark:text-gray-200">
+            {usedCount}
+            <span className="text-gray-400 dark:text-gray-500 font-normal"> / {maxUses}</span>
+          </span>
+          <span
+            className={`text-[11px] font-medium ${isExhausted ? 'text-rose-500' : 'text-gray-400 dark:text-gray-500'}`}
+          >
+            {isExhausted ? 'Habis' : `Sisa ${remaining}`}
+          </span>
+        </div>
+        {/* Progress bar */}
+        <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${isExhausted ? 'bg-rose-500' : pct >= 80 ? 'bg-amber-400' : 'bg-emerald-500'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // Multi-use unlimited
+  return (
+    <div className="flex items-center gap-1.5">
+      <Infinity className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+      <span className="text-[13px] text-gray-600 dark:text-gray-300 font-semibold">
+        {usedCount}
+      </span>
+      <span className="text-[12px] text-gray-400 dark:text-gray-500">pengguna</span>
+    </div>
+  )
 }
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function CouponPage() {
   const { showSnackbar } = useSnackbar()
@@ -144,9 +228,9 @@ export default function CouponPage() {
       textColor: 'text-emerald-600 dark:text-emerald-400',
     },
     {
-      label: 'Used',
-      value: summary.used,
-      icon: Tag,
+      label: 'Used / Exhausted',
+      value: (summary.used ?? 0) + (summary.exhausted ?? 0),
+      icon: Users,
       bgLight: 'bg-blue-50 dark:bg-orange-900/20',
       textColor: 'text-blue-600 dark:text-orange-400',
     },
@@ -209,6 +293,16 @@ export default function CouponPage() {
 
   const selectTriggerClass =
     'w-full sm:w-[180px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 rounded-xl text-[13px] focus:ring-0'
+
+  // ─── column headers ─────────────────────────────────────────────────────────
+  const headers = [
+    { label: 'Coupon Code', align: '' },
+    { label: 'Type', align: '' },
+    { label: 'Valid Until', align: '' },
+    { label: 'Status', align: 'text-center' },
+    { label: 'Usage', align: '' },
+    { label: 'Action', align: 'text-right' },
+  ]
 
   return (
     <div className="flex-1 h-full bg-[#f7f7f5] dark:bg-[#0f141e] text-gray-600 dark:text-gray-300 overflow-y-auto overflow-x-hidden px-6 pb-6 pt-16 font-sans">
@@ -303,7 +397,8 @@ export default function CouponPage() {
                   <SelectGroup>
                     <SelectItem value="all">Semua Status</SelectItem>
                     <SelectItem value="active">Aktif</SelectItem>
-                    <SelectItem value="used">Digunakan</SelectItem>
+                    <SelectItem value="used">Digunakan (Single)</SelectItem>
+                    <SelectItem value="exhausted">Exhausted</SelectItem>
                     <SelectItem value="expired">Kadaluarsa</SelectItem>
                   </SelectGroup>
                 </SelectContent>
@@ -315,19 +410,17 @@ export default function CouponPage() {
         {/* Table */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left border-collapse">
+            <table className="w-full min-w-[960px] text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-700">
-                  {['Coupon Code', 'Type', 'Valid Until', 'Status', 'Used By', 'Action'].map(
-                    (h, i) => (
-                      <th
-                        key={h}
-                        className={`px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ${i === 3 ? 'text-center' : i === 5 ? 'text-right' : ''}`}
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
+                  {headers.map((h) => (
+                    <th
+                      key={h.label}
+                      className={`px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ${h.align}`}
+                    >
+                      {h.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
@@ -353,20 +446,23 @@ export default function CouponPage() {
                     const status = deriveCouponStatus(coupon)
                     const statusConfig = getStatusConfig(status)
                     const typeBadge = getTypeBadge(coupon.days ?? 0)
+                    const isActive = status === 'active'
+
                     return (
                       <tr
                         key={coupon.id}
                         className="hover:bg-blue-50/20 dark:hover:bg-orange-900/10 transition-colors"
                       >
+                        {/* Code */}
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-2">
                             <code className="text-[14px] font-bold text-gray-800 dark:text-gray-100 tracking-wide bg-gray-50 dark:bg-gray-700 px-2.5 py-1 rounded-lg border border-gray-100 dark:border-gray-600 font-mono">
                               {coupon.code}
                             </code>
-                            {status == 'active' && (
+                            {isActive && (
                               <button
                                 onClick={() => handleCopy(coupon.code, coupon.id)}
-                                className="w-7 h-7 rounded-md bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-center text-gray-800 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                                className="w-7 h-7 rounded-md bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-center text-gray-800 dark:text-gray-100 transition-colors"
                                 title="Copy code"
                               >
                                 {copiedId === coupon.id ? (
@@ -377,26 +473,42 @@ export default function CouponPage() {
                               </button>
                             )}
                           </div>
+                          {/* Multi-use badge */}
+                          {(coupon.maxUses !== null || (coupon.usedCount ?? 0) > 1) && (
+                            <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-900/30 px-1.5 py-0.5 rounded-md">
+                              <Users className="w-2.5 h-2.5" />
+                              Multi-use
+                            </span>
+                          )}
                         </td>
+
+                        {/* Type */}
                         <td className="px-4 py-3.5">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-semibold border ${typeBadge.bg} ${typeBadge.text} ${typeBadge.border}`}
                           >
                             <typeBadge.Icon className="w-3.5 h-3.5" />
-                            {coupon.planName}
-                            {` ${coupon.days} Hari`}
+                            {coupon.planName} {coupon.days} Hari
                           </span>
                         </td>
+
+                        {/* Valid Until */}
                         <td className="px-4 py-3.5">
                           {!coupon.expired || coupon.expired === '-' || coupon.expired === '~' ? (
                             <span className="text-[13px] text-gray-400">—</span>
                           ) : (
                             <span className="text-[13px] text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                              {coupon.expired}
+                              {new Date(coupon.expired).toLocaleDateString('id-ID', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric',
+                              })}
                             </span>
                           )}
                         </td>
+
+                        {/* Status */}
                         <td className="px-6 py-4 text-center">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-semibold border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
@@ -407,9 +519,13 @@ export default function CouponPage() {
                             {statusConfig.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 text-[13px] text-gray-500 dark:text-gray-400 max-w-[180px] truncate">
-                          {coupon.userEmail ?? '—'}
+
+                        {/* Usage */}
+                        <td className="px-4 py-3.5">
+                          <UsageCell coupon={coupon} />
                         </td>
+
+                        {/* Action */}
                         <td className="px-4 py-3.5 text-right">
                           <button
                             onClick={() => setDeleteTarget(coupon)}

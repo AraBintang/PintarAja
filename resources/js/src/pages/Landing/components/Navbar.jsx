@@ -23,7 +23,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg shadow-black/5 py-0' : 'bg-transparent'}`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg shadow-black/5 py-0' : mobileOpen ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-lg shadow-black/5 py-0' : 'bg-transparent'}`}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-[72px]">
         {/* Logo */}
@@ -48,6 +48,13 @@ export default function Navbar() {
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#4A90D9] transition-all duration-300 group-hover:w-full rounded-full"></span>
             </a>
           ))}
+          <a
+            href="/blog"
+            className="relative text-[14px] font-medium transition-colors duration-300 group text-gray-600 dark:text-gray-300 hover:text-[#4A90D9]"
+          >
+            Blog
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#4A90D9] transition-all duration-300 group-hover:w-full rounded-full"></span>
+          </a>
         </div>
 
         {/* CTA */}
@@ -101,17 +108,26 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-6 py-4 space-y-3 shadow-xl absolute top-full left-0 right-0 animate-[fadeInUp_0.3s_ease-out]">
-          {navLinks.map((link) => (
+          <div className="flex flex-col text-center gap-3">
+            {navLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 py-2 hover:text-[#4A90D9] transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.label}
+              </a>
+            ))}
             <a
-              key={link.label}
-              href={link.href}
+              href="/blog"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 py-2 hover:text-[#4A90D9] transition-colors"
-              onClick={() => setMobileOpen(false)}
             >
-              {link.label}
+              Blog
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#4A90D9] transition-all duration-300 group-hover:w-full rounded-full"></span>
             </a>
-          ))}
-          <div className="grid grid-cols-2 gap-2 pt-4">
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 pt-4">
             <Link
               to="/login"
               className="block w-full text-center px-6 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-full"
