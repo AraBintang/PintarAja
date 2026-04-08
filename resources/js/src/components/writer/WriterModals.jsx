@@ -28,16 +28,17 @@ export function PromptLibraryModal({ open, onClose, onSelect, papers, sections }
   const fetchPrompts = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await request(
-        `/prompts${buildQuery({
-          view: 'writer',
-          page,
-          per_page: PER_PAGE,
-          search: search.trim() || undefined,
-          paperId: selectedPaperId !== 'all' ? selectedPaperId : undefined,
-          sectionId: selectedSectionId !== 'all' ? selectedSectionId : undefined,
-        })}`,
-      )
+      const query = buildQuery({
+        view: 'writer',
+        page,
+        per_page: PER_PAGE,
+        search: search.trim() || undefined,
+        paperId: selectedPaperId !== 'all' ? selectedPaperId : undefined,
+        sectionId: selectedSectionId !== 'all' ? selectedSectionId : undefined,
+      })
+
+      const res = await request(`/prompts${query}`)
+
       setPrompts(res.data || [])
       setTotal(res.pagination?.total || 0)
     } catch {

@@ -29,6 +29,13 @@ class PaymentController extends Controller
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
+        // Check and update expired transactions
+        $paginated->getCollection()->each(function ($tx) {
+            if ($tx->T_TransactionStatus == 0 && Carbon::createFromTimestamp($tx->T_TransactionExpired)->isPast()) {
+                $tx->update(['T_TransactionStatus' => 3]);
+            }
+        });
+
         return response()->json([
             'data' => $paginated->getCollection()->map(fn($tx) => $this->formatTransaction($tx)),
             'pagination' => [

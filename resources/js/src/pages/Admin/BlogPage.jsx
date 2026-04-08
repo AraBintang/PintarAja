@@ -89,8 +89,8 @@ export default function BlogPage() {
     setActionLoading(true)
     try {
       if (editTarget) {
-        console.log(editTarget)
-        await updateBlog(editTarget.M_BlogID, payload)
+        // API uses aliased 'id' field
+        await updateBlog(editTarget.id, payload)
         showSnackbar('success', 'Artikel berhasil diperbarui')
       } else {
         await createBlog(payload)
@@ -143,6 +143,7 @@ export default function BlogPage() {
   return (
     <div className="flex-1 h-full bg-[#f7f7f5] dark:bg-[#0f141e] text-gray-600 dark:text-gray-300 overflow-y-auto overflow-x-hidden px-6 pb-6 pt-16 font-sans">
       <div className="max-w-[1200px] mx-auto overflow-hidden">
+        {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 sm:mb-6">
           <div>
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2.5">
@@ -164,6 +165,7 @@ export default function BlogPage() {
           </button>
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-5 sm:mb-6 w-full">
           {stats.map((stat) => (
             <div
@@ -187,6 +189,7 @@ export default function BlogPage() {
           ))}
         </div>
 
+        {/* Search & Filter */}
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <div className="relative w-full sm:flex-1 sm:max-w-[400px]">
@@ -202,7 +205,6 @@ export default function BlogPage() {
                 className="w-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl pl-11 pr-4 py-3.5 text-[14px] text-gray-800 dark:text-gray-100 shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 dark:focus:border-orange-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-orange-900/30 focus:outline-none transition-all"
               />
             </div>
-
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center justify-center gap-2 px-4 py-3.5 text-[13px] font-medium rounded-xl border transition-all w-full sm:w-auto ${
@@ -260,6 +262,7 @@ export default function BlogPage() {
           )}
         </div>
 
+        {/* Table */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px] text-left border-separate border-spacing-0">
@@ -306,45 +309,45 @@ export default function BlogPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
-                          {blog.M_BlogFeaturedImage && (
+                          {blog.image && (
                             <img
-                              src={`/storage/${blog.M_BlogFeaturedImage}`}
-                              alt={blog.M_BlogTitle}
+                              src={`/storage/${blog.image}`}
+                              alt={blog.title}
                               className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
                             />
                           )}
                           <div className="min-w-0">
                             <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-100 truncate max-w-[200px]">
-                              {blog.M_BlogTitle}
+                              {blog.title}
                             </p>
                             <p className="text-[12px] text-gray-400 truncate max-w-[200px]">
-                              {blog.M_BlogSlug}
+                              {blog.slug}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3.5 text-center">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-[12px] font-medium border border-blue-100 dark:border-blue-800/30">
-                          {blog.M_BlogCategory || '-'}
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-[12px] font-medium border border-blue-100 dark:border-blue-800/30">
+                          {blog.category || '-'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span
                           className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${
-                            blog.M_BlogIsPublished
+                            blog.is_published
                               ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
                               : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30'
                           }`}
                         >
-                          {blog.M_BlogIsPublished ? 'Published' : 'Draft'}
+                          {blog.is_published ? 'Published' : 'Draft'}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-[13px] text-center text-gray-700 dark:text-gray-300">
-                        {blog.M_BlogViewCount}
+                        {blog.view_count}
                       </td>
                       <td className="px-4 py-3.5 text-[13px] text-gray-500 dark:text-gray-400 text-center">
-                        {blog.M_BlogPublishedAt
-                          ? new Date(blog.M_BlogPublishedAt).toLocaleDateString('id-ID')
+                        {blog.published_at
+                          ? new Date(blog.published_at).toLocaleDateString('id-ID')
                           : '-'}
                       </td>
                       <td className="px-4 py-3.5">
@@ -372,17 +375,18 @@ export default function BlogPage() {
             </table>
           </div>
 
+          {/* Pagination */}
           {pagination && pagination.last_page > 1 && (
             <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between flex-wrap gap-3">
               <p className="text-[13px] text-gray-500 dark:text-gray-400">
                 Viewing{' '}
                 <span className="font-semibold text-gray-800 dark:text-gray-100">
-                  {pagination ? (currentPage - 1) * PAGE_SIZE + 1 : 0}–
-                  {pagination ? Math.min(currentPage * PAGE_SIZE, pagination.total) : 0}
+                  {(currentPage - 1) * PAGE_SIZE + 1}–
+                  {Math.min(currentPage * PAGE_SIZE, pagination.total)}
                 </span>{' '}
                 from{' '}
                 <span className="font-semibold text-gray-800 dark:text-gray-100">
-                  {pagination?.total ?? 0}
+                  {pagination.total}
                 </span>{' '}
                 articles
               </p>
@@ -394,7 +398,6 @@ export default function BlogPage() {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-
                 {getPageNumbers().map((p, i) =>
                   p === '...' ? (
                     <span key={`ellipsis-${i}`} className="text-gray-400 text-sm px-1">
@@ -414,7 +417,6 @@ export default function BlogPage() {
                     </button>
                   ),
                 )}
-
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
@@ -442,7 +444,7 @@ export default function BlogPage() {
         onConfirm={handleDeleteConfirm}
         loading={actionLoading}
         data={'Article'}
-        name={deleteTarget?.M_BlogTitle ?? ''}
+        name={deleteTarget?.title ?? ''}
       />
     </div>
   )

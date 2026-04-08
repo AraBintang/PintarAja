@@ -11,8 +11,9 @@ import {
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import Pagination from '@/components/Pagination'
 import { useSnackbar } from '@/context/SnackbarContext'
-import { request } from '@/utils/Http'
+import { buildQuery, request } from '@/utils/Http'
 
 const FILTERS = [
   { key: 'Semua', label: 'All' },
@@ -80,6 +81,8 @@ function formatDate(dateString) {
   }).format(new Date(dateString))
 }
 
+const PAGE_SIZE = 10
+
 export default function OrderHistoryTab() {
   const { showSnackbar } = useSnackbar()
   const navigate = useNavigate()
@@ -87,23 +90,36 @@ export default function OrderHistoryTab() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState('Semua')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState(null)
 
   useEffect(() => {
-    fetchOrders()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const fetchOrders = async () => {
-    try {
+    const fetchOrders = async () => {
       setLoading(true)
-      const data = await request('/payments', { method: 'GET' })
-      setOrders(data.data || [])
-    } catch (err) {
-      showSnackbar('error', err.message)
-    } finally {
-      setLoading(false)
+
+      try {
+        const query = buildQuery({
+          page: currentPage,
+          per_page: PAGE_SIZE,
+        })
+
+        const res = await request(`/payments${query}`, { method: 'GET' })
+
+        setOrders(res.data || [])
+        setPagination(res.pagination || null)
+      } catch (err) {
+        showSnackbar('error', err.message)
+      } finally {
+        setLoading(false)
+      }
     }
-  }
+
+    fetchOrders()
+  }, [currentPage, showSnackbar])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeFilter])
 
   // Navigate ke payment/detail dengan returnUrl yang mengarah ke settings tab history
   const handleOpenDetail = (order) => {
@@ -235,6 +251,19 @@ export default function OrderHistoryTab() {
                 </button>
               )
             })}
+
+            {/* Pagination */}
+            {pagination && pagination.last_page > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pagination.last_page}
+                total={pagination.total}
+                pageSize={PAGE_SIZE}
+                onPageChange={setCurrentPage}
+                label="file"
+                className="pt-2"
+              />
+            )}
           </div>
         )}
       </div>

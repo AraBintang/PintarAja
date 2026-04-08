@@ -8,7 +8,29 @@ use Illuminate\Support\Facades\Storage;
 
 class BlogController extends Controller
 {
-    public function index()
+    private function mapBlog(Blog $blog): array
+    {
+        return [
+            'id' => $blog->M_BlogID,
+            'title' => $blog->M_BlogTitle,
+            'slug' => $blog->M_BlogSlug,
+            'excerpt' => $blog->M_BlogExcerpt,
+            'description' => $blog->M_BlogDescription,
+            'meta_title' => $blog->M_BlogMetaTitle,
+            'content' => $blog->M_BlogContent,
+            'image' => $blog->M_BlogFeaturedImage,
+            'category' => $blog->M_BlogCategory,
+            'author_id' => $blog->M_BlogAuthorId,
+            'view_count' => $blog->M_BlogViewCount,
+            'published_at' => $blog->M_BlogPublishedAt,
+            'is_published' => $blog->M_BlogIsPublished,
+            'author' => $blog->relationLoaded('author') && $blog->author
+                        ? ['id' => $blog->author->M_UserID, 'name' => $blog->author->M_UserFullName]
+                        : null,
+        ];
+    }
+
+    public function userIndex()
     {
         $blogs = Blog::published()
             ->latest('M_BlogPublishedAt')
@@ -36,10 +58,10 @@ class BlogController extends Controller
         $blog->incrementViewCount();
 
         $relatedBlogs = Blog::published()
-            ->where('M_BlogID', '!=', $blog->id)
-            ->when($blog->M_BlogCategory, function ($query) use ($blog) {
-                $query->where('M_BlogCategory', $blog->M_BlogCategory);
-            })
+            ->where('M_BlogID', '!=', $blog->M_BlogID)
+            ->when($blog->M_BlogCategory, fn ($q) =>
+                $q->where('M_BlogCategory', $blog->M_BlogCategory)
+            )
             ->latest('M_BlogPublishedAt')
             ->limit(3)
             ->get();
@@ -47,8 +69,8 @@ class BlogController extends Controller
         return view('blog.show', [
             'blog' => $blog,
             'relatedBlogs' => $relatedBlogs,
-            'title' => $blog->M_BlogTitle . ' - Pintaraja',
-            'description' => $blog->M_BlogDescription ?: $blog->M_BlogExcerpt,
+            'title' => ($blog->M_BlogMetaTitle ?: $blog->M_BlogTitle) . ' - Pintaraja',
+            'description'  => $blog->M_BlogDescription ?: $blog->M_BlogExcerpt,
         ]);
     }
 
@@ -73,8 +95,7 @@ class BlogController extends Controller
         ]);
     }
 
-    // Admin methods
-    public function adminIndex()
+    public function index()
     {
         $query = Blog::query()->with('author');
 
@@ -106,7 +127,7 @@ class BlogController extends Controller
         ];
 
         return response()->json([
-            'data' => $blogs->items(),
+            'data' => array_map(fn ($b) => $this->mapBlog($b), $blogs->items()),
             'pagination' => [
                 'current_page' => $blogs->currentPage(),
                 'last_page' => $blogs->lastPage(),
@@ -121,13 +142,18 @@ class BlogController extends Controller
 
     public function store()
     {
+        request()->merge([
+            'M_BlogIsPublished' => filter_var(request('M_BlogIsPublished'), FILTER_VALIDATE_BOOLEAN),
+        ]);
+
         $validated = request()->validate([
-            'M_BlogTitle'  => 'required|string|max:255',
+            'M_BlogTitle' => 'required|string|max:255',
+            'M_BlogMetaTitle' => 'nullable|string|max:255',
             'M_BlogSlug' => 'required|string|max:255|unique:m_blog,M_BlogSlug',
             'M_BlogExcerpt' => 'nullable|string|max:500',
             'M_BlogDescription' => 'nullable|string|max:160',
             'M_BlogContent' => 'required|string',
-            'M_BlogFeaturedImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'M_BlogFeaturedImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:8192',
             'M_BlogCategory' => 'required|string|max:100',
             'M_BlogIsPublished' => 'boolean',
             'M_BlogPublishedAt' => 'nullable|date',
@@ -142,10 +168,11 @@ class BlogController extends Controller
         }
 
         $blog = Blog::create($validated);
+        $blog->load('author');
 
         return response()->json([
             'message' => 'Blog created successfully',
-            'data' => $blog,
+            'data' => $this->mapBlog($blog),
         ], 201);
     }
 
@@ -153,13 +180,18 @@ class BlogController extends Controller
     {
         $blog = Blog::findOrFail($id);
 
+        request()->merge([
+            'M_BlogIsPublished' => filter_var(request('M_BlogIsPublished'), FILTER_VALIDATE_BOOLEAN),
+        ]);
+
         $validated = request()->validate([
             'M_BlogTitle' => 'required|string|max:255',
+            'M_BlogMetaTitle' => 'nullable|string|max:255',
             'M_BlogSlug' => 'required|string|max:255|unique:m_blog,M_BlogSlug,' . $id . ',M_BlogID',
             'M_BlogExcerpt' => 'nullable|string|max:500',
-            'M_BlogDescription'  => 'nullable|string|max:160',
+            'M_BlogDescription' => 'nullable|string|max:160',
             'M_BlogContent' => 'required|string',
-            'M_BlogFeaturedImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'M_BlogFeaturedImage' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:8192',
             'M_BlogCategory' => 'required|string|max:100',
             'M_BlogIsPublished' => 'boolean',
             'M_BlogPublishedAt' => 'nullable|date',
@@ -177,10 +209,11 @@ class BlogController extends Controller
         }
 
         $blog->update($validated);
+        $blog->load('author');
 
         return response()->json([
             'message' => 'Blog updated successfully',
-            'data' => $blog,
+            'data' => $this->mapBlog($blog),
         ]);
     }
 
@@ -194,8 +227,6 @@ class BlogController extends Controller
 
         $blog->delete();
 
-        return response()->json([
-            'message' => 'Blog deleted successfully',
-        ]);
+        return response()->json(['message' => 'Blog deleted successfully']);
     }
 }
