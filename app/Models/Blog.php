@@ -15,6 +15,7 @@ class Blog extends Model
         'M_BlogTitle',
         'M_BlogSlug',
         'M_BlogExcerpt',
+        'M_BlogMetaTitle',
         'M_BlogDescription',
         'M_BlogContent',
         'M_BlogFeaturedImage',
@@ -34,7 +35,7 @@ class Blog extends Model
 
     public function author()
     {
-        return $this->belongsTo(User::class, 'M_BlogAuthorId');
+        return $this->belongsTo(User::class, 'M_BlogAuthorId', 'M_UserID');
     }
 
     public function scopePublished($query)

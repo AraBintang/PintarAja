@@ -136,7 +136,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Route Admin Only
     Route::middleware('role:A')->group(function () {
         Route::prefix('blogs')->group(function () {
-            Route::get('/', [BlogController::class, 'adminIndex']);
+            Route::get('/', [BlogController::class, 'index']);
             Route::post('/', [BlogController::class, 'store']);
             Route::put('/{id}', [BlogController::class, 'update']);
             Route::delete('/{id}', [BlogController::class, 'destroy']);
