@@ -13,18 +13,33 @@ class TranscribeController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-
-        $results = Transcribe::select([
+        $search = $request->input('search');
+        $perPage = (int) $request->input('per_page', 15);
+        $page = max(1, (int) $request->input('page', 1));
+    
+        $query = Transcribe::select([
                 'M_TranscribeID as id',
                 'M_TranscribeName as name',
                 'M_TranscribeData as data',
-                'M_TranscribeSource as source'
+                'M_TranscribeSource as source',
             ])
             ->where('M_TranscribeM_UserID', $user->M_UserID)
-            ->orderByDesc('M_TranscribeID')
-            ->get();
-
-        return response()->json($results);
+            ->when($search, fn($q) =>
+                $q->where('M_TranscribeName', 'like', "%{$search}%")
+            )
+            ->orderByDesc('M_TranscribeID');
+    
+        $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+    
+        return response()->json([
+            'data' => $paginated->items(),
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'last_page' => $paginated->lastPage(),
+            ],
+        ]);
     }
 
     private function splitAudio($audioPath)

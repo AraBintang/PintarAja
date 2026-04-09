@@ -1,18 +1,8 @@
-import {
-  BookOpen,
-  ChevronLeft,
-  ChevronRight,
-  Edit2,
-  Eye,
-  Filter,
-  Plus,
-  Search,
-  Terminal,
-  Trash2,
-} from 'lucide-react'
+import { BookOpen, Edit2, Eye, Filter, Plus, Search, Terminal, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import DeleteModal from '@/components/DeleteModal'
+import Pagination from '@/components/Pagination'
 import PromptForm from '@/components/prompt/PromptForm'
 import {
   Select,
@@ -147,21 +137,6 @@ export default function PromptAIPage() {
     } finally {
       setActionLoading(false)
     }
-  }
-
-  const totalPages = pagination?.last_page ?? 1
-  const currentPage = pagination?.current_page ?? 1
-
-  const getPageNumbers = () => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
-    const pages = [1]
-    if (currentPage > 3) pages.push('...')
-    const start = Math.max(2, currentPage - 1)
-    const end = Math.min(totalPages - 1, currentPage + 1)
-    for (let i = start; i <= end; i++) pages.push(i)
-    if (currentPage < totalPages - 2) pages.push('...')
-    pages.push(totalPages)
-    return pages
   }
 
   const selectTriggerClass =
@@ -343,7 +318,7 @@ export default function PromptAIPage() {
                         onClick={() => setExpandedRow(isExpanded ? null : prompt.id)}
                       >
                         <td className="px-6 py-3.5 text-[13px] text-gray-400 font-medium">
-                          {(currentPage - 1) * PAGE_SIZE + index + 1}
+                          {(pagination?.current_page - 1) * PAGE_SIZE + index + 1}
                         </td>
                         <td className="px-4 py-3.5">
                           <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-100 mb-1.5 line-clamp-1">
@@ -400,57 +375,17 @@ export default function PromptAIPage() {
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between flex-wrap gap-3">
-            <p className="text-[13px] text-gray-500 dark:text-gray-400">
-              Viewing{' '}
-              <span className="font-semibold text-gray-800 dark:text-gray-100">
-                {pagination ? (currentPage - 1) * PAGE_SIZE + 1 : 0}–
-                {pagination ? Math.min(currentPage * PAGE_SIZE, pagination.total) : 0}
-              </span>{' '}
-              from{' '}
-              <span className="font-semibold text-gray-800 dark:text-gray-100">
-                {pagination?.total ?? 0}
-              </span>{' '}
-              prompt
-            </p>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 disabled:opacity-40 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              {getPageNumbers().map((p, i) =>
-                p === '...' ? (
-                  <span key={`e-${i}`} className="text-gray-400 text-sm px-1">
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`w-9 h-9 flex items-center justify-center rounded-lg font-medium text-[13px] transition-colors ${
-                      currentPage === p
-                        ? 'bg-blue-600 dark:bg-orange-500 text-white shadow-sm shadow-blue-200 dark:shadow-orange-900/30'
-                        : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ),
-              )}
-
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 disabled:opacity-40 transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          {pagination && pagination.last_page > 1 && (
+            <Pagination
+              currentPage={pagination.current_page}
+              totalPages={pagination.last_page}
+              total={pagination.total}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+              label="prompts"
+              className="px-6 py-4 border-t border-gray-100 dark:border-gray-700"
+            />
+          )}
         </div>
       </div>
 

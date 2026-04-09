@@ -449,6 +449,7 @@ export default function WriterPage() {
             <div className="w-12 h-12 skeleton rounded-xl" />
             <div className="h-9 w-48 skeleton rounded-xl mt-1" />
           </div>
+          <div className="h-4 w-120 skeleton rounded-lg mx-auto mt-3" />
           <div className="h-4 w-80 skeleton rounded-lg mx-auto mt-3" />
         </div>
         <div className="w-full max-w-3xl">
@@ -474,7 +475,34 @@ export default function WriterPage() {
               </div>
             ))}
           </div>
-          <div className="h-14 w-full skeleton rounded-2xl" />
+          <div className="bg-white/80 dark:bg-gray-800/90 border border-white/50 dark:border-gray-700 rounded-[24px] shadow-sm mb-5 p-6">
+            <div className="space-y-2.5">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-4 skeleton rounded-md"
+                  style={{ width: `${[100, 83, 67, 100, 75][i]}%` }}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="bg-white/80 flex justify-between gap-2 dark:bg-gray-800/90 border border-white/50 dark:border-gray-700 rounded-[20px] p-5 shadow-sm">
+            <div className="w-100">
+              <div className="h-3 w-20 skeleton rounded-md mb-3" />
+              <div className="h-10 w-full skeleton rounded-xl" />
+            </div>
+
+            <div className="w-50">
+              <div className="h-3 w-20 skeleton rounded-md mb-3" />
+              <div className="h-10 w-full skeleton rounded-xl" />
+            </div>
+
+            <div className="w-50">
+              <div className="h-3 w-20 skeleton rounded-md mb-3" />
+              <div className="h-10 w-full skeleton rounded-xl" />
+            </div>
+          </div>
+          <div className="mt-5 h-14 w-full skeleton rounded-2xl" />
         </div>
       </div>
     )

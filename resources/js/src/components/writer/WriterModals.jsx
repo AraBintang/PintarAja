@@ -1,6 +1,7 @@
-import { BookOpen, ChevronLeft, ChevronRight, FolderPlus, Loader2, Search, X } from 'lucide-react'
+import { BookOpen, FolderPlus, Loader2, Search, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+import Pagination from '@/components/Pagination'
 import {
   Select,
   SelectContent,
@@ -20,10 +21,8 @@ export function PromptLibraryModal({ open, onClose, onSelect, papers, sections }
   const [page, setPage] = useState(1)
 
   const [prompts, setPrompts] = useState([])
-  const [total, setTotal] = useState(0)
+  const [pagination, setPagination] = useState(null)
   const [loading, setLoading] = useState(false)
-
-  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE))
 
   const fetchPrompts = useCallback(async () => {
     setLoading(true)
@@ -40,10 +39,9 @@ export function PromptLibraryModal({ open, onClose, onSelect, papers, sections }
       const res = await request(`/prompts${query}`)
 
       setPrompts(res.data || [])
-      setTotal(res.pagination?.total || 0)
+      setPagination(res.pagination)
     } catch {
       setPrompts([])
-      setTotal(0)
     } finally {
       setLoading(false)
     }
@@ -102,7 +100,7 @@ export function PromptLibraryModal({ open, onClose, onSelect, papers, sections }
               Prompt Library
             </h3>
             <p className="text-gray-400 dark:text-gray-500 text-[12px] mt-1 ml-9">
-              {loading ? 'Loading...' : `${total} prompt avalaible`}
+              {loading ? 'Loading...' : `${pagination?.total} prompt avalaible`}
             </p>
           </div>
           <button
@@ -254,62 +252,17 @@ export function PromptLibraryModal({ open, onClose, onSelect, papers, sections }
         </div>
 
         {/* Pagination */}
-        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
-          <span className="text-[12px] text-gray-400 dark:text-gray-500">
-            {total > 0 ? `Viewing page ${page} of ${totalPages}` : ''}
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1 || loading}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(
-                (p) => totalPages <= 5 || p === 1 || p === totalPages || Math.abs(p - page) <= 1,
-              )
-              .reduce((acc, p, idx, arr) => {
-                if (idx > 0 && p - arr[idx - 1] > 1) acc.push('ellipsis-' + p)
-                acc.push(p)
-                return acc
-              }, [])
-              .map((item) =>
-                String(item).startsWith('ellipsis') ? (
-                  <span
-                    key={item}
-                    className="w-8 h-8 flex items-center justify-center text-gray-400 text-[12px]"
-                  >
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={item}
-                    onClick={() => setPage(item)}
-                    disabled={loading}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-semibold transition-all disabled:cursor-not-allowed
-                      ${
-                        page === item
-                          ? 'bg-[#4A90D9] text-white shadow-sm'
-                          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                  >
-                    {item}
-                  </button>
-                ),
-              )}
-
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages || loading}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        {pagination && pagination.last_page > 1 && (
+          <Pagination
+            currentPage={pagination?.current_page}
+            totalPages={pagination.last_page}
+            total={pagination.total}
+            pageSize={PER_PAGE}
+            onPageChange={setPage}
+            label="ai keys"
+            className="px-5 py-3 border-t border-gray-100 dark:border-gray-700/60"
+          />
+        )}
       </div>
     </div>
   )

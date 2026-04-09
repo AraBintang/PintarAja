@@ -3,18 +3,40 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{{ $description ?? 'Pintaraja AI — Blog articles' }}">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ request()->url() }}">
-    <meta property="og:title" content="{{ $title ?? 'Pintaraja Blog' }}">
-    <meta property="og:description" content="{{ $description ?? 'Pintaraja AI — Blog articles' }}">
 
     <title>{{ $title ?? 'Pintaraja Blog' }}</title>
+    <meta name="description" content="{{ $description ?? 'Pintaraja AI — Blog articles' }}">
+
+    <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
+
+    <meta property="og:title" content="{{ $title ?? 'Pintaraja Blog' }}">
+    <meta property="og:description" content="{{ $description ?? 'Pintaraja AI — Blog articles' }}">
+    <meta property="og:url" content="{{ $canonical ?? url()->current() }}">
+    <meta property="og:type" content="{{ !empty($isArticle) && $isArticle ? 'article' : 'website' }}">
+    <meta property="og:site_name" content="Pintaraja">
+
+    @if (!empty($ogImage))
+    <meta property="og:image" content="{{ $ogImage }}">
+    <meta property="og:image:alt" content="{{ $title ?? 'Pintaraja Blog' }}">
+    @endif
+
+    @if (!empty($publishedTime) && !empty($isArticle) && $isArticle)
+    <meta property="article:published_time" content="{{ $publishedTime }}">
+    @endif
+
+    @if (!empty($modifiedTime) && !empty($isArticle) && $isArticle)
+    <meta property="article:modified_time" content="{{ $modifiedTime }}">
+    @endif
+
+    @if (!empty($authorUrl) && !empty($isArticle) && $isArticle)
+    <meta property="article:author" content="{{ $authorUrl }}">
+    @endif
+
     <link rel="icon" href="{{ asset('favicon.ico') }}" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css'])
 
@@ -34,7 +56,7 @@
         .nav-line { position: relative; }
         .nav-line::after {
             content: ''; position: absolute; bottom: -2px; left: 0;
-            width: 0; height: 1px; background: currentColor; transition: width .2s;
+            width: 0; height: 2px; background: currentColor; transition: width .2s;
         }
         .nav-line:hover::after { width: 100%; }
 
@@ -44,9 +66,9 @@
         /* ── Blog prose ── */
         .blog-content { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.05rem; line-height: 1.85; color: #374151; }
         .dark .blog-content { color: #d1d5db; }
-        .blog-content h2 { font-family: 'Lora', serif; font-size: 1.65rem; font-weight: 600; margin: 2.2em 0 .7em; color: #111827; line-height: 1.3; }
+        .blog-content h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.65rem; font-weight: 600; margin: 2.2em 0 .7em; color: #111827; line-height: 1.3; }
         .dark .blog-content h2 { color: #f3f4f6; }
-        .blog-content h3 { font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 600; margin: 1.8em 0 .6em; color: #111827; }
+        .blog-content h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.3rem; font-weight: 600; margin: 1.8em 0 .6em; color: #111827; }
         .dark .blog-content h3 { color: #f3f4f6; }
         .blog-content p { margin-bottom: 1.5em; }
         .blog-content ul, .blog-content ol { margin: 0 0 1.5em 1.5em; }
@@ -80,15 +102,15 @@
             {{-- Nav + theme toggle --}}
             <div class="flex items-center gap-6">
                 <nav class="flex items-center gap-6">
-                    <a href="/blog" class="nav-line text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Blog</a>
-                    <a href="/" class="nav-line text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Home</a>
+                    <a href="/blog" class="nav-line text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-[#4A90D9] transition-colors">Blog</a>
+                    <a href="/" class="nav-line text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-[#4A90D9] transition-colors">Home</a>
                 </nav>
 
                 {{-- Cycle: system → light → dark → system … --}}
                 <button
                     id="theme-btn"
                     aria-label="Toggle theme"
-                    class="w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-all"
+                    class="w-9 h-9 flex items-center justify-center transition-allp-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all capitalize"
                 >
                     {{-- Sun: light --}}
                     <svg id="icon-light"xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-brightness-high w-4 h-4 hidden" viewBox="0 0 16 16">

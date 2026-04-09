@@ -14,62 +14,66 @@ class ConversationController extends Controller
     {
         $user = $request->user();
         $search = $request->input('search');
+        $perPage = (int) $request->input('per_page', 15);
+        $page = max(1, (int) $request->input('page', 1));
         $limit = 20;
-
-        $conversations = Conver::where('T_ConversationM_UserID', $user->M_UserID)
+    
+        $query = Conver::where('T_ConversationM_UserID', $user->M_UserID)
             ->where('T_ConversationIsActive', 'Y')
-            ->when($search, fn ($q) =>
+            ->when($search, fn($q) =>
                 $q->where('T_ConversationTitle', 'like', "%{$search}%")
             )
-            ->orderByDesc('T_ConversationLastUpdated')
-            ->get()
-            ->map(function ($conver) use ($limit) {
-
-                $chatBatch = Chat::where('T_ChatT_ConversationID', $conver->T_ConversationID)
-                    ->orderByDesc('T_ChatID')
-                    ->limit($limit + 1)
-                    ->get();
-
-                $hasMore = $chatBatch->count() > $limit;
-
-                $chats = $chatBatch->take($limit);
-
-                $nextCursor = $chats->last()?->T_ChatID;
-
-                $chats = $chats
-                    ->reverse()
-                    ->values()
-                    ->map(function ($chat) {
-                        $annotations = [];
-                        if (!empty($chat->T_ChatAnnotations)) {
-                            $decoded = json_decode($chat->T_ChatAnnotations, true);
-                            if (is_array($decoded)) {
-                                $annotations = $decoded;
-                            }
-                        }
-
-                        return [
-                            'id' => $chat->T_ChatID,
-                            'conversationId' => $chat->T_ChatT_ConversationID,
-                            'code' => $chat->T_ChatCode,
-                            'role' => $chat->T_ChatRole,
-                            'content' => $chat->T_ChatContent,
-                            'annotations' => $annotations,
-                            'time' => Carbon::parse($chat->T_ChatCreated)->format('H:i')
-                        ];
-                    });
-
+            ->orderByDesc('T_ConversationLastUpdated');
+    
+        $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+    
+        $conversations = $paginated->getCollection()->map(function ($conver) use ($limit) {
+            $chatBatch = Chat::where('T_ChatT_ConversationID', $conver->T_ConversationID)
+                ->orderByDesc('T_ChatID')
+                ->limit($limit + 1)
+                ->get();
+    
+            $hasMore = $chatBatch->count() > $limit;
+            $chats = $chatBatch->take($limit);
+            $nextCursor = $chats->last()?->T_ChatID;
+    
+            $chats = $chats->reverse()->values()->map(function ($chat) {
+                $annotations = [];
+                if (!empty($chat->T_ChatAnnotations)) {
+                    $decoded = json_decode($chat->T_ChatAnnotations, true);
+                    if (is_array($decoded)) $annotations = $decoded;
+                }
+    
                 return [
-                    'id' => $conver->T_ConversationID,
-                    'title' => $conver->T_ConversationTitle,
-                    'lastUpdated' => Carbon::parse($conver->T_ConversationLastUpdated)->diffForHumans(),
-                    'nextCursor' => $nextCursor,
-                    'hasMoreChats' => $hasMore,
-                    'chats' => $chats
+                    'id' => $chat->T_ChatID,
+                    'conversationId' => $chat->T_ChatT_ConversationID,
+                    'code' => $chat->T_ChatCode,
+                    'role' => $chat->T_ChatRole,
+                    'content' => $chat->T_ChatContent,
+                    'annotations' => $annotations,
+                    'time' => Carbon::parse($chat->T_ChatCreated)->format('H:i'),
                 ];
             });
-
-        return response()->json($conversations);
+    
+            return [
+                'id'          => $conver->T_ConversationID,
+                'title'       => $conver->T_ConversationTitle,
+                'lastUpdated' => Carbon::parse($conver->T_ConversationLastUpdated)->diffForHumans(),
+                'nextCursor'  => $nextCursor,
+                'hasMoreChats'=> $hasMore,
+                'chats'       => $chats,
+            ];
+        });
+    
+        return response()->json([
+            'data'       => $conversations,
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'per_page'     => $paginated->perPage(),
+                'total'        => $paginated->total(),
+                'last_page'    => $paginated->lastPage(),
+            ],
+        ]);
     }
 
     public function store(Request $request)

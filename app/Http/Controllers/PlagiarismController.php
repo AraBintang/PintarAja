@@ -20,19 +20,23 @@ class PlagiarismController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $perPage = (int) $request->input('per_page', 20);
+        $perPage = (int) $request->input('per_page', 15);
         $page = max(1, (int) $request->input('page', 1));
         $status = $request->input('status');
-
+        $search = $request->input('search');
+    
         $query = Plagiarism::where('M_PlagiarismUserID', $user->M_UserID)
             ->whereNotIn('M_PlagiarismStatus', ['waiting_payment'])
             ->when($status, fn($q) => $q->where('M_PlagiarismStatus', $status))
+            ->when($search, fn($q) =>
+                $q->where('M_PlagiarismTitle', 'like', "%{$search}%")
+            )
             ->orderByDesc('M_PlagiarismCreated');
-
+    
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
-
+    
         return response()->json([
-            'data' => $paginated->getCollection()->map(fn($p) => $this->formatPlagiarism($p)),
+            'data'       => $paginated->getCollection()->map(fn($p) => $this->formatPlagiarism($p)),
             'pagination' => [
                 'current_page' => $paginated->currentPage(),
                 'per_page' => $paginated->perPage(),

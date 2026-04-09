@@ -12,18 +12,33 @@ class ParaphraseController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-
-        $results = Paraphrase::select([
+        $search = $request->input('search');
+        $perPage = (int) $request->input('per_page', 15);
+        $page = max(1, (int) $request->input('page', 1));
+    
+        $query = Paraphrase::select([
                 'M_ParaphraseID as id',
                 'M_ParaphraseName as name',
                 'M_ParaphraseOrigin as origin',
-                'M_ParaphraseData as data'
+                'M_ParaphraseData as data',
             ])
             ->where('M_ParaphraseM_UserID', $user->M_UserID)
-            ->orderByDesc('M_ParaphraseID')
-            ->get();
-
-        return response()->json($results);
+            ->when($search, fn($q) =>
+                $q->where('M_ParaphraseName', 'like', "%{$search}%")
+            )
+            ->orderByDesc('M_ParaphraseID');
+    
+        $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+    
+        return response()->json([
+            'data' => $paginated->items(),
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'per_page' => $paginated->perPage(),
+                'total'  => $paginated->total(),
+                'last_page' => $paginated->lastPage(),
+            ],
+        ]);
     }
 
     public function paraphrase(Request $request)

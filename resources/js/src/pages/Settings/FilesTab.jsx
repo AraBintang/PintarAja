@@ -39,9 +39,14 @@ export default function FilesTab() {
   const fetchFiles = async (page = 1, search = '') => {
     setLoading(true)
     try {
-      const res = await request(
-        `/writers/files?page=${page}&per_page=${PAGE_SIZE}&search=${encodeURIComponent(search)}`,
-      )
+      const query = buildQuery({
+        page,
+        per_page: PAGE_SIZE,
+        search: encodeURIComponent(search),
+      })
+
+      const res = await request(`/writers/files${query}`)
+
       setFiles(res.files || [])
       setQuota(res.quota || null)
       setPagination(res.pagination || null)

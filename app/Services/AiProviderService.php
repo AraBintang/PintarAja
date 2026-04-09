@@ -138,7 +138,7 @@ class AiProviderService
                     'system' => $format === false ? $systemPrompt : null,
                     'messages' => $messages,
                     'stream' => true,
-                    'max_tokens' => 1024,
+                    'max_tokens' => 8192,
                 ]),
                 'stream' => true,
             ]);

@@ -3,6 +3,34 @@ import { useEffect, useRef, useState } from 'react'
 
 import { AI_CODE_MAP, AI_MODELS, AutoIcon } from '@/assets/ai'
 
+/* ─── Toast Notification ─── */
+function Toast({ message, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 3000)
+    return () => clearTimeout(t)
+  }, [onClose])
+
+  return (
+    <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-[13px] font-medium rounded-2xl shadow-xl whitespace-nowrap">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        {message}
+      </div>
+    </div>
+  )
+}
+
 /* ─── ModelSelect ─── */
 function ModelSelect({ value, onChange, aiProviders, disabled }) {
   const [open, setOpen] = useState(false)
@@ -208,6 +236,35 @@ function FileChip({ file, index, onRemove, isStreaming }) {
   )
 }
 
+/* ─── Helper: detect if pasted text looks like code ─── */
+function detectCode(text) {
+  const lines = text.split('\n')
+  if (lines.length < 2) return false
+
+  const codePatterns = [
+    /^\s*(import|export|from|require)\s+/m,
+    /^\s*(function|const|let|var|class|def|return|if|for|while|switch)\s+/m,
+    /[{};]\s*$/m,
+    /^\s*(\/\/|#|\/\*|\*).+/m,
+    /=>\s*[{(]/,
+    /\(\s*\)\s*\{/,
+    /<\/?[a-zA-Z][a-zA-Z0-9]*(\s|\/?>)/,
+    /^\s*(public|private|protected|static|async|await)\s+/m,
+    /^\s*@[a-zA-Z]/m,
+  ]
+  return codePatterns.some((p) => p.test(text))
+}
+
+function guessLang(text) {
+  if (/^\s*</.test(text) && /<\//.test(text)) return 'html'
+  if (/import React|\.jsx|\.tsx/.test(text)) return 'tsx'
+  if (/def |import |print\(/.test(text)) return 'python'
+  if (/SELECT|INSERT|UPDATE|DELETE/i.test(text) && !/function|const/.test(text)) return 'sql'
+  if (/\$[a-zA-Z]|echo |<\?php/.test(text)) return 'php'
+  if (/interface |: string|: number|: boolean/.test(text)) return 'typescript'
+  return 'javascript'
+}
+
 export default function ChatInput({
   inputValue,
   onInputChange,
@@ -226,6 +283,7 @@ export default function ChatInput({
   const textareaRef = useRef(null)
   const imageRef = useRef(null)
   const docRef = useRef(null)
+  const [toast, setToast] = useState(null)
 
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
 
@@ -263,8 +321,57 @@ export default function ChatInput({
   }
 
   const selectedProvider = aiProviders.find((a) => String(a.id) === String(selectedAiId))
-  const canAttachImage = !isStreaming && selectedProvider?.code !== 'SETTING-DSK'
+  const isDeepseek = selectedProvider?.code === 'SETTING-DSK'
+  const canAttachImage = !isStreaming && !isDeepseek
   const canAttachFile = !isStreaming && selectedProvider?.code === 'SETTING-GPT'
+
+  /* ─── Paste handler ─── */
+  const handlePaste = (e) => {
+    if (isStreaming) return
+
+    const items = Array.from(e.clipboardData?.items ?? [])
+
+    // 1. Paste image from clipboard
+    const imageItem = items.find((item) => item.type.startsWith('image/'))
+    if (imageItem) {
+      e.preventDefault()
+      if (isDeepseek) {
+        setToast('Model ini tidak support image vision')
+        return
+      }
+      const file = imageItem.getAsFile()
+      if (file) {
+        const ext = file.type.split('/')[1] || 'png'
+        const named = new File([file], `paste-${Date.now()}.${ext}`, { type: file.type })
+        onFileChange([named])
+      }
+      return
+    }
+
+    // 2. Paste code — detect and auto-wrap in markdown code block
+    const textItem = items.find((item) => item.type === 'text/plain')
+    if (textItem) {
+      textItem.getAsString((text) => {
+        if (detectCode(text)) {
+          e.preventDefault()
+          const lang = guessLang(text)
+          const block = `\`\`\`${lang}\n${text}\n\`\`\``
+
+          const el = textareaRef.current
+          const start = el.selectionStart
+          const end = el.selectionEnd
+          const next = inputValue.slice(0, start) + block + inputValue.slice(end)
+          onInputChange(next)
+
+          requestAnimationFrame(() => {
+            el.selectionStart = el.selectionEnd = start + block.length
+            el.focus()
+          })
+        }
+        // else: let default paste happen normally (don't call preventDefault)
+      })
+    }
+  }
 
   return (
     <div
@@ -277,8 +384,11 @@ export default function ChatInput({
             e.preventDefault()
             if (!isStreaming) onSubmit()
           }}
-          className="w-full bg-white -mt-8 dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50 shadow-sm"
+          className="w-full bg-white -mt-8 dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50 shadow-sm relative"
         >
+          {/* Toast */}
+          {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+
           <div className="flex flex-col">
             {attachedFiles.length > 0 && (
               <div className="px-4 pt-4 flex items-end gap-2 flex-wrap">
@@ -300,6 +410,7 @@ export default function ChatInput({
               value={inputValue}
               onChange={handleInput}
               onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
               disabled={isStreaming}
               placeholder={isStreaming ? 'AI is answering...' : 'Ask anything'}
               className="w-full px-5 my-4 text-[15px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none bg-transparent resize-none min-h-[35px] max-h-[312px] disabled:cursor-not-allowed transition-colors"
