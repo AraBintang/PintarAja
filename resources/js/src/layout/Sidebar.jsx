@@ -163,7 +163,7 @@ export default function Sidebar({ onUpgradeClick }) {
         />
       )}
       <aside
-        className={`fixed top-0 left-0 h-dvh bg-white dark:bg-[#090d16] z-[70] flex flex-col transition-all duration-300 ease-in-out border-r border-gray-100 dark:border-gray-800
+        className={`fixed top-0 left-0 h-dvh bg-white dark:bg-[#090d16] z-[60] flex flex-col transition-all duration-300 ease-in-out border-r border-gray-100 dark:border-gray-800
                     ${expanded ? 'w-[260px] translate-x-0' : 'w-[64px] md:translate-x-0 -translate-x-full'}
         `}
       >

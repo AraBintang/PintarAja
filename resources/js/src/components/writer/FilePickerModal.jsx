@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import Pagination from '@/components/Pagination'
-import { request } from '@/utils/Http'
+import { buildQuery, request } from '@/utils/Http'
 
 const PAGE_SIZE = 5
 const MAX_FILES = 20
@@ -91,9 +91,14 @@ export default function FilePickerModal({
   const fetchSavedFiles = useCallback(async () => {
     setLoadingSaved(true)
     try {
-      const res = await request(
-        `/writers/files?page=${currentPage}&per_page=${PAGE_SIZE}&search=${encodeURIComponent(searchQuery)}`,
-      )
+      const query = buildQuery({
+        page: currentPage,
+        per_page: PAGE_SIZE,
+        search: encodeURIComponent(searchQuery),
+      })
+
+      const res = await request(`/writers/files${query}`)
+
       setSavedFiles(res.files || [])
       setPagination(res.pagination || null)
     } catch {

@@ -18,34 +18,27 @@ class WriterController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-
+    
         if (!$user) {
-            return response()->json([
-                'message' => 'User authentication failed.'
-            ], 401);
+            return response()->json(['message' => 'User authentication failed.'], 401);
         }
-
-        $papers = Paper::select(
-            'M_PaperID as id',
-            'M_PaperName as name'
-        )->orderBy('M_PaperName')->get();
-
-        $sections = Section::select(
-            'M_SectionID as id',
-            'M_SectionM_PaperID as paper_id',
-            'M_SectionName as name'
-        )->orderBy('M_SectionName', 'desc')->get();
-
+    
+        $search = $request->input('search');
+        $perPage = (int) $request->input('per_page', 15);
+        $page = max(1, (int) $request->input('page', 1));
+    
+        $papers = Paper::select('M_PaperID as id', 'M_PaperName as name')
+            ->orderBy('M_PaperName')->get();
+    
+        $sections = Section::select('M_SectionID as id', 'M_SectionM_PaperID as paper_id', 'M_SectionName as name')
+            ->orderBy('M_SectionName', 'desc')->get();
+    
         $aiProviders = DB::table('m_plansetting as ps')
             ->join('m_setting as s', 's.M_SettingID', '=', 'ps.M_PlanSettingM_SettingID')
             ->where('ps.M_PlanSettingM_PlanID', $user->M_UserPlan)
             ->where('s.M_SettingIsActive', 'Y')
-            ->select(
-                's.M_SettingID as id',
-                's.M_SettingCode as code',
-                's.M_SettingModel as model'
-            )
-            ->orderByRaw("CASE 
+            ->select('s.M_SettingID as id', 's.M_SettingCode as code', 's.M_SettingModel as model')
+            ->orderByRaw("CASE
                 WHEN s.M_SettingCode = 'SETTING-GPT' THEN 1
                 WHEN s.M_SettingCode = 'SETTING-GMN' THEN 2
                 WHEN s.M_SettingCode = 'SETTING-CLD' THEN 3
@@ -54,16 +47,12 @@ class WriterController extends Controller
                 ELSE 6
             END")
             ->get();
-
+    
         $workbooks = Workbook::where('M_WorkbookM_UserID', $user->M_UserID)
-            ->select(
-                'M_WorkbookID as id',
-                'M_WorkbookName as name'
-            )
-            ->orderBy('M_WorkbookName')
-            ->get();
-
-        $documents = Document::where('M_DocumentM_UserID', $user->M_UserID)
+            ->select('M_WorkbookID as id', 'M_WorkbookName as name')
+            ->orderBy('M_WorkbookName')->get();
+    
+        $documentQuery = Document::where('m_document.M_DocumentM_UserID', $user->M_UserID)
             ->leftJoin('m_workbook', 'm_workbook.M_WorkbookID', '=', 'm_document.M_DocumentM_WorkbookID')
             ->select(
                 'm_document.M_DocumentID as id',
@@ -76,16 +65,25 @@ class WriterController extends Controller
                 'm_workbook.M_WorkbookName as workbook',
                 'm_document.M_DocumentLastUpdated as lastEdited'
             )
-            ->orderBy('m_document.M_DocumentLastUpdated', 'desc')
-            ->limit(20)
-            ->get();
-
+            ->when($search, fn($q) =>
+                $q->where('m_document.M_DocumentName', 'like', "%{$search}%")
+            )
+            ->orderBy('m_document.M_DocumentLastUpdated', 'desc');
+    
+        $paginated = $documentQuery->paginate($perPage, ['*'], 'page', $page);
+    
         return response()->json([
             'papers' => $papers,
             'sections' => $sections,
             'ai' => $aiProviders,
             'workbooks' => $workbooks,
-            'documents' => $documents,
+            'documents' => $paginated->items(),
+            'pagination'=> [
+                'current_page' => $paginated->currentPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'last_page' => $paginated->lastPage(),
+            ],
         ]);
     }
 

@@ -15,7 +15,7 @@ class CouponController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = 10;
+        $perPage = (int) $request->input('per_page', 10);
         $page = max(1, (int) $request->input('page', 1));
         $search = $request->input('search');
 

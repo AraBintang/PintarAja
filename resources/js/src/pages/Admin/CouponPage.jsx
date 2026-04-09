@@ -1,8 +1,6 @@
 import {
   Calendar,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Copy,
   Crown,
   Diamond,
@@ -21,6 +19,7 @@ import { useState } from 'react'
 
 import CouponForm from '@/components/coupon/CouponForm'
 import DeleteModal from '@/components/DeleteModal'
+import Pagination from '@/components/Pagination'
 import {
   Select,
   SelectContent,
@@ -276,26 +275,12 @@ export default function CouponPage() {
     }
   }
 
-  const totalPages = pagination?.last_page ?? 1
-  const currentPage = pagination?.current_page ?? 1
-
-  const getPageNumbers = () => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1)
-    const pages = [1]
-    if (currentPage > 3) pages.push('...')
-    const start = Math.max(2, currentPage - 1)
-    const end = Math.min(totalPages - 1, currentPage + 1)
-    for (let i = start; i <= end; i++) pages.push(i)
-    if (currentPage < totalPages - 2) pages.push('...')
-    pages.push(totalPages)
-    return pages
-  }
-
   const selectTriggerClass =
     'w-full sm:w-[180px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 rounded-xl text-[13px] focus:ring-0'
 
   // ─── column headers ─────────────────────────────────────────────────────────
   const headers = [
+    { label: 'No.', align: '' },
     { label: 'Coupon Code', align: '' },
     { label: 'Type', align: '' },
     { label: 'Valid Until', align: '' },
@@ -425,9 +410,9 @@ export default function CouponPage() {
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
+                  Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i}>
-                      <td colSpan={6} className="px-6 py-4">
+                      <td colSpan={7} className="px-6 py-4">
                         <div className="h-8 bg-gray-100 dark:bg-gray-700 rounded-lg animate-pulse" />
                       </td>
                     </tr>
@@ -435,14 +420,14 @@ export default function CouponPage() {
                 ) : displayCoupons.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="px-6 py-16 text-center text-gray-400 dark:text-gray-500 text-[14px]"
                     >
                       Tidak ada kupon ditemukan
                     </td>
                   </tr>
                 ) : (
-                  displayCoupons.map((coupon) => {
+                  displayCoupons.map((coupon, index) => {
                     const status = deriveCouponStatus(coupon)
                     const statusConfig = getStatusConfig(status)
                     const typeBadge = getTypeBadge(coupon.days ?? 0)
@@ -453,6 +438,10 @@ export default function CouponPage() {
                         key={coupon.id}
                         className="hover:bg-blue-50/20 dark:hover:bg-orange-900/10 transition-colors"
                       >
+                        <td className="px-6 py-4 text-[13px] font-medium text-gray-400">
+                          {(pagination?.current_page - 1) * PAGE_SIZE + index + 1}.
+                        </td>
+
                         {/* Code */}
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-2">
@@ -544,57 +533,17 @@ export default function CouponPage() {
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between flex-wrap gap-3">
-            <p className="text-[13px] text-gray-500 dark:text-gray-400">
-              Viewing{' '}
-              <span className="font-semibold text-gray-800 dark:text-gray-100">
-                {pagination ? (currentPage - 1) * PAGE_SIZE + 1 : 0}–
-                {pagination ? Math.min(currentPage * PAGE_SIZE, pagination.total) : 0}
-              </span>{' '}
-              from{' '}
-              <span className="font-semibold text-gray-800 dark:text-gray-100">
-                {pagination?.total ?? 0}
-              </span>{' '}
-              coupon
-            </p>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 disabled:opacity-40 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              {getPageNumbers().map((p, i) =>
-                p === '...' ? (
-                  <span key={`e-${i}`} className="text-gray-400 text-sm px-1">
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`w-9 h-9 flex items-center justify-center rounded-lg font-medium text-[13px] transition-colors ${
-                      currentPage === p
-                        ? 'bg-blue-600 dark:bg-orange-500 text-white shadow-sm shadow-blue-200 dark:shadow-orange-900/30'
-                        : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ),
-              )}
-
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 disabled:opacity-40 transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          {pagination && pagination.last_page > 1 && (
+            <Pagination
+              currentPage={pagination?.current_page}
+              totalPages={pagination.last_page}
+              total={pagination.total}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+              label="coupons"
+              className="px-6 py-4 border-t border-gray-100 dark:border-gray-700"
+            />
+          )}
         </div>
       </div>
 

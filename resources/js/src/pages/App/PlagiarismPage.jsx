@@ -115,14 +115,9 @@ function SkeletonCard() {
           </div>
         ))}
       </div>
-      <div className="space-y-2">
-        {[1, 2].map((i) => (
-          <div key={i} className="h-12 rounded-xl bg-gray-100 dark:bg-gray-900" />
-        ))}
-      </div>
       <div className="flex gap-3">
         <div className="h-11 w-36 rounded-2xl bg-gray-200 dark:bg-gray-700" />
-        <div className="h-11 w-28 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+        <div className="h-11 w-36 rounded-2xl bg-gray-100 dark:bg-gray-900" />
       </div>
     </div>
   )

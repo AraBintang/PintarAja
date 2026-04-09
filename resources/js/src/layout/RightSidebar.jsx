@@ -13,7 +13,7 @@ import {
   Wand2,
   X,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import {
@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/select'
 import { useRightSidebar } from '@/context/RightSidebarContext'
 import { useSnackbar } from '@/context/SnackbarContext'
-import { request } from '@/utils/Http'
+import { buildQuery, request } from '@/utils/Http'
 
 const PAGE_CONFIG = {
   '/chat': { title: 'History Chat', icon: MessagesSquare, apiPath: '/convers' },
@@ -38,13 +38,9 @@ const PAGE_CONFIG = {
   '/plagiarism': { title: 'History Plagiarism', icon: FileSearch, apiPath: '/plagiarism' },
 }
 
-// Which routes support rename (PUT /{id})
 const RENAME_SUPPORTED = ['/chat', '/new', '/writer', '/paraphrase', '/humanizer', '/transcribe']
-
-// Which routes support delete
 const DELETE_SUPPORTED = ['/chat', '/new', '/writer', '/paraphrase', '/humanizer', '/transcribe']
 
-// API prefix per route
 const API_PREFIX = {
   '/chat': '/convers',
   '/new': '/convers',
@@ -54,15 +50,21 @@ const API_PREFIX = {
   '/transcribe': '/transcribes',
 }
 
+const PER_PAGE = 15
+
 export default function RightSidebar() {
   const { isOpen, close } = useRightSidebar()
   const { showSnackbar } = useSnackbar()
   const location = useLocation()
+
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetchingMore, setIsFetchingMore] = useState(false)
   const [historyItems, setHistoryItems] = useState([])
   const [workbooks, setWorkbooks] = useState([])
   const [activeWorkbook, setActiveWorkbook] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
 
   const [editingId, setEditingId] = useState(null)
   const [editingValue, setEditingValue] = useState('')
@@ -71,6 +73,8 @@ export default function RightSidebar() {
   const [downloadingId, setDownloadingId] = useState(null)
 
   const editInputRef = useRef(null)
+  const sentinelRef = useRef(null)
+  const searchTimerRef = useRef(null)
 
   const current = PAGE_CONFIG[location.pathname] || { title: 'Riwayat', icon: Clock, apiPath: null }
   const IconComponent = current.icon
@@ -78,75 +82,120 @@ export default function RightSidebar() {
   const canDelete = DELETE_SUPPORTED.includes(location.pathname)
   const apiPrefix = API_PREFIX[location.pathname]
 
+  // ─── FETCH ───────────────────────────────────────────────────
+
+  const fetchItems = useCallback(
+    async ({ pageNum = 1, search = '', append = false } = {}) => {
+      if (pageNum === 1) {
+        setIsLoading(true)
+        if (!append) setHistoryItems([])
+      } else {
+        setIsFetchingMore(true)
+      }
+
+      try {
+        if (location.pathname === '/writer') {
+          const query = buildQuery({
+            page: pageNum,
+            per_page: PER_PAGE,
+            search: search || undefined,
+          })
+          const res = await request(`/writers${query}`)
+          const docs = Array.isArray(res.documents) ? res.documents : []
+          if (pageNum === 1) {
+            setWorkbooks(Array.isArray(res.workbooks) ? res.workbooks : [])
+          }
+          setHistoryItems((prev) => (pageNum === 1 ? docs : [...prev, ...docs]))
+          setHasMore(docs.length === PER_PAGE)
+          return
+        }
+
+        if (!current.apiPath) {
+          setHistoryItems([])
+          setHasMore(false)
+          return
+        }
+
+        const query = buildQuery({ page: pageNum, per_page: PER_PAGE, search: search || undefined })
+        const res = await request(`${current.apiPath}${query}`)
+        const items = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : []
+        setHistoryItems((prev) => (pageNum === 1 ? items : [...prev, ...items]))
+        // Support both paginated (res.data + pagination meta) and plain array responses
+        const total = res.pagination?.total ?? res.total ?? null
+        if (total !== null) {
+          setHasMore(pageNum * PER_PAGE < total)
+        } else {
+          setHasMore(items.length === PER_PAGE)
+        }
+      } catch {
+        if (pageNum === 1) setHistoryItems([])
+        setHasMore(false)
+      } finally {
+        setIsLoading(false)
+        setIsFetchingMore(false)
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [location.pathname],
+  )
+
+  // Reset & initial load when sidebar opens or route changes
   useEffect(() => {
     if (!isOpen) {
       setSearchQuery('')
       setActiveWorkbook('all')
       setEditingId(null)
       setDeletingId(null)
-
+      setPage(1)
+      setHasMore(false)
       return
     }
 
-    if (location.pathname === '/writer') {
-      setIsLoading(true)
-      setHistoryItems([])
-      request('/writers')
-        .then((res) => {
-          setHistoryItems(Array.isArray(res.documents) ? res.documents : [])
-          setWorkbooks(Array.isArray(res.workbooks) ? res.workbooks : [])
-        })
-        .catch(() => setHistoryItems([]))
-        .finally(() => setIsLoading(false))
-      return
-    }
-
-    if (!current.apiPath) {
-      setHistoryItems([])
-      setIsLoading(false)
-      return
-    }
-
-    setIsLoading(true)
-    setHistoryItems([])
-    request(current.apiPath)
-      .then((res) => {
-        const items = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : []
-        setHistoryItems(items)
-      })
-      .catch(() => setHistoryItems([]))
-      .finally(() => setIsLoading(false))
+    setPage(1)
+    fetchItems({ pageNum: 1, search: searchQuery })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, location.pathname])
 
+  // Debounced search — reset to page 1
   useEffect(() => {
-    const handler = (e) => {
-      setHistoryItems((prev) => [
-        {
-          id: e.detail.id,
-          title: e.detail.title || 'New Conversation',
-          lastUpdated: e.detail.lastUpdated || 'Baru saja',
-          chats: [],
-          nextCursor: null,
-          hasMoreChats: false,
-          ai: [],
-        },
-        ...prev,
-      ])
-    }
-    window.addEventListener('conversationCreated', handler)
-    return () => window.removeEventListener('conversationCreated', handler)
-  }, [])
+    if (!isOpen) return
+    clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(() => {
+      setPage(1)
+      fetchItems({ pageNum: 1, search: searchQuery })
+    }, 350)
+    return () => clearTimeout(searchTimerRef.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery])
 
-  // Listen event dari pages untuk set active item
+  // IntersectionObserver — load next page when sentinel is visible
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isFetchingMore && !isLoading) {
+          const nextPage = page + 1
+          setPage(nextPage)
+          fetchItems({ pageNum: nextPage, search: searchQuery, append: true })
+        }
+      },
+      { threshold: 0.1 },
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore, isFetchingMore, isLoading, page, searchQuery, fetchItems])
+
+  // ─── REALTIME EVENTS ─────────────────────────────────────────
+
   useEffect(() => {
     const handlers = {
-      // Chat: conversation baru dibuat
       conversationCreated: (e) => {
         if (location.pathname !== '/chat' && location.pathname !== '/new') return
         const conv = e.detail
         setHistoryItems((prev) => {
-          // Cegah duplikat
           if (prev.some((h) => h.id === conv.id)) return prev
           return [
             {
@@ -164,22 +213,17 @@ export default function RightSidebar() {
         setActiveItemId(conv.id)
       },
 
-      // Writer: document disave
       documentSaved: (e) => {
         if (location.pathname !== '/writer') return
-        const doc = e.detail // { id, name, workbook, workbook_id, lastEdited }
+        const doc = e.detail
         setHistoryItems((prev) => {
           const exists = prev.some((h) => h.id === doc.id)
-          if (exists) {
-            // Update nama jika sudah ada (re-save)
-            return prev.map((h) => (h.id === doc.id ? { ...h, ...doc } : h))
-          }
+          if (exists) return prev.map((h) => (h.id === doc.id ? { ...h, ...doc } : h))
           return [doc, ...prev]
         })
         setActiveItemId(doc.id)
       },
 
-      // Paraphrase: history baru
       paraphraseCompleted: (e) => {
         if (location.pathname !== '/paraphrase') return
         const item = e.detail
@@ -190,7 +234,6 @@ export default function RightSidebar() {
         setActiveItemId(item.id)
       },
 
-      // Transcribe: history baru
       transcribeCompleted: (e) => {
         if (location.pathname !== '/transcribe') return
         const item = e.detail
@@ -203,25 +246,17 @@ export default function RightSidebar() {
 
       plagiarismPaid: () => {
         if (location.pathname !== '/plagiarism') return
-        request('/plagiarism')
-          .then((res) => {
-            const items = Array.isArray(res.data) ? res.data : []
-            setHistoryItems(items)
-          })
-          .catch(() => {})
+        setPage(1)
+        fetchItems({ pageNum: 1, search: searchQuery })
       },
     }
 
-    Object.entries(handlers).forEach(([event, handler]) => {
-      window.addEventListener(event, handler)
-    })
-
-    return () => {
-      Object.entries(handlers).forEach(([event, handler]) => {
-        window.removeEventListener(event, handler)
-      })
-    }
-  }, [location.pathname])
+    Object.entries(handlers).forEach(([event, handler]) => window.addEventListener(event, handler))
+    return () =>
+      Object.entries(handlers).forEach(([event, handler]) =>
+        window.removeEventListener(event, handler),
+      )
+  }, [location.pathname, searchQuery, fetchItems])
 
   // Focus input when editing starts
   useEffect(() => {
@@ -229,6 +264,8 @@ export default function RightSidebar() {
       setTimeout(() => editInputRef.current?.focus(), 50)
     }
   }, [editingId])
+
+  // ─── WORKBOOK FILTER (client-side only, no refetch needed) ───
 
   const filteredItems = useMemo(() => {
     let items = historyItems
@@ -239,75 +276,48 @@ export default function RightSidebar() {
           doc.workbook_name ??
           (typeof doc.workbook === 'string' ? doc.workbook : doc.workbook?.name) ??
           null
-
         const matchedWorkbook = workbooks.find((wb) => wb.name === activeWorkbook)
-
-        if (docWorkbookName !== null) {
-          return docWorkbookName === activeWorkbook
-        }
-
-        if (matchedWorkbook && doc.workbook_id !== undefined) {
+        if (docWorkbookName !== null) return docWorkbookName === activeWorkbook
+        if (matchedWorkbook && doc.workbook_id !== undefined)
           return String(doc.workbook_id) === String(matchedWorkbook.id)
-        }
-
         return false
       })
     }
 
-    if (!searchQuery.trim()) return items
+    return items
+  }, [historyItems, activeWorkbook, workbooks])
 
-    return items.filter((item) =>
-      (item.name || item.title || '').toLowerCase().includes(searchQuery.toLowerCase()),
-    )
-  }, [historyItems, searchQuery, activeWorkbook, workbooks])
-
-  // ─── HANDLERS ────────────────────────────────────────────────
+  // ─── ITEM CLICK ──────────────────────────────────────────────
 
   const handleItemClick = (item) => {
-    // Don't navigate if editing or showing delete confirm
     if (editingId === item.id || deletingId === item.id) return
-
     setActiveItemId(item.id)
 
-    if (location.pathname === '/chat' || location.pathname === '/new') {
-      window.dispatchEvent(
-        new CustomEvent('loadHistoryChat', {
-          detail: {
+    const eventMap = {
+      '/chat': 'loadHistoryChat',
+      '/new': 'loadHistoryChat',
+      '/writer': 'loadHistoryWriter',
+      '/paraphrase': 'loadHistoryParaphrase',
+      '/transcribe': 'loadHistoryTranscribe',
+      '/humanizer': 'loadHistoryHumanizer',
+    }
+
+    const eventName = eventMap[location.pathname]
+    if (!eventName) return
+
+    const detail =
+      location.pathname === '/chat' || location.pathname === '/new'
+        ? {
             id: item.id,
             title: item.title,
             chats: item.chats ?? [],
             nextCursor: item.nextCursor ?? null,
             hasMoreChats: item.hasMoreChats ?? false,
-          },
-        }),
-      )
-      close()
-      return
-    }
+          }
+        : item
 
-    if (location.pathname === '/writer') {
-      window.dispatchEvent(new CustomEvent('loadHistoryWriter', { detail: item }))
-      close()
-      return
-    }
-
-    if (location.pathname === '/paraphrase') {
-      window.dispatchEvent(new CustomEvent('loadHistoryParaphrase', { detail: item }))
-      close()
-      return
-    }
-
-    if (location.pathname === '/transcribe') {
-      window.dispatchEvent(new CustomEvent('loadHistoryTranscribe', { detail: item }))
-      close()
-      return
-    }
-
-    if (location.pathname === '/humanizer') {
-      window.dispatchEvent(new CustomEvent('loadHistoryHumanizer', { detail: item }))
-      close()
-      return
-    }
+    window.dispatchEvent(new CustomEvent(eventName, { detail }))
+    close()
   }
 
   // ─── RENAME ──────────────────────────────────────────────────
@@ -348,7 +358,6 @@ export default function RightSidebar() {
         prev.map((h) => (h.id === item.id ? { ...h, title: newName, name: newName } : h)),
       )
 
-      // Notify page if currently loaded item was renamed
       if (location.pathname === '/chat' || location.pathname === '/new') {
         window.dispatchEvent(
           new CustomEvent('conversationRenamed', { detail: { id: item.id, title: newName } }),
@@ -382,14 +391,10 @@ export default function RightSidebar() {
     try {
       await request(`${apiPrefix}/${item.id}`, { method: 'DELETE' })
       setHistoryItems((prev) => prev.filter((h) => h.id !== item.id))
-
-      // Notify page
       window.dispatchEvent(
         new CustomEvent('historyItemDeleted', { detail: { id: item.id, path: location.pathname } }),
       )
-
       if (activeItemId === item.id) setActiveItemId(null)
-
       showSnackbar('success', 'Deleted successfully!')
     } catch (err) {
       showSnackbar('error', err?.message || 'Failed to delete. Please try again.')
@@ -397,6 +402,8 @@ export default function RightSidebar() {
       setDeletingId(null)
     }
   }
+
+  // ─── WORKBOOK ────────────────────────────────────────────────
 
   const handleDeleteWorkbook = async (e, wb) => {
     e.preventDefault()
@@ -420,10 +427,7 @@ export default function RightSidebar() {
     const name = newWorkbookName.trim()
     if (!name) return
     try {
-      await request('/workbooks', {
-        method: 'POST',
-        body: { name },
-      })
+      await request('/workbooks', { method: 'POST', body: { name } })
       const updated = await request('/writers')
       setWorkbooks(Array.isArray(updated.workbooks) ? updated.workbooks : workbooks)
       showSnackbar('success', `Workbook "${name}" created!`)
@@ -434,6 +438,8 @@ export default function RightSidebar() {
       setNewWorkbookName('')
     }
   }
+
+  // ─── DOWNLOAD ────────────────────────────────────────────────
 
   const handleDownload = async (e, item) => {
     e.stopPropagation()
@@ -453,11 +459,13 @@ export default function RightSidebar() {
     }
   }
 
+  // ─── RENDER ──────────────────────────────────────────────────
+
   return (
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] transition-opacity duration-300"
           onClick={close}
         />
       )}
@@ -616,250 +624,269 @@ export default function RightSidebar() {
               </p>
             </div>
           ) : (
-            filteredItems.map((item) => {
-              const isPlagiarism = location.pathname === '/plagiarism'
-              const isEditing = editingId === item.id
-              const isDeleting = deletingId === item.id
-              const displayName = item.title || item.name || 'New Conversation'
-              const isDownloading = downloadingId === item.id
+            <>
+              {filteredItems.map((item) => {
+                const isPlagiarism = location.pathname === '/plagiarism'
+                const isEditing = editingId === item.id
+                const isDeleting = deletingId === item.id
+                const displayName = item.title || item.name || 'New Conversation'
+                const isDownloading = downloadingId === item.id
 
-              const lastChat = item.chats?.at(-1)
-              const chatPreview = !isPlagiarism ? (lastChat?.content?.slice(0, 70) ?? '') : null
+                const lastChat = item.chats?.at(-1)
+                const chatPreview = !isPlagiarism ? (lastChat?.content?.slice(0, 70) ?? '') : null
 
-              return (
-                <div className="px-2" key={item.id}>
-                  <div
-                    onClick={() => !isPlagiarism && handleItemClick(item)}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors group border-b border-gray-50 dark:border-gray-800 last:border-0 ${
-                      isPlagiarism ? 'cursor-default' : 'cursor-pointer'
-                    } ${
-                      isDeleting
-                        ? 'bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/30'
-                        : activeItemId === item.id
-                          ? 'bg-[#eeedeb] dark:bg-gray-900'
-                          : isPlagiarism
-                            ? 'hover:bg-gray-50 dark:hover:bg-gray-900/50'
-                            : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'
-                    }`}
-                  >
-                    {isPlagiarism ? (
-                      <div className="space-y-1.5">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-0.5">
-                              {item.service === 'turnitin' ? 'Turnin' : 'Drillbot AI'}
-                            </p>
-                            <h3 className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate leading-tight">
-                              {displayName}
-                            </h3>
+                return (
+                  <div className="px-2" key={item.id}>
+                    <div
+                      onClick={() => !isPlagiarism && handleItemClick(item)}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors group border-b border-gray-50 dark:border-gray-800 last:border-0 ${
+                        isPlagiarism ? 'cursor-default' : 'cursor-pointer'
+                      } ${
+                        isDeleting
+                          ? 'bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/30'
+                          : activeItemId === item.id
+                            ? 'bg-[#eeedeb] dark:bg-gray-900'
+                            : isPlagiarism
+                              ? 'hover:bg-gray-50 dark:hover:bg-gray-900/50'
+                              : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'
+                      }`}
+                    >
+                      {isPlagiarism ? (
+                        <div className="space-y-1.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-0.5">
+                                {item.service === 'turnitin' ? 'Turnin' : 'Drillbot AI'}
+                              </p>
+                              <h3 className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate leading-tight">
+                                {displayName}
+                              </h3>
+                            </div>
+
+                            {item.resultUrl && (
+                              <button
+                                onClick={(e) => handleDownload(e, item)}
+                                disabled={isDownloading}
+                                title="Download hasil"
+                                className={`flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                                  isDownloading
+                                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-wait'
+                                    : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                                }`}
+                              >
+                                {isDownloading ? (
+                                  <span className="w-3 h-3 border border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+                                ) : (
+                                  <>
+                                    <Download className="w-3 h-3" /> Unduh
+                                  </>
+                                )}
+                              </button>
+                            )}
                           </div>
-
-                          {item.resultUrl && (
-                            <button
-                              onClick={(e) => handleDownload(e, item)}
-                              disabled={isDownloading}
-                              title="Download hasil"
-                              className={`flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all ${
-                                isDownloading
-                                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-wait'
-                                  : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                item.status === 'done'
+                                  ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                                  : item.status === 'processing'
+                                    ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                                    : item.status === 'pending'
+                                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                                      : item.status === 'failed'
+                                        ? 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400'
+                                        : item.status === 'cancelled'
+                                          ? 'bg-red-50 dark:bg-red-900/20 text-red-400 dark:text-red-500'
+                                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                               }`}
                             >
-                              {isDownloading ? (
-                                <span className="w-3 h-3 border border-gray-300 border-t-gray-500 rounded-full animate-spin" />
-                              ) : (
-                                <>
-                                  <Download className="w-3 h-3" /> Unduh
-                                </>
-                              )}
-                            </button>
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  item.status === 'done'
+                                    ? 'bg-emerald-400'
+                                    : item.status === 'processing'
+                                      ? 'bg-purple-400 animate-pulse'
+                                      : item.status === 'pending'
+                                        ? 'bg-blue-400'
+                                        : item.status === 'failed'
+                                          ? 'bg-red-400'
+                                          : item.status === 'cancelled'
+                                            ? 'bg-red-300'
+                                            : 'bg-gray-400'
+                                }`}
+                              />
+                              {item.statusLabel || item.status}
+                            </span>
+
+                            <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                              {item.lastUpdated || item.time}
+                            </span>
+                          </div>
+                          {item.isDone && item.completedAt && (
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                              Selesai: {item.completedAt}
+                            </p>
                           )}
                         </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                              item.status === 'done'
-                                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                                : item.status === 'processing'
-                                  ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
-                                  : item.status === 'pending'
-                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                                    : item.status === 'failed'
-                                      ? 'bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400'
-                                      : item.status === 'cancelled'
-                                        ? 'bg-red-50 dark:bg-red-900/20 text-red-400 dark:text-red-500'
-                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                item.status === 'done'
-                                  ? 'bg-emerald-400'
-                                  : item.status === 'processing'
-                                    ? 'bg-purple-400 animate-pulse'
-                                    : item.status === 'pending'
-                                      ? 'bg-blue-400'
-                                      : item.status === 'failed'
-                                        ? 'bg-red-400'
-                                        : item.status === 'cancelled'
-                                          ? 'bg-red-300'
-                                          : 'bg-gray-400'
-                              }`}
-                            />
-                            {item.statusLabel || item.status}
-                          </span>
-
-                          <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                            {item.lastUpdated || item.time}
-                          </span>
-                        </div>
-                        {item.isDone && item.completedAt && (
-                          <p className="text-[10px] text-gray-400 dark:text-gray-500">
-                            Selesai: {item.completedAt}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        {/* Delete confirm banner */}
-                        {isDeleting ? (
-                          <div
-                            className="flex items-center justify-between gap-2"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <p className="text-[12px] text-red-600 dark:text-red-400 font-medium flex-1 truncate">
-                              Delete "{displayName}"?
-                            </p>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <button
-                                onClick={(e) => confirmDelete(e, item)}
-                                className="px-2.5 py-1 text-[11px] font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
-                              >
-                                Delete
-                              </button>
-                              <button
-                                onClick={cancelDelete}
-                                className="px-2.5 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                              >
-                                Cancel
-                              </button>
+                      ) : (
+                        <>
+                          {isDeleting ? (
+                            <div
+                              className="flex items-center justify-between gap-2"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <p className="text-[12px] text-red-600 dark:text-red-400 font-medium flex-1 truncate">
+                                Delete "{displayName}"?
+                              </p>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <button
+                                  onClick={(e) => confirmDelete(e, item)}
+                                  className="px-2.5 py-1 text-[11px] font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                                >
+                                  Delete
+                                </button>
+                                <button
+                                  onClick={cancelDelete}
+                                  className="px-2.5 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                {/* Workbook tag */}
-                                {(item.workbook_name ??
-                                  (typeof item.workbook === 'string'
-                                    ? item.workbook
-                                    : item.workbook?.name)) && (
-                                  <p className="text-[11px] text-gray-400 truncate mb-0.5">
-                                    {item.workbook_name ??
-                                      (typeof item.workbook === 'string'
-                                        ? item.workbook
-                                        : item.workbook?.name)}
-                                  </p>
-                                )}
+                          ) : (
+                            <>
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  {(item.workbook_name ??
+                                    (typeof item.workbook === 'string'
+                                      ? item.workbook
+                                      : item.workbook?.name)) && (
+                                    <p className="text-[11px] text-gray-400 truncate mb-0.5">
+                                      {item.workbook_name ??
+                                        (typeof item.workbook === 'string'
+                                          ? item.workbook
+                                          : item.workbook?.name)}
+                                    </p>
+                                  )}
 
-                                {/* Editable title */}
-                                {isEditing ? (
-                                  <div
-                                    className="flex items-center gap-1"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <input
-                                      ref={editInputRef}
-                                      value={editingValue}
-                                      onChange={(e) => setEditingValue(e.target.value)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') submitRename(e, item)
-                                        if (e.key === 'Escape') cancelEditing(e)
-                                      }}
-                                      className="flex-1 text-[13px] font-medium bg-white dark:bg-gray-800 border border-[#4A90D9]/40 rounded-md px-2 py-0.5 outline-none text-gray-800 dark:text-gray-200 min-w-0"
-                                    />
-                                    <button
-                                      onClick={(e) => submitRename(e, item)}
-                                      className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors flex-shrink-0"
+                                  {isEditing ? (
+                                    <div
+                                      className="flex items-center gap-1"
+                                      onClick={(e) => e.stopPropagation()}
                                     >
-                                      <Check className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      onClick={cancelEditing}
-                                      className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+                                      <input
+                                        ref={editInputRef}
+                                        value={editingValue}
+                                        onChange={(e) => setEditingValue(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') submitRename(e, item)
+                                          if (e.key === 'Escape') cancelEditing(e)
+                                        }}
+                                        className="flex-1 text-[13px] font-medium bg-white dark:bg-gray-800 border border-[#4A90D9]/40 rounded-md px-2 py-0.5 outline-none text-gray-800 dark:text-gray-200 min-w-0"
+                                      />
+                                      <button
+                                        onClick={(e) => submitRename(e, item)}
+                                        className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors flex-shrink-0"
+                                      >
+                                        <Check className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={cancelEditing}
+                                        className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <h3
+                                      className={`text-[13px] font-medium truncate transition-colors ${
+                                        activeItemId === item.id
+                                          ? 'text-[#4A90D9]'
+                                          : 'text-gray-800 dark:text-gray-200 group-hover:text-[#4A90D9]'
+                                      }`}
                                     >
-                                      <X className="w-3.5 h-3.5" />
-                                    </button>
+                                      {displayName}
+                                    </h3>
+                                  )}
+                                </div>
+
+                                {!isEditing && (
+                                  <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5">
+                                    {canRename && (
+                                      <button
+                                        onClick={(e) => startEditing(e, item)}
+                                        className="p-1 rounded-md text-gray-300 hover:text-[#4A90D9] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all opacity-0 group-hover:opacity-100"
+                                        title="Rename"
+                                      >
+                                        <Pencil className="w-3 h-3" />
+                                      </button>
+                                    )}
+
+                                    {canDelete && (
+                                      <button
+                                        onClick={(e) => startDelete(e, item)}
+                                        className="p-1 rounded-md text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    )}
                                   </div>
-                                ) : (
-                                  <h3
-                                    className={`text-[13px] font-medium truncate transition-colors
-                                ${
-                                  activeItemId === item.id
-                                    ? 'text-[#4A90D9]'
-                                    : 'text-gray-800 dark:text-gray-200 group-hover:text-[#4A90D9]'
-                                }`}
-                                  >
-                                    {displayName}
-                                  </h3>
                                 )}
                               </div>
 
-                              {/* Right side: timestamp + action buttons */}
                               {!isEditing && (
-                                <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5">
-                                  {/* Edit button */}
-                                  {canRename && (
-                                    <button
-                                      onClick={(e) => startEditing(e, item)}
-                                      className="p-1 rounded-md text-gray-300 hover:text-[#4A90D9] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all opacity-0 group-hover:opacity-100"
-                                      title="Rename"
-                                    >
-                                      <Pencil className="w-3 h-3" />
-                                    </button>
-                                  )}
+                                <div className="flex justify-between">
+                                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                                    {chatPreview ||
+                                      (typeof item.data === 'string'
+                                        ? item.data.slice(0, 80)
+                                        : item.preview || '')}
+                                  </p>
 
-                                  {/* Delete button */}
-                                  {canDelete && (
-                                    <button
-                                      onClick={(e) => startDelete(e, item)}
-                                      className="p-1 rounded-md text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
-                                      title="Delete"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </button>
-                                  )}
+                                  <div>
+                                    {(item.time || item.lastUpdated) && (
+                                      <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap mr-1">
+                                        {item.lastUpdated || item.time}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               )}
-                            </div>
-
-                            {/* Preview */}
-                            {!isEditing && (
-                              <div className="flex justify-between">
-                                <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                                  {chatPreview ||
-                                    (typeof item.data === 'string'
-                                      ? item.data.slice(0, 80)
-                                      : item.preview || '')}
-                                </p>
-
-                                <div>
-                                  {(item.time || item.lastUpdated) && (
-                                    <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap mr-1">
-                                      {item.lastUpdated || item.time}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </>
-                    )}
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
+                )
+              })}
+
+              {/* Sentinel for infinite scroll */}
+              <div ref={sentinelRef} className="h-4" />
+
+              {/* Load more indicator */}
+              {isFetchingMore && (
+                <div className="px-4 py-3 space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 w-3/4 skeleton opacity-60" />
+                        <div className="h-3 w-12 skeleton opacity-40" />
+                      </div>
+                      <div className="h-3 w-full skeleton opacity-30" />
+                    </div>
+                  ))}
                 </div>
-              )
-            })
+              )}
+
+              {/* End of list indicator */}
+              {!hasMore && filteredItems.length >= PER_PAGE && (
+                <p className="text-center text-[11px] text-gray-400 dark:text-gray-600 py-4">
+                  All history loaded
+                </p>
+              )}
+            </>
           )}
         </div>
       </aside>
