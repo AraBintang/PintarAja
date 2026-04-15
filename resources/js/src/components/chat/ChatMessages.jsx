@@ -626,7 +626,7 @@ export default function ChatMessages({
       )}
 
       {messages.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[78vh] text-center w-full">
+        <div className="flex flex-col items-center justify-center min-h-[74vh] text-center w-full">
           {isInitialLoading || isLoadingHistory ? (
             <InitialSkeleton />
           ) : (

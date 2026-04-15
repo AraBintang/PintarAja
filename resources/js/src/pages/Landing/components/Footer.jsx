@@ -37,7 +37,7 @@ export default function Footer() {
           >
             <button onClick={() => navigate('/')} className="flex flex-col gap-1 cursor-pointer">
               <div className="flex items-end">
-                <img src="/p doank.png" alt="Pintaraja" className="w-7 h-7 object-contain" />
+                <img src="/pintaraja.webp" alt="Pintaraja" className="w-7 h-7 object-contain" />
                 <span className="text-base font-bold text-gray-900 dark:text-white -ml-1 -mb-1">
                   intaraja
                 </span>

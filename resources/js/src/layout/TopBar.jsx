@@ -1,19 +1,27 @@
 import { Crown, History, Menu, MessagesSquare, Monitor, Moon, Sun, User } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useRightSidebar } from '@/context/RightSidebarContext'
 import { useSidebar } from '@/context/SidebarContext'
 import { useTheme } from '@/context/ThemeContext'
+
+const returnUrl = window.location.pathname
 
 export default function TopBar({ user }) {
   const location = useLocation()
   const { toggle: toggleRight } = useRightSidebar()
   const { toggle: toggleLeft } = useSidebar()
   const { theme, toggleTheme } = useTheme()
+  const navigate = useNavigate()
 
   const isComingSoonPage = location.pathname.startsWith('/humanize')
   const isAdminPage = location.pathname.startsWith('/admin')
   const isChatPage = location.pathname === '/chat' || location.pathname === '/new'
+
+  function toPlanTab() {
+    navigate(`${returnUrl}?settings=true&tab=plan`)
+    return
+  }
 
   return (
     <>
@@ -27,7 +35,10 @@ export default function TopBar({ user }) {
       </div>
 
       <div className="fixed top-3 right-6 md:right-3 z-40 flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 py-1.5 pl-2 !pr-2.5 rounded-full shadow">
-        <button className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold border  bg-blue-50 text-[#2686D4] dark:text-[#F2901E] border-blue-200 dark:border-orange-500/30 dark:bg-orange-500/10">
+        <button
+          className="cursor-pointer flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold border bg-blue-50 text-[#2686D4] dark:text-[#F2901E] border-blue-200 dark:border-orange-500/30 dark:bg-orange-500/10 transition-all duration-200 hover:scale-95 hover:shadow-md hover:bg-blue-100 dark:hover:bg-orange-500/20 hover:border-blue-300 dark:hover:border-orange-500/50"
+          onClick={() => toPlanTab()}
+        >
           {user?.plan_id !== 1 ? (
             <Crown className="w-3 h-3 fill-current" />
           ) : (

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import Pagination from '@/components/Pagination'
 import { useSnackbar } from '@/context/SnackbarContext'
-import { request } from '@/utils/Http'
+import { buildQuery, request } from '@/utils/Http'
 
 const PAGE_SIZE = 5
 

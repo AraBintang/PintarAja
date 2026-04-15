@@ -95,7 +95,7 @@
 
             {{-- Logo --}}
             <a href="/" class="hover:opacity-75 transition-opacity flex items-end gap-0.5">
-                <img src="{{ asset('p doank.png') }}" alt="Pintaraja" class="h-8 w-auto">
+                <img src="{{ asset('pintaraja.webp') }}" alt="Pintaraja" class="h-8 w-auto">
                 <span class="text-base font-bold text-gray-900 dark:text-white leading-none mb-0.5">intaraja</span>
             </a>
 
@@ -142,7 +142,7 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-10 mb-10">
                 <div class="col-span-2 md:col-span-1">
                     <a href="/" class="hover:opacity-75 transition-opacity flex items-end gap-0.5 mb-3">
-                        <img src="{{ asset('p doank.png') }}" alt="Pintaraja" class="h-8 w-auto">
+                        <img src="{{ asset('pintaraja.webp') }}" alt="Pintaraja" class="h-8 w-auto">
                         <span class="text-base font-bold text-gray-900 dark:text-white leading-none mb-0.5">intaraja</span>
                     </a>
                     <p class="text-sm text-gray-400 dark:text-gray-500 leading-relaxed">Platform AI terbaik untuk pembelajaran dan produktivitas.</p>
