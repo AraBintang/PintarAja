@@ -30,7 +30,7 @@ export default function AuthLayout({ lottieData, lottieText, lottieSub, children
           onClick={() => navigate('/')}
           className="absolute top-6 left-8 flex items-center gap-1 cursor-pointer"
         >
-          <img src="/p doank.png" alt="Pintaraja" className="w-7 h-7 object-contain" />
+          <img src="/pintaraja.webp" alt="Pintaraja" className="w-7 h-7 object-contain" />
           <span className="text-base font-bold text-gray-900 dark:text-white -ml-1.5 -mb-1.5">
             intaraja
           </span>
@@ -61,7 +61,7 @@ export default function AuthLayout({ lottieData, lottieText, lottieSub, children
           onClick={() => navigate('/')}
           className="md:hidden flex items-center gap-1 mb-8 cursor-pointer"
         >
-          <img src="/p doank.png" alt="Pintaraja" className="w-8 h-8 object-contain" />
+          <img src="/pintaraja.webp" alt="Pintaraja" className="w-8 h-8 object-contain" />
           <span className="text-lg font-bold text-gray-900 dark:text-white -ml-1.5 -mb-1.5">
             intaraja
           </span>

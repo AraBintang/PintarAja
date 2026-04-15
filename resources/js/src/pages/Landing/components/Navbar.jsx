@@ -29,8 +29,16 @@ export default function Navbar() {
         {/* Logo */}
         <a href="#hero" className="flex flex-col gap-1 cursor-pointer">
           <div className="flex items-end">
-            <img src="/p doank.png" alt="Pintaraja" className="w-7 h-7 object-contain" />
-            <span className="text-base font-bold text-gray-900 dark:text-white -ml-1 -mb-1">
+            <img
+              src="/pintaraja.webp"
+              alt="Pintaraja"
+              width={20}
+              height={28}
+              loading="lazy"
+              className="object-contain"
+            />
+
+            <span className="text-base font-bold text-gray-900 dark:text-white -mb-1">
               intaraja
             </span>
           </div>
