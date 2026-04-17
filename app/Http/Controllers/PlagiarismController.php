@@ -170,9 +170,14 @@ class PlagiarismController extends Controller
                 'signature' => hash_hmac('sha256', $merchantCode . $merchantRef . $totalAmount, $privateKey),
             ];
 
+            $isSandbox = app()->environment('local', 'development');
+            $url = $isSandbox
+                ? 'https://tripay.co.id/api-sandbox/transaction/create'
+                : 'https://tripay.co.id/api/transaction/create';
+
             $tripayResponse = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $apiKey,
-            ])->post('https://tripay.co.id/api/transaction/create', $payload);
+            ])->post($url, $payload);
 
             if ($tripayResponse->failed()) {
                 foreach ($storedFiles as $sf) {
