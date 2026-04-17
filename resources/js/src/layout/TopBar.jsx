@@ -5,8 +5,6 @@ import { useRightSidebar } from '@/context/RightSidebarContext'
 import { useSidebar } from '@/context/SidebarContext'
 import { useTheme } from '@/context/ThemeContext'
 
-const returnUrl = window.location.pathname
-
 export default function TopBar({ user }) {
   const location = useLocation()
   const { toggle: toggleRight } = useRightSidebar()
@@ -19,7 +17,8 @@ export default function TopBar({ user }) {
   const isChatPage = location.pathname === '/chat' || location.pathname === '/new'
 
   function toPlanTab() {
-    navigate(`${returnUrl}?settings=true&tab=plan`)
+    navigate(`${location.pathname}?settings=true&tab=plan`)
+
     return
   }
 

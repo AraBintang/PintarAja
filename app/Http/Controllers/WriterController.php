@@ -37,7 +37,12 @@ class WriterController extends Controller
             ->join('m_setting as s', 's.M_SettingID', '=', 'ps.M_PlanSettingM_SettingID')
             ->where('ps.M_PlanSettingM_PlanID', $user->M_UserPlan)
             ->where('s.M_SettingIsActive', 'Y')
-            ->select('s.M_SettingID as id', 's.M_SettingCode as code', 's.M_SettingModel as model')
+            ->select(
+              's.M_SettingID as id',
+              's.M_SettingCode as code',
+              's.M_SettingModel as model',
+              's.M_SettingModel as label',
+              )
             ->orderByRaw("CASE
                 WHEN s.M_SettingCode = 'SETTING-GPT' THEN 1
                 WHEN s.M_SettingCode = 'SETTING-GMN' THEN 2

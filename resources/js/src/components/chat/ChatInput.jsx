@@ -48,14 +48,18 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
         className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800/60 hover:bg-gray-50 dark:hover:bg-gray-700/60 rounded-full text-[13px] transition-all shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span className="flex-shrink-0">{mapped.icon}</span>
-        <span className="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[90px]">
-          {mapped.label}
-        </span>
-        {selected?.model && (
-          <span className="text-[12px] text-gray-500 dark:text-gray-400 font-medium truncate max-w-[110px]">
-            {selected.model}
-          </span>
-        )}
+        {selected?.model &&
+          (() => {
+            const modelInfo = (AI_MODELS[selected.code] ?? []).find(
+              (item) => item.value === selected?.model || item.label === selected?.model,
+            )
+
+            return (
+              <span className="font-semibold text-gray-800 dark:text-gray-200 truncate">
+                {modelInfo?.label || selected?.model}
+              </span>
+            )
+          })()}
         <svg
           width="12"
           height="12"
@@ -113,11 +117,11 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
                       </div>
                       <div className="flex flex-col min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          {ai.model && (
+                          {modelInfo?.label && (
                             <span
                               className={`text-[13px] font-semibold truncate ${isSelected ? 'text-[#4A90D9]' : 'text-gray-700 dark:text-gray-200'}`}
                             >
-                              {ai.model}
+                              {modelInfo?.label}
                             </span>
                           )}
                         </div>

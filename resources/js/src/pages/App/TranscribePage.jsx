@@ -405,6 +405,41 @@ export default function TranscribePage() {
             Paste a YouTube video link to transcribe its audio.
           </p>
 
+          <div className="w-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl p-4 mb-5">
+            <div className="flex gap-3">
+              <div className="flex-shrink-0 w-5 h-5 mt-0.5 text-amber-500 dark:text-amber-400">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path
+                    fillRule="evenodd"
+                    d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-amber-800 dark:text-amber-300 mb-1.5">
+                  Persyaratan Video YouTube
+                </p>
+                <ul className="space-y-1">
+                  {[
+                    'Durasi maksimal 2 jam',
+                    'Video harus bersifat publik atau tidak terdaftar (unlisted)',
+                    'Video harus memiliki audio yang jelas',
+                    'Konten dengan hak cipta ketat mungkin tidak dapat diproses',
+                  ].map((item, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-[13px] text-amber-700 dark:text-amber-400"
+                    >
+                      <span className="mt-1.5 w-1 h-1 rounded-full bg-amber-500 dark:bg-amber-400 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
           <div className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm rounded-xl p-1 flex gap-2 focus-within:ring-2 focus-within:ring-blue-500/20 dark:focus-within:ring-orange-400/20 focus-within:border-blue-500 dark:focus-within:border-orange-400 transition-all">
             <input
               type="url"

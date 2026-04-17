@@ -93,10 +93,12 @@ class TranscribeController extends Controller
             ]]
         ];
 
-        $response = Http::post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
-            $payload
-        );
+        $response = Http::timeout(300)
+            ->retry(2, 5000)
+            ->post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
+                $payload
+            );
 
         if (!$response->successful()) {
             throw new \Exception("Gemini API failed: " . $response->body());
@@ -126,10 +128,12 @@ class TranscribeController extends Controller
             ]]
         ];
 
-        $response = Http::post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
-            $payload
-        );
+        $response = Http::timeout(300)
+            ->retry(2, 5000)
+            ->post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
+                $payload
+            );
 
         if (!$response->successful()) {
             throw new \Exception("Gemini YouTube transcribe failed: " . $response->body());
@@ -145,7 +149,6 @@ class TranscribeController extends Controller
         $request->validate([
             'source' => 'required',
             'video_url' => 'nullable|url',
-            'file' => 'nullable|file|max:102400',
             'file' => 'nullable|file|max:102400',
         ]);
 
@@ -299,7 +302,7 @@ class TranscribeController extends Controller
     {
         $transcribe = Transcribe::findOrFail($id);
 
-         if (!$transcribe) {
+        if (!$transcribe) {
             return response()->json([
                 'message' => 'Data not found.'
             ], 404);

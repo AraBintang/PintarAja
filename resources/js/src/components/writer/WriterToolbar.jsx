@@ -38,14 +38,19 @@ const WriterToolbar = memo(function WriterToolbar({
                     <span className="text-[12px] text-gray-400 dark:text-gray-500 font-medium">
                       Model:
                     </span>
-                    <span className="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[90px]">
-                      {AI_CODE_MAP[selectedAi.code]?.label}
-                    </span>
-                    {selectedAi.model && (
-                      <span className="text-[12px] text-gray-500 dark:text-gray-400 font-medium truncate max-w-[110px]">
-                        {selectedAi.model}
-                      </span>
-                    )}
+                    {selectedAi?.model &&
+                      (() => {
+                        const modelInfo = (AI_MODELS[selectedAi?.code] ?? []).find(
+                          (item) =>
+                            item.value === selectedAi?.model || item.label === selectedAi?.model,
+                        )
+
+                        return (
+                          <span className="font-semibold text-gray-800 dark:text-gray-200 truncate">
+                            {modelInfo?.label || selectedAi?.model}
+                          </span>
+                        )
+                      })()}
                   </div>
                 )}
               </SelectValue>
@@ -79,6 +84,7 @@ const WriterToolbar = memo(function WriterToolbar({
                       (item) => item.value === ai.model || item.label === ai.model,
                     )
                     const isSelected = String(ai.id) === selectedAiId
+
                     return (
                       <SelectItem
                         key={ai.id}
@@ -97,11 +103,11 @@ const WriterToolbar = memo(function WriterToolbar({
                           </div>
                           <div className="flex flex-col flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              {ai.model && (
+                              {modelInfo?.label && (
                                 <span
                                   className={`text-[13px] font-semibold truncate ${isSelected ? 'text-[#4A90D9]' : 'text-gray-700 dark:text-gray-200'}`}
                                 >
-                                  {ai.model}
+                                  {modelInfo?.label}
                                 </span>
                               )}
                             </div>

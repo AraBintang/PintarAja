@@ -126,24 +126,29 @@ class AiProviderService
                 ];
             }
 
-            $response = $client->post('https://api.anthropic.com/v1/messages', [
-                'headers' => [
-                    'x-api-key' => $apiKey,
-                    'anthropic-version' => '2023-06-01',
-                    'content-type' => 'application/json',
-                    'accept' => 'text/event-stream',
-                ],
-                'json' => array_filter([
-                    'model' => $model ?? 'claude-3-sonnet-20240229',
-                    'system' => $format === false ? $systemPrompt : null,
-                    'messages' => $messages,
+            try {
+                $response = $client->post('https://api.anthropic.com/v1/messages', [
+                    'headers' => [
+                        'x-api-key' => $apiKey,
+                        'anthropic-version' => '2023-06-01',
+                        'content-type' => 'application/json',
+                        'accept' => 'text/event-stream',
+                    ],
+                    'json' => array_filter([
+                        'model' => $model ?? 'claude-sonnet-4-5',
+                        'messages' => $messages,
+                        'stream' => true,
+                        'max_tokens' => 8192,
+                    ]),
                     'stream' => true,
-                    'max_tokens' => 8192,
-                ]),
-                'stream' => true,
-            ]);
+                ]);
+            } catch (\GuzzleHttp\Exception\ClientException $e) {
+                $errorBody = $e->getResponse()->getBody()->getContents();
+                \Log::error('Anthropic API error: ' . $errorBody);
+                throw $e;
+            }
 
-            $body   = $response->getBody();
+            $body = $response->getBody();
             $buffer = '';
             $output = '';
 
@@ -203,7 +208,6 @@ class AiProviderService
                     'messages' => $messages,
                     'stream' => true,
                 ],
-                'stream' => true,
             ]);
 
             $body = $response->getBody();
