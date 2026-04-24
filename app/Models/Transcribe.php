@@ -19,6 +19,10 @@ class Transcribe extends Model
         'M_TranscribeName',
         'M_TranscribeData',
         'M_TranscribeSource',
+        'M_TranscribeStatus',
+        'M_TranscribeStartedAt',
+        'M_TranscribeCompletedAt',
+        'M_TranscribeErrorMessage',
         'M_TranscribeCreated',
         'M_TranscribeLastUpdated',
     ];

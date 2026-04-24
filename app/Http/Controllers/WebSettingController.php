@@ -82,11 +82,8 @@ class WebSettingController extends Controller
     public function public()
     {
         $settings = WebSetting::all()->groupBy('M_WebSettingKey')->map(function ($group) {
-            if ($group->count() === 1) {
-                return $group->first()->M_WebSettingValue;
-            }
             return $group->map(fn($s) => [
-                'id'    => $s->M_WebSettingID,
+                'id' => $s->M_WebSettingID,
                 'label' => $s->M_WebSettingLabel,
                 'value' => $s->M_WebSettingValue,
             ])->values();

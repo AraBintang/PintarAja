@@ -111,6 +111,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('transcribes')->group(function () {
         Route::get('/', [TranscribeController::class, 'index']);
+        Route::get('/active', [TranscribeController::class, 'getActive']);
+        Route::get('/{id}/status', [TranscribeController::class, 'getStatus']);
         Route::post('/', [TranscribeController::class, 'transcribe']);
         Route::put('/{id}', [TranscribeController::class, 'update']);
         Route::delete('/{id}', [TranscribeController::class, 'destroy']);

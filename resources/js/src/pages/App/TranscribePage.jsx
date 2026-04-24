@@ -5,38 +5,8 @@ import RecordingPanel from '@/components/transcribe/RecordingPanel'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
 
-function useAnimatedHeight(dependency) {
-  const ref = useRef(null)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-
-    const prev = el.style.height
-    el.style.height = 'auto'
-    const fullHeight = el.scrollHeight
-    el.style.height = prev || '0px'
-
-    el.getBoundingClientRect()
-    el.style.transition = 'height 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
-    el.style.height = `${fullHeight}px`
-
-    const onEnd = () => {
-      el.style.height = 'auto'
-      el.style.transition = ''
-    }
-    el.addEventListener('transitionend', onEnd, { once: true })
-    return () => el.removeEventListener('transitionend', onEnd)
-  }, [dependency])
-
-  return ref
-}
-
 function TranscriptionResultView({ transcriptionResult, handleReset, handleExport }) {
   const [animKey, setAnimKey] = useState(0)
-  const cardRef = useAnimatedHeight(transcriptionResult)
-  const summaryRef = useAnimatedHeight(transcriptionResult?.summary)
-  const transcriptRef = useAnimatedHeight(transcriptionResult?.transcript)
 
   // Re-trigger slideUp setiap kali data berubah
   useEffect(() => {
@@ -65,7 +35,6 @@ function TranscriptionResultView({ transcriptionResult, handleReset, handleExpor
 
       <div
         key={`card-${animKey}`}
-        ref={cardRef}
         className="w-full mt-20 md:mt-18 mb-6 bg-white dark:bg-gray-800 rounded-[24px] shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col md:flex-row animate-[slideUp_0.45s_ease-out_both]"
       >
         {/* ── Left panel ── */}
@@ -90,7 +59,7 @@ function TranscriptionResultView({ transcriptionResult, handleReset, handleExpor
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
                 Summary
               </h3>
-              <ul ref={summaryRef} className="space-y-4 overflow-hidden">
+              <ul className="space-y-4 overflow-hidden">
                 {transcriptionResult.summary.map((point, idx) => (
                   <li
                     key={`${animKey}-summary-${idx}`}
@@ -121,7 +90,7 @@ function TranscriptionResultView({ transcriptionResult, handleReset, handleExpor
             </button>
           </div>
 
-          <div ref={transcriptRef} className="flex-1 overflow-hidden pr-2 space-y-6">
+          <div className="flex-1 overflow-hidden pr-2 space-y-6">
             {transcriptionResult.transcript.map((item, idx) => (
               <div
                 key={`${animKey}-transcript-${idx}`}
@@ -153,13 +122,6 @@ function TranscriptionResultView({ transcriptionResult, handleReset, handleExpor
       </div>
     </div>
   )
-}
-
-const formatTime = (seconds) => {
-  const hrs = Math.floor(seconds / 3600)
-  const mins = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
-  return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
 const parseTranscript = (rawText) => {
@@ -194,11 +156,12 @@ export default function TranscribePage() {
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [uploadedFile, setUploadedFile] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [processingProgress, setProcessingProgress] = useState(0)
   const [transcriptionResult, setTranscriptionResult] = useState(null)
   const [currentHistoryId, setCurrentHistoryId] = useState(null)
+  const [activeTranscriptionId, setActiveTranscriptionId] = useState(null)
 
   const fileInputRef = useRef(null)
+  const pollingIntervalRef = useRef(null)
 
   useEffect(() => {
     const handleLoadHistory = (e) => {
@@ -235,6 +198,97 @@ export default function TranscribePage() {
     return () => window.removeEventListener('historyItemDeleted', handleDeleted)
   }, [currentHistoryId])
 
+  // Check for active transcription on component mount
+  useEffect(() => {
+    const checkActiveTranscription = async () => {
+      try {
+        const res = await request('/transcribes/active', {
+          method: 'GET',
+        })
+
+        if (res.active && res.data) {
+          setActiveTranscriptionId(res.data.id)
+          setIsProcessing(true)
+          // Start polling immediately
+          startPolling(res.data.id)
+        }
+      } catch (err) {
+        console.error('Failed to check active transcription:', err)
+      }
+    }
+
+    checkActiveTranscription()
+
+    return () => {
+      // Cleanup polling on unmount
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Ganti startPolling dengan ini
+  const startPolling = (transcriptionId) => {
+    // Pastikan tidak ada polling yang jalan sebelumnya
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+      pollingIntervalRef.current = null
+    }
+
+    const pollStatus = async () => {
+      try {
+        const res = await request(`/transcribes/${transcriptionId}/status`, {
+          method: 'GET',
+        })
+
+        if (res.status === 'completed') {
+          // Stop polling DULU sebelum apapun
+          clearInterval(pollingIntervalRef.current)
+          pollingIntervalRef.current = null
+
+          const transcript = parseTranscript(res.data || '')
+          setTranscriptionResult({
+            title: res.name || 'Transcription',
+            duration: '',
+            speakers: 1,
+            summary: [],
+            transcript,
+          })
+          setCurrentHistoryId(res.id)
+          setIsProcessing(false)
+          setActiveTranscriptionId(null)
+
+          window.dispatchEvent(
+            new CustomEvent('transcribeCompleted', {
+              detail: {
+                id: res.id,
+                name: res.name?.slice(0, 60),
+                data: res.data,
+                source: res.source,
+                time: new Date().toLocaleString('id-ID'),
+              },
+            }),
+          )
+        } else if (res.status === 'failed') {
+          clearInterval(pollingIntervalRef.current)
+          pollingIntervalRef.current = null
+
+          setIsProcessing(false)
+          setActiveTranscriptionId(null)
+          showSnackbar('error', `Transcription failed: ${res.error_message || 'Unknown error'}`)
+        }
+        // pending/processing → lanjut polling
+      } catch (err) {
+        console.error('Polling error:', err)
+      }
+    }
+
+    // Poll tiap 15 detik, tapi langsung poll sekali dulu
+    pollStatus()
+    pollingIntervalRef.current = setInterval(pollStatus, 15000)
+  }
+
   const handleExport = () => {
     const lines = transcriptionResult.transcript
       .map((item) => `[${item.time}] ${item.speaker}: ${item.text}`)
@@ -248,23 +302,17 @@ export default function TranscribePage() {
     URL.revokeObjectURL(url)
   }
 
-  const startFakeProgress = () => {
-    setProcessingProgress(0)
-    const interval = setInterval(() => {
-      setProcessingProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(interval)
-          return prev
-        }
-        return prev + Math.floor(Math.random() * 10) + 3
-      })
-    }, 1000)
-    return interval
-  }
+  const submitTranscription = async ({ source, file, videoUrl }) => {
+    // Check if already transcribing
+    if (activeTranscriptionId && isProcessing) {
+      showSnackbar(
+        'warning',
+        'You already have a transcription in progress. Please wait for it to complete.',
+      )
+      return
+    }
 
-  const submitTranscription = async ({ source, file, videoUrl, duration }) => {
     setIsProcessing(true)
-    const interval = startFakeProgress()
 
     try {
       const formData = new FormData()
@@ -281,43 +329,24 @@ export default function TranscribePage() {
         body: formData,
       })
 
-      clearInterval(interval)
-      setProcessingProgress(100)
+      // Store the transcription ID and start polling
+      setActiveTranscriptionId(res.id)
+      showSnackbar('success', 'Transcription started. Processing in the background...')
 
-      const transcript = parseTranscript(res.data)
-
-      setTranscriptionResult({
-        title:
-          source === 'youtube'
-            ? 'YouTube Video Transcription'
-            : source === 'upload'
-              ? file?.name || 'Uploaded File'
-              : 'Recorded Audio',
-        duration: duration || '',
-        speakers: 1,
-        summary: [],
-        transcript,
-      })
-
-      if (res.id) {
-        setCurrentHistoryId(res.id)
-        window.dispatchEvent(
-          new CustomEvent('transcribeCompleted', {
-            detail: {
-              id: res.id,
-              name: res.name.slice(0, 60),
-              data: res.data,
-              source: res.source,
-              time: new Date().toLocaleString('id-ID'),
-            },
-          }),
-        )
-      }
+      // Start polling for status updates
+      startPolling(res.id)
     } catch (err) {
-      clearInterval(interval)
-      showSnackbar('error', err.message || 'Gagal melakukan transkripsi')
-    } finally {
       setIsProcessing(false)
+      setActiveTranscriptionId(null)
+
+      if (err.message?.includes('409') || err.activeStatus) {
+        showSnackbar(
+          'warning',
+          'You already have a transcription in progress. Please wait for it to complete.',
+        )
+      } else {
+        showSnackbar('error', err.message || 'Failed to start transcription')
+      }
     }
   }
 
@@ -340,12 +369,11 @@ export default function TranscribePage() {
     submitTranscription({ source: 'youtube', videoUrl: youtubeUrl })
   }
 
-  const handleRecordDone = (audioFile, recordingTime) => {
+  const handleRecordDone = (audioFile) => {
     setActiveTab('landing')
     submitTranscription({
       source: 'record',
       file: audioFile,
-      duration: formatTime(recordingTime),
     })
   }
 
@@ -354,8 +382,8 @@ export default function TranscribePage() {
     setYoutubeUrl('')
     setUploadedFile(null)
     setIsProcessing(false)
-    setProcessingProgress(0)
     setTranscriptionResult(null)
+    setActiveTranscriptionId(null)
   }
 
   return (
@@ -377,18 +405,14 @@ export default function TranscribePage() {
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2 animate-pulse">
             Transcribing...
           </h2>
-          <p className="text-blue-600 dark:text-orange-400 font-bold text-3xl mb-4 tracking-tight drop-shadow-sm">
+          {/* <p className="text-blue-600 dark:text-orange-400 font-bold text-3xl mb-4 tracking-tight drop-shadow-sm">
             {processingProgress}%
-          </p>
+          </p> */}
           <p className="text-gray-500 dark:text-gray-400 text-[15px] text-center max-w-[280px]">
             Analyzing audio and generating transcription. Please hold on.
           </p>
-
-          <div className="w-64 h-2 bg-gray-100 dark:bg-gray-800 rounded-full mt-8 overflow-hidden relative shadow-inner">
-            <div
-              className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-blue-400 to-blue-600 dark:from-orange-400 dark:to-orange-500 rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${processingProgress}%` }}
-            />
+          <div className="w-64 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full mt-8 overflow-hidden">
+            <div className="h-full w-1/2 bg-gradient-to-r from-blue-400 to-blue-600 dark:from-orange-400 dark:to-orange-500 rounded-full animate-shimmer" />
           </div>
         </div>
       ) : activeTab === 'record' ? (

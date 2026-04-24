@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\TranscribeJob;
 use App\Models\Transcribe;
 use Gemini\Laravel\Facades\Gemini;
 use Illuminate\Http\Request;
@@ -42,108 +43,6 @@ class TranscribeController extends Controller
         ]);
     }
 
-    private function splitAudio($audioPath)
-    {
-        $chunkDir = storage_path('app/audio_chunks/' . uniqid());
-
-        if (!file_exists($chunkDir)) {
-            mkdir($chunkDir, 0777, true);
-        }
-
-        $command = "ffmpeg -i " . escapeshellarg($audioPath) .
-            " -f segment -segment_time 600 -c copy " .
-            escapeshellarg($chunkDir . "/chunk_%03d.mp3") .
-            " 2>&1";
-
-        exec($command);
-
-        return glob($chunkDir . "/*.mp3");
-    }
-
-    private function transcribeWithGemini($audioPath)
-    {
-        $apiKey = config('services.gemini.key');
-
-        $audioData = base64_encode(file_get_contents($audioPath));
-
-        $ext = pathinfo($audioPath, PATHINFO_EXTENSION);
-
-        $mimeTypes = [
-            'mp3' => 'audio/mpeg',
-            'wav' => 'audio/wav',
-            'webm' => 'audio/webm',
-            'm4a' => 'audio/mp4'
-        ];
-
-        $mimeType = $mimeTypes[$ext] ?? 'audio/mpeg';
-
-        $payload = [
-            "contents" => [[
-                "parts" => [
-                    [
-                        "inlineData" => [
-                            "mimeType" => $mimeType,
-                            "data" => $audioData
-                        ]
-                    ],
-                    [
-                        "text" => "Please transcribe this audio with timestamps."
-                    ]
-                ]
-            ]]
-        ];
-
-        $response = Http::timeout(300)
-            ->retry(2, 5000)
-            ->post(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
-                $payload
-            );
-
-        if (!$response->successful()) {
-            throw new \Exception("Gemini API failed: " . $response->body());
-        }
-
-        $result = $response->json();
-
-        return $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
-    }
-
-    private function transcribeYoutubeWithGemini($youtubeUrl)
-    {
-        $apiKey = config('services.gemini.key');
-
-        $payload = [
-            "contents" => [[
-                "parts" => [
-                    [
-                        "file_data" => [
-                            "file_uri" => $youtubeUrl
-                        ]
-                    ],
-                    [
-                        "text" => "Please transcribe this audio with timestamps."
-                    ]
-                ]
-            ]]
-        ];
-
-        $response = Http::timeout(300)
-            ->retry(2, 5000)
-            ->post(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
-                $payload
-            );
-
-        if (!$response->successful()) {
-            throw new \Exception("Gemini YouTube transcribe failed: " . $response->body());
-        }
-
-        $result = $response->json();
-
-        return $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
-    }
-
     public function transcribe(Request $request)
     {
         $request->validate([
@@ -158,121 +57,86 @@ class TranscribeController extends Controller
             return response()->json(['error' => 'Your current plan does not include access to this feature. Please upgrade to continue.'], 403);
         }
 
+        // Check if user already has an active transcription (pending or processing)
+        $activeTranscription = Transcribe::where('M_TranscribeM_UserID', $user->M_UserID)
+            ->whereIn('M_TranscribeStatus', ['pending', 'processing'])
+            ->first();
+
+        if ($activeTranscription) {
+            return response()->json([
+                'error' => 'You already have a transcription in progress. Please wait for it to complete before starting a new one.',
+                'activeId' => $activeTranscription->M_TranscribeID,
+                'activeStatus' => $activeTranscription->M_TranscribeStatus
+            ], 409);
+        }
+
         $source = $request->input('source');
-        $audioPath = null;
-        $transcript = null;
+        $filePath = null;
+        $youtubeUrl = null;
 
-        if ($source === 'youtube') {
-            $youtubeUrl = $request->video_url;
+        try {
+            if ($source === 'youtube') {
+                $youtubeUrl = $request->video_url;
+            } elseif ($source === 'upload') {
+                $file = $request->file('file');
+                $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(storage_path('app/private/uploads'), $filename);
+                $filePath = storage_path('app/private/uploads/' . $filename);
 
-            try {
-                $transcript = $this->transcribeYoutubeWithGemini($youtubeUrl);
-            } catch (\Exception $e) {
-                return response()->json([
-                    'error' => 'Failed to transcribe YouTube video',
-                    'log' => $e->getMessage()
-                ], 500);
-            }
-        }
-
-        if ($source === 'upload') {
-            $file = $request->file('file');
-
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(storage_path('app/private/uploads'), $filename);
-            $fullPath = storage_path('app/private/uploads/' . $filename);
-
-            if (!file_exists($fullPath)) {
-                return response()->json([
-                    'error' => 'Uploaded file not found',
-                    'path' => $fullPath
-                ], 500);
-            }
-
-            $audioPath = storage_path('app/audio/' . uniqid() . '.mp3');
-
-            $command = "ffmpeg -i " .
-                escapeshellarg($fullPath) .
-                " -vn -acodec libmp3lame " .
-                escapeshellarg($audioPath) .
-                " 2>&1";
-
-            exec($command, $output, $status);
-
-            if ($status !== 0) {
-                return response()->json([
-                    'error' => 'Failed to extract audio',
-                    'log' => $output
-                ], 500);
-            }
-        }
-
-        if ($source === 'record') {
-            $file = $request->file('file');
-
-            $filename = uniqid() . ".webm";
-            $file->move(storage_path('app/private/record'), $filename);
-            $fullPath = storage_path('app/private/record/' . $filename);
-            $audioPath = storage_path("app/audio/" . uniqid() . ".mp3");
-
-            $command = "ffmpeg -i " .
-                escapeshellarg($fullPath) .
-                " -vn -acodec mp3 " .
-                escapeshellarg($audioPath) .
-                " 2>&1";
-
-            exec($command, $output, $status);
-
-            if ($status !== 0) {
-                return response()->json([
-                    'error' => 'Failed to process record audio',
-                    'log' => $output
-                ], 500);
-            }
-        }
-
-        if ($audioPath) {
-            $maxSize = 20 * 1024 * 1024;
-
-            if (filesize($audioPath) <= $maxSize) {
-                $transcript = $this->transcribeWithGemini($audioPath);
-            } else {
-                $chunks = $this->splitAudio($audioPath);
-
-                $transcriptParts = [];
-
-                foreach ($chunks as $chunk) {
-                    $text = $this->transcribeWithGemini($chunk);
-                    $transcriptParts[] = $text;
-                    unlink($chunk);
+                if (!file_exists($filePath)) {
+                    return response()->json([
+                        'error' => 'Uploaded file not found',
+                    ], 500);
                 }
+            } elseif ($source === 'record') {
+                $file = $request->file('file');
+                $filename = uniqid() . ".webm";
+                $file->move(storage_path('app/private/record'), $filename);
+                $filePath = storage_path('app/private/record/' . $filename);
 
-                $transcript = implode("\n\n", $transcriptParts);
+                if (!file_exists($filePath)) {
+                    return response()->json([
+                        'error' => 'Recorded file not found',
+                    ], 500);
+                }
             }
 
-            if ($audioPath && file_exists($audioPath)) {
-                unlink($audioPath);
+            // Create transcription record with pending status
+            $transcribe = Transcribe::create([
+                'M_TranscribeM_UserID' => $user->M_UserID,
+                'M_TranscribeName' => ucfirst($source) . ' transcribe ' . now()->format('Y-m-d H:i'),
+                'M_TranscribeSource' => $source,
+                'M_TranscribeStatus' => 'pending'
+            ]);
+
+            // Dispatch job to process transcription asynchronously
+            // ffmpeg conversion (for upload/record) happens inside the job
+            TranscribeJob::dispatch(
+                $transcribe->M_TranscribeID,
+                $source,
+                $filePath,
+                $youtubeUrl
+            );
+
+            return response()->json([
+                'success' => true,
+                'id' => $transcribe->M_TranscribeID,
+                'name' => $transcribe->M_TranscribeName,
+                'source' => $transcribe->M_TranscribeSource,
+                'status' => $transcribe->M_TranscribeStatus,
+                'message' => 'Transcription started. Processing in the background...'
+            ], 201);
+        } catch (\Exception $e) {
+            // Cleanup files on error
+            if ($filePath && file_exists($filePath)) {
+                unlink($filePath);
             }
 
-            if (isset($fullPath) && file_exists($fullPath)) {
-                unlink($fullPath);
-            }
+            return response()->json([
+                'error' => 'Failed to start transcription',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        $transcribeId = Transcribe::create([
-            'M_TranscribeM_UserID' => $user->M_UserID,
-            'M_TranscribeName' => ucfirst($source) . ' transcribe ' . now()->format('Y-m-d H:i'),
-            'M_TranscribeData' => $transcript,
-            'M_TranscribeSource' => $source
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $transcript,
-            'id' => $transcribeId->M_TranscribeID,
-            'name' => $transcribeId->M_TranscribeName,
-            'source' => $transcribeId->M_TranscribeSource
-        ]);
     }
 
     public function update(Request $request, $id)
@@ -313,6 +177,64 @@ class TranscribeController extends Controller
         return response()->json([
             'message' => 'Deleted successfully',
             'id' => $id
+        ]);
+    }
+
+    /**
+     * Get status of a specific transcription
+     */
+    public function getStatus(Request $request, $id)
+    {
+        $user = $request->user();
+        $transcribe = Transcribe::where('M_TranscribeID', $id)
+            ->where('M_TranscribeM_UserID', $user->M_UserID)
+            ->first();
+
+        if (!$transcribe) {
+            return response()->json([
+                'message' => 'Transcription not found.'
+            ], 404);
+        }
+
+        return response()->json([
+            'id' => $transcribe->M_TranscribeID,
+            'status' => $transcribe->M_TranscribeStatus,
+            'name' => $transcribe->M_TranscribeName,
+            'source' => $transcribe->M_TranscribeSource,
+            'started_at' => $transcribe->M_TranscribeStartedAt,
+            'completed_at' => $transcribe->M_TranscribeCompletedAt,
+            'has_error' => $transcribe->M_TranscribeStatus === 'failed',
+            'error_message' => $transcribe->M_TranscribeErrorMessage,
+            'data' => $transcribe->M_TranscribeStatus === 'completed' ? $transcribe->M_TranscribeData : null
+        ]);
+    }
+
+    /**
+     * Get active transcription (pending or processing) for current user
+     */
+    public function getActive(Request $request)
+    {
+        $user = $request->user();
+        $activeTranscription = Transcribe::where('M_TranscribeM_UserID', $user->M_UserID)
+            ->whereIn('M_TranscribeStatus', ['pending', 'processing'])
+            ->first();
+
+        if (!$activeTranscription) {
+            return response()->json([
+                'active' => false,
+                'data' => null
+            ]);
+        }
+
+        return response()->json([
+            'active' => true,
+            'data' => [
+                'id' => $activeTranscription->M_TranscribeID,
+                'status' => $activeTranscription->M_TranscribeStatus,
+                'name' => $activeTranscription->M_TranscribeName,
+                'source' => $activeTranscription->M_TranscribeSource,
+                'started_at' => $activeTranscription->M_TranscribeStartedAt,
+            ]
         ]);
     }
 }
