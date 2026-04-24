@@ -129,13 +129,13 @@ const WriterForm = memo(function WriterForm({
                   type="button"
                   onClick={() => setPickerOpen(true)}
                   disabled={isGenerating}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] md:text-[12px] font-semibold rounded-lg md:rounded-xl border border-blue-200 bg-blue-50 text-[#2686D4] dark:text-[#60a5fa] hover:bg-blue-100 dark:border-blue-700/30 dark:bg-blue-900/10 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] md:text-[12px] font-semibold rounded-lg md:rounded-xl border border-blue-200 bg-blue-50 text-[#2686D4] dark:text-[#F2901E] hover:bg-blue-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:hover:bg-orange-500/20 transition-colors"
                 >
                   <Paperclip className="w-3.5 h-3.5" />
                   <span>
                     {selectedFiles.length > 0
-                      ? `${selectedFiles.length} Referensi`
-                      : 'Tambah Referensi'}
+                      ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
+                      : 'Add References'}
                   </span>
                 </button>
               )}

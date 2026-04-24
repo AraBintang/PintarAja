@@ -4,10 +4,10 @@
 
 <div class="max-w-5xl mx-auto px-6 sm:px-10">
 
-    {{-- Breadcrumb --}}
     <div class="pt-10 pb-8 md:pt-14">
         <a href="/blog"
-           class="inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors group">
+          onclick="history.length > 1 ? (history.back(), event.preventDefault()) : null"
+          class="inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors group">
             <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
             </svg>

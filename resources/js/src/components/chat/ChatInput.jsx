@@ -1,4 +1,5 @@
 import { ArrowUp, FileText, Image, Lock, Plus, X as XIcon } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 
 import { AI_CODE_MAP, AI_MODELS, AutoIcon } from '@/assets/ai'
@@ -11,8 +12,14 @@ function Toast({ message, onClose }) {
   }, [onClose])
 
   return (
-    <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-[13px] font-medium rounded-2xl shadow-xl whitespace-nowrap">
+    <motion.div
+      initial={{ scale: 0.95, opacity: 0, y: 10 }}
+      animate={{ scale: 1, opacity: 1, y: 0 }}
+      exit={{ scale: 0.95, opacity: 0, y: 10 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+    >
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-[13px] font-medium rounded-2xl shadow-xl whitespace-nowrap">
         <svg
           width="15"
           height="15"
@@ -27,7 +34,7 @@ function Toast({ message, onClose }) {
         </svg>
         {message}
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -74,9 +81,15 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
       </button>
 
       {open && !disabled && (
-        <>
+        <AnimatePresence>
           <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl z-[70] min-w-[220px] max-w-[300px] p-1.5 overflow-hidden">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0, y: 10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl z-[70] min-w-[220px] max-w-[300px] p-1.5 overflow-hidden"
+          >
             <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase px-3 pt-2 pb-1.5 tracking-widest">
               Select AI Model
             </p>
@@ -150,8 +163,8 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
                 })
               )}
             </div>
-          </div>
-        </>
+          </motion.div>
+        </AnimatePresence>
       )}
     </div>
   )
@@ -450,9 +463,15 @@ export default function ChatInput({
                 </button>
 
                 {showAttachMenu && (
-                  <>
+                  <AnimatePresence>
                     <div className="fixed inset-0 z-10" onClick={onToggleAttachMenu} />
-                    <div className="absolute bottom-full mb-2 p-1 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-20 w-48">
+                    <motion.div
+                      initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                      className="absolute bottom-full mb-2 p-1 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-20 w-48"
+                    >
                       <button
                         type="button"
                         onClick={() => {
@@ -512,8 +531,8 @@ export default function ChatInput({
                           <p className="text-[11px] text-gray-400 mt-0.5">PDF, DOC, TXT</p>
                         </div>
                       </button>
-                    </div>
-                  </>
+                    </motion.div>
+                  </AnimatePresence>
                 )}
 
                 <div className="flex items-center ml-1 bg-[#eeedeb] dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full">

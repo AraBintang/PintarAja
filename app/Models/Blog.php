@@ -31,6 +31,7 @@ class Blog extends Model
         'M_BlogCreatedAt' => 'datetime',
         'M_BlogLastUpdatedAt' => 'datetime',
         'M_BlogIsPublished' => 'boolean',
+        'M_BlogViewCount' => 'integer',
     ];
 
     public function author()

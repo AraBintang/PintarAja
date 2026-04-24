@@ -1,4 +1,5 @@
 import { Check, FileText, Loader2, Paperclip, Search, Upload, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -207,256 +208,269 @@ export default function FilePickerModal({
     onClose()
   }
 
-  if (!open) return null
-
   return createPortal(
-    <div
-      className="fixed inset-0 z-80 flex items-center justify-center bg-black/40 backdrop-blur-md"
-      onClick={onClose}
-    >
-      {/* Modal */}
-      <div
-        className="relative w-full sm:max-w-xl bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
-          <div>
-            <h3 className="text-[16px] font-bold text-gray-900 dark:text-white">
-              Pilih File Referensi
-            </h3>
-            <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">
-              Maks. {MAX_FILES} file · {localSelected.length} terpilih
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-80 flex items-center justify-center bg-black/40 backdrop-blur-md"
+          onClick={onClose}
+        >
+          {/* Modal */}
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0, y: 10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="relative w-full sm:max-w-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700/60 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+              <div>
+                <h3 className="text-[16px] font-bold text-gray-900 dark:text-white">
+                  Select Reference Files
+                </h3>
+                <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">
+                  Max. {MAX_FILES} file · {localSelected.length} selected
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-        {/* Selected chips */}
-        {localSelected.length > 0 && (
-          <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
-            <div className="flex flex-wrap gap-1.5">
-              {localSelected.map((f) => (
-                <div
-                  key={f.fileId}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 rounded-full"
-                >
-                  <FileTypeIcon fileName={f.fileName} className="w-3 h-3" />
-                  <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300 max-w-[120px] truncate">
-                    {f.fileName}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setLocalSelected((prev) => prev.filter((x) => x.fileId !== f.fileId))
-                    }
-                    className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+            {/* Selected chips */}
+            {localSelected.length > 0 && (
+              <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700/60 flex-shrink-0">
+                <div className="flex flex-wrap gap-1.5">
+                  {localSelected.map((f) => (
+                    <div
+                      key={f.fileId}
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 rounded-full"
+                    >
+                      <FileTypeIcon fileName={f.fileName} className="w-3 h-3" />
+                      <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300 max-w-[120px] truncate">
+                        {f.fileName}
+                      </span>
+                      <button
+                        onClick={() =>
+                          setLocalSelected((prev) => prev.filter((x) => x.fileId !== f.fileId))
+                        }
+                        className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
+              </div>
+            )}
+
+            {/* Tabs */}
+            <div className="flex gap-2 px-5 pt-3 flex-shrink-0">
+              {[
+                { key: 'saved', label: 'Saved Files', icon: FileText },
+                { key: 'upload', label: 'Upload New', icon: Upload },
+              ].map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-colors ${
+                    tab === key
+                      ? 'bg-blue-600 dark:bg-orange-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </button>
               ))}
             </div>
-          </div>
-        )}
 
-        {/* Tabs */}
-        <div className="flex gap-2 px-5 pt-3 flex-shrink-0">
-          {[
-            { key: 'saved', label: 'File Tersimpan', icon: FileText },
-            { key: 'upload', label: 'Upload Baru', icon: Upload },
-          ].map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-colors ${
-                tab === key
-                  ? 'bg-blue-600 dark:bg-orange-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 pb-3 pt-3 space-y-3">
-          {tab === 'saved' ? (
-            <>
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari file referensi..."
-                  className="w-full h-10 pl-9 pr-4 text-[13px] rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
-                />
-              </div>
-
-              {/* File list */}
-              {loadingSaved ? (
-                <div className="flex items-center justify-center gap-2 py-10 text-gray-400 text-sm">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Memuat file...
-                </div>
-              ) : savedFiles.length === 0 ? (
-                <div className="py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
-                  {searchQuery ? 'Tidak ada file yang cocok.' : 'Belum ada file tersimpan.'}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {savedFiles.map((file) => {
-                    const selected = isSelected(file.fileId)
-                    const disabled = !selected && localSelected.length >= MAX_FILES
-                    return (
-                      <button
-                        key={file.id}
-                        type="button"
-                        onClick={() => toggleFile(file)}
-                        disabled={disabled}
-                        className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-                          selected
-                            ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                            : disabled
-                              ? 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 opacity-50 cursor-not-allowed'
-                              : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'
-                        }`}
-                      >
-                        {/* Checkbox */}
-                        <div
-                          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                            selected
-                              ? 'border-blue-500 bg-blue-500 dark:border-blue-400 dark:bg-blue-500'
-                              : 'border-gray-300 dark:border-gray-600'
-                          }`}
-                        >
-                          {selected && <Check className="w-3 h-3 text-white" />}
-                        </div>
-
-                        {/* Icon */}
-                        <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                          <FileTypeIcon fileName={file.name} className="w-4 h-4" />
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100 truncate">
-                            {file.name}
-                          </p>
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-                            {formatFileSize(file.size)} ·{' '}
-                            {new Date(file.createdAt).toLocaleDateString('id-ID')}
-                          </p>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Pagination */}
-              {pagination && pagination.last_page > 1 && (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={pagination.last_page}
-                  total={pagination.total}
-                  pageSize={PAGE_SIZE}
-                  onPageChange={setCurrentPage}
-                  label="file"
-                  className="pt-2"
-                />
-              )}
-            </>
-          ) : (
-            /* Upload tab */
-            <div
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-              className="relative flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-10 text-center transition-colors hover:border-blue-300 dark:hover:border-blue-600"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept={ALLOWED_EXTENSIONS.join(',')}
-                className="hidden"
-                onChange={handleFileInputChange}
-              />
-
-              {isUploading ? (
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-5 pb-3 pt-3 space-y-3">
+              {tab === 'saved' ? (
                 <>
-                  <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-                  <div>
-                    <p className="text-[14px] font-semibold text-gray-700 dark:text-gray-200">
-                      Mengupload {uploadProgress?.current}/{uploadProgress?.total}
-                    </p>
-                    <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-1 truncate max-w-[220px]">
-                      {uploadProgress?.fileName}
-                    </p>
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search reference files..."
+                      className="w-full h-10 pl-9 pr-4 text-[13px] rounded-xl border border-gray-100 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
+                    />
                   </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 flex items-center justify-center">
-                    <Paperclip className="w-6 h-6 text-blue-500 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-[14px] font-semibold text-gray-700 dark:text-gray-200">
-                      Drag & drop file, atau{' '}
-                      <button
-                        type="button"
-                        className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
-                        disabled={localSelected.length >= MAX_FILES}
-                      >
-                        browse
-                      </button>
-                    </p>
-                    <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-1">
-                      PDF, DOCX, TXT, MD, PPTX · Maks. 20MB/file
-                    </p>
-                  </div>
-                  {localSelected.length >= MAX_FILES && (
-                    <p className="text-[12px] font-semibold text-amber-600 dark:text-amber-400">
-                      Batas {MAX_FILES} file tercapai
-                    </p>
+
+                  {/* File list */}
+                  {loadingSaved ? (
+                    <div className="flex items-center justify-center gap-2 py-10 text-gray-400 text-sm">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading files...
+                    </div>
+                  ) : savedFiles.length === 0 ? (
+                    <div className="py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
+                      {searchQuery ? 'Tidak ada file yang cocok.' : 'Belum ada file tersimpan.'}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {savedFiles.map((file) => {
+                        const selected = isSelected(file.fileId)
+                        const disabled = !selected && localSelected.length >= MAX_FILES
+                        return (
+                          <button
+                            key={file.id}
+                            type="button"
+                            onClick={() => toggleFile(file)}
+                            disabled={disabled}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                              selected
+                                ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                : disabled
+                                  ? 'border-gray-100 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/50 opacity-50 cursor-not-allowed'
+                                  : 'border-gray-100 dark:border-gray-700/60 bg-white dark:bg-gray-800/50 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'
+                            }`}
+                          >
+                            {/* Checkbox */}
+                            <div
+                              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                                selected
+                                  ? 'border-blue-500 bg-blue-500 dark:border-blue-400 dark:bg-blue-500'
+                                  : 'border-gray-300 dark:border-gray-600'
+                              }`}
+                            >
+                              {selected && <Check className="w-3 h-3 text-white" />}
+                            </div>
+
+                            {/* Icon */}
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 dark:bg-orange-500/10 dark:border-orange-500/20 flex items-center justify-center flex-shrink-0">
+                              <FileTypeIcon
+                                fileName={file.name}
+                                className="w-4 h-4 text-blue-500 dark:text-orange-400"
+                              />
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100 truncate">
+                                {file.name}
+                              </p>
+                              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                                {formatFileSize(file.size)} ·{' '}
+                                {new Date(file.createdAt).toLocaleDateString('id-ID')}
+                              </p>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* Pagination */}
+                  {pagination && pagination.last_page > 1 && (
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={pagination.last_page}
+                      total={pagination.total}
+                      pageSize={PAGE_SIZE}
+                      onPageChange={setCurrentPage}
+                      label="file"
+                      className="pt-2"
+                    />
                   )}
                 </>
+              ) : (
+                /* Upload tab */
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                  className="relative flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-10 text-center transition-colors hover:border-blue-300 dark:hover:border-blue-600"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept={ALLOWED_EXTENSIONS.join(',')}
+                    className="hidden"
+                    onChange={handleFileInputChange}
+                  />
+
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                      <div>
+                        <p className="text-[14px] font-semibold text-gray-700 dark:text-gray-200">
+                          Uploading {uploadProgress?.current}/{uploadProgress?.total}
+                        </p>
+                        <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-1 truncate max-w-[220px]">
+                          {uploadProgress?.fileName}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 flex items-center justify-center">
+                        <Paperclip className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-[14px] font-semibold text-gray-700 dark:text-gray-200">
+                          Drag & drop file, or{' '}
+                          <button
+                            type="button"
+                            className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
+                            disabled={localSelected.length >= MAX_FILES}
+                          >
+                            browse
+                          </button>
+                        </p>
+                        <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-1">
+                          PDF, DOCX, TXT, MD, PPTX · Max. 20MB/file
+                        </p>
+                      </div>
+                      {localSelected.length >= MAX_FILES && (
+                        <p className="text-[12px] font-semibold text-amber-600 dark:text-amber-400">
+                          Limit {MAX_FILES} file reached
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
 
-        {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3 flex-shrink-0">
-          <p className="text-[12px] text-gray-400 dark:text-gray-500">
-            {localSelected.length}/{MAX_FILES} file dipilih
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-[13px] font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              Batal
-            </button>
-            <button
-              onClick={handleConfirm}
-              className="px-5 py-2 text-[13px] font-semibold rounded-xl bg-blue-600 dark:bg-orange-500 text-white hover:bg-blue-700 dark:hover:bg-orange-600 transition-colors disabled:opacity-50"
-            >
-              Gunakan {localSelected.length > 0 ? `(${localSelected.length})` : ''}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>,
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between gap-3 flex-shrink-0">
+              <p className="text-[12px] text-gray-400 dark:text-gray-500">
+                {localSelected.length}/{MAX_FILES} file selected
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 text-[13px] font-semibold rounded-xl border border-gray-100 dark:border-gray-700/60 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  className="px-5 py-2 text-[13px] font-semibold rounded-xl bg-blue-600 dark:bg-orange-500 text-white hover:bg-blue-700 dark:hover:bg-orange-600 transition-colors disabled:opacity-50"
+                >
+                  Use {localSelected.length > 0 ? `(${localSelected.length})` : ''}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
 
     document.body,
   )

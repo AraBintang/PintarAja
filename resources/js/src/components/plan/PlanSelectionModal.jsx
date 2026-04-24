@@ -1,4 +1,5 @@
 import { Check, Crown, Sparkles, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -38,8 +39,6 @@ export default function PlanSelectionModal({ open, onClose, onSelectPlan, fromSe
     }
     fetchPlans()
   }, [open])
-
-  if (!open) return null
 
   const activePeriod = PERIOD_OPTIONS.find((p) => p.key === period)
 
@@ -82,214 +81,227 @@ export default function PlanSelectionModal({ open, onClose, onSelectPlan, fromSe
   }
 
   return (
-    <div
-      onClick={onClose}
-      className="fixed inset-0 z-80 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full sm:max-w-4xl bg-white dark:bg-gray-900 sm:rounded-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col mx-4"
-      >
-        {/* Mobile handle */}
-        <div className="sm:hidden flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
-        </div>
-
-        {/* Header */}
-        <div className="px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between gap-4 shrink-0">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Select Plan</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Tingkatkan akses dengan fitur premium
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all shrink-0"
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-80 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0, y: 10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="relative w-full sm:max-w-4xl bg-white dark:bg-gray-900 sm:rounded-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col mx-4"
+            onClick={(e) => e.stopPropagation()}
           >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+            {/* Mobile handle */}
+            <div className="sm:hidden flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+            </div>
 
-        {/* Period Toggle */}
-        <div className="px-6 pt-4 shrink-0">
-          <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
-            {PERIOD_OPTIONS.map((opt) => {
-              const hasDiscount = periodHasDiscount(opt.key)
-              return (
-                <button
-                  key={opt.key}
-                  onClick={() => setPeriod(opt.key)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    period === opt.key
-                      ? 'bg-blue-600 dark:bg-orange-500 text-white shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                  }`}
-                >
-                  {opt.label}
-                  {hasDiscount && (
-                    <span
-                      className={`text-[9px] font-extrabold px-1 py-0.5 rounded ${
+            {/* Header */}
+            <div className="px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between gap-4 shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Select Plan</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Tingkatkan akses dengan fitur premium
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Period Toggle */}
+            <div className="px-6 pt-4 shrink-0">
+              <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+                {PERIOD_OPTIONS.map((opt) => {
+                  const hasDiscount = periodHasDiscount(opt.key)
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => setPeriod(opt.key)}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                         period === opt.key
-                          ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
-                          : 'text-emerald-500 dark:text-emerald-400'
+                          ? 'bg-blue-600 dark:bg-orange-500 text-white shadow-sm'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                       }`}
                     >
-                      Promo
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Plan Cards */}
-        <div className="px-6 pb-6 pt-4 overflow-y-auto flex-1">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-64 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : plans.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-              <Sparkles className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-medium">No plan available</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {plans.map((plan) => {
-                const isPopular = plan.isPopular === 'Y'
-                const { base, disc, final, hasDiscount, isYearly, perMonth } = getPriceInfo(plan)
-
-                return (
-                  <div
-                    key={plan.id}
-                    className={`relative rounded-xl p-5 flex flex-col border transition-colors ${
-                      isPopular
-                        ? 'border-blue-500 dark:border-orange-500 bg-blue-50/40 dark:bg-orange-900/10 shadow-md'
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60'
-                    }`}
-                  >
-                    {isPopular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-blue-600 dark:bg-orange-500 text-white shadow">
-                          <Crown className="w-2.5 h-2.5" />
-                          Popular
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="mt-2 mb-3">
-                      <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                        {plan.name}
-                      </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-                        {plan.tagLine}
-                      </p>
-                    </div>
-
-                    {/* Price */}
-                    <div className="mb-4">
-                      {isYearly && perMonth !== null ? (
-                        <>
-                          {hasDiscount && (
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className="text-xs text-gray-400 line-through">
-                                Rp {formatPrice(Math.round(base / 12))}
-                              </span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-                                Hemat {disc}%
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex items-end gap-1">
-                            <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                              Rp {formatPrice(perMonth)}
-                            </span>
-                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">
-                              /month
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
-                            Billed Rp {formatPrice(final)}/year
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          {hasDiscount && (
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className="text-xs text-gray-400 line-through">
-                                Rp {formatPrice(base)}
-                              </span>
-                              <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-                                -{disc}%
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex items-end gap-1">
-                            <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                              Rp {final === 0 ? '0' : formatPrice(final)}
-                            </span>
-                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">
-                              {activePeriod.unit}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Features */}
-                    <ul className="flex-1 space-y-1.5 mb-4">
-                      {(plan.features ?? []).slice(0, 4).map((f, idx) => (
-                        <li
-                          key={idx}
-                          className={`flex items-center gap-2 text-xs ${
-                            f.isIncluded === false
-                              ? 'text-gray-300 dark:text-gray-600'
-                              : 'text-gray-600 dark:text-gray-300'
+                      {opt.label}
+                      {hasDiscount && (
+                        <span
+                          className={`text-[9px] font-extrabold px-1 py-0.5 rounded ${
+                            period === opt.key
+                              ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
+                              : 'text-emerald-500 dark:text-emerald-400'
                           }`}
                         >
-                          <Check
-                            className={`w-3 h-3 shrink-0 ${
-                              f.isIncluded === false
-                                ? 'text-gray-300 dark:text-gray-600'
-                                : 'text-emerald-500'
-                            }`}
-                          />
-                          <span className="truncate">{f.title}</span>
-                        </li>
-                      ))}
-                      {(plan.features ?? []).length > 4 && (
-                        <li className="text-xs text-gray-400 pl-5">
-                          +{plan.features.length - 4} lainnya
-                        </li>
+                          Promo
+                        </span>
                       )}
-                    </ul>
-
-                    <button
-                      onClick={() => handleBuy(plan)}
-                      disabled={plan.id === 1}
-                      className={`w-full py-2.5 rounded-lg font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
-                        isPopular
-                          ? 'bg-blue-600 dark:bg-orange-500 text-white hover:bg-blue-700 dark:hover:bg-orange-600'
-                          : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100'
-                      }
-                      ${plan.id === 1 ? 'hidden' : ''}`}
-                    >
-                      Select Plan
                     </button>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+
+            {/* Plan Cards */}
+            <div className="px-6 pb-6 pt-4 overflow-y-auto flex-1">
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-64 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : plans.length === 0 ? (
+                <div className="text-center py-16 text-gray-400">
+                  <Sparkles className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm font-medium">No plan available</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {plans.map((plan) => {
+                    const isPopular = plan.isPopular === 'Y'
+                    const { base, disc, final, hasDiscount, isYearly, perMonth } =
+                      getPriceInfo(plan)
+
+                    return (
+                      <div
+                        key={plan.id}
+                        className={`relative rounded-xl p-5 flex flex-col border transition-colors ${
+                          isPopular
+                            ? 'border-blue-500 dark:border-orange-500 bg-blue-50/40 dark:bg-orange-900/10 shadow-md'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60'
+                        }`}
+                      >
+                        {isPopular && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-blue-600 dark:bg-orange-500 text-white shadow">
+                              <Crown className="w-2.5 h-2.5" />
+                              Popular
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="mt-2 mb-3">
+                          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                            {plan.name}
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                            {plan.tagLine}
+                          </p>
+                        </div>
+
+                        {/* Price */}
+                        <div className="mb-4">
+                          {isYearly && perMonth !== null ? (
+                            <>
+                              {hasDiscount && (
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <span className="text-xs text-gray-400 line-through">
+                                    Rp {formatPrice(Math.round(base / 12))}
+                                  </span>
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                                    Hemat {disc}%
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-end gap-1">
+                                <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                                  Rp {formatPrice(perMonth)}
+                                </span>
+                                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">
+                                  /month
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+                                Billed Rp {formatPrice(final)}/year
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              {hasDiscount && (
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <span className="text-xs text-gray-400 line-through">
+                                    Rp {formatPrice(base)}
+                                  </span>
+                                  <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                                    -{disc}%
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-end gap-1">
+                                <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                                  Rp {final === 0 ? '0' : formatPrice(final)}
+                                </span>
+                                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">
+                                  {activePeriod.unit}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Features */}
+                        <ul className="flex-1 space-y-1.5 mb-4">
+                          {(plan.features ?? []).slice(0, 4).map((f, idx) => (
+                            <li
+                              key={idx}
+                              className={`flex items-center gap-2 text-xs ${
+                                f.isIncluded === false
+                                  ? 'text-gray-300 dark:text-gray-600'
+                                  : 'text-gray-600 dark:text-gray-300'
+                              }`}
+                            >
+                              <Check
+                                className={`w-3 h-3 shrink-0 ${
+                                  f.isIncluded === false
+                                    ? 'text-gray-300 dark:text-gray-600'
+                                    : 'text-emerald-500'
+                                }`}
+                              />
+                              <span className="truncate">{f.title}</span>
+                            </li>
+                          ))}
+                          {(plan.features ?? []).length > 4 && (
+                            <li className="text-xs text-gray-400 pl-5">
+                              +{plan.features.length - 4} lainnya
+                            </li>
+                          )}
+                        </ul>
+
+                        <button
+                          onClick={() => handleBuy(plan)}
+                          disabled={plan.id === 1}
+                          className={`w-full py-2.5 rounded-lg font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+                            isPopular
+                              ? 'bg-blue-600 dark:bg-orange-500 text-white hover:bg-blue-700 dark:hover:bg-orange-600'
+                              : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100'
+                          }
+                      ${plan.id === 1 ? 'hidden' : ''}`}
+                        >
+                          Select Plan
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

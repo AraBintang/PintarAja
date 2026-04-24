@@ -12,11 +12,17 @@ class PromptController extends Controller
 {
     public function index(Request $request)
     {
+        $custom = $request->input('custom');
         $perPage = (int) $request->input('per_page', 10);
         $page = max(1, (int) $request->input('page', 1));
         $search = $request->input('search');
 
         $query = Prompt::with(['paper', 'section'])
+            ->when($custom === 'true', function ($q) {
+                $q->where('M_PromptM_UserID', auth()->id());
+            }, function ($q) {
+                $q->whereNull('M_PromptM_UserID');
+            })
             ->when($search, function ($q) use ($search) {
                 $q->where('M_PromptName', 'like', "%{$search}%");
             })
@@ -86,13 +92,21 @@ class PromptController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'custom' => 'sometimes|boolean',
+            'name' => 'required|string',
             'paperId' => 'required|integer',
             'sectionId' => 'required|integer',
-            'name' => 'required|string',
             'value' => 'required|string',
         ]);
 
+        $userId = null;
+
+        if ($request->custom) {
+            $userId = auth()->id();
+        }
+
         Prompt::create([
+            'M_PromptM_UserID' =>  $userId,
             'M_PromptM_PaperID' => $validated['paperId'],
             'M_PromptM_SectionID' => $validated['sectionId'],
             'M_PromptName' => $validated['name'],

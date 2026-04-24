@@ -18,6 +18,7 @@ class Prompt extends Model
 
     protected $fillable = [
         'M_PromptM_PaperID',
+        'M_PromptM_UserID',
         'M_PromptM_PaperID',
         'M_PromptM_SectionID',
         'M_PromptName',

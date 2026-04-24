@@ -57,7 +57,7 @@ export default function AdminUserPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [filterRole, setFilterRole] = useState('')
   const [filterPlan, setFilterPlan] = useState('')
-  const [filterStatus, setFilterStatus] = useState('')
+  // const [filterStatus, setFilterStatus] = useState('')
   const [page, setPage] = useState(1)
 
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -71,7 +71,7 @@ export default function AdminUserPage() {
     search: debouncedSearch,
     role: filterRole,
     plan: filterPlan,
-    status: filterStatus,
+    // status: filterStatus,
     page,
     perPage: PAGE_SIZE,
   })
@@ -84,13 +84,13 @@ export default function AdminUserPage() {
       bgLight: 'bg-blue-50 dark:bg-orange-900/20',
       textColor: 'text-blue-600 dark:text-orange-400',
     },
-    {
-      label: 'Active Users',
-      value: summary.active,
-      icon: UserCheck,
-      bgLight: 'bg-emerald-50 dark:bg-emerald-900/20',
-      textColor: 'text-emerald-600 dark:text-emerald-400',
-    },
+    // {
+    //   label: 'Active Users',
+    //   value: summary.active,
+    //   icon: UserCheck,
+    //   bgLight: 'bg-emerald-50 dark:bg-emerald-900/20',
+    //   textColor: 'text-emerald-600 dark:text-emerald-400',
+    // },
     {
       label: 'Admin',
       value: summary.admin,
@@ -165,7 +165,7 @@ export default function AdminUserPage() {
               User Setting
             </h1>
             <p className="text-gray-500 dark:text-gray-400 text-[12px] sm:text-sm mt-1">
-              Kelola data pengguna, langganan, dan status akun
+              Kelola data pengguna dan langganan User
             </p>
           </div>
           <button
@@ -178,7 +178,7 @@ export default function AdminUserPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-5 sm:mb-6 w-full">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-5 sm:mb-6 w-full">
           {stats.map((stat) => (
             <div
               key={stat.label}
@@ -271,7 +271,7 @@ export default function AdminUserPage() {
                 </SelectContent>
               </Select>
 
-              <Select
+              {/* <Select
                 value={filterStatus}
                 onValueChange={(v) => {
                   setFilterStatus(v === 'all' ? '' : v)
@@ -288,7 +288,7 @@ export default function AdminUserPage() {
                     <SelectItem value="N">Inactive</SelectItem>
                   </SelectGroup>
                 </SelectContent>
-              </Select>
+              </Select> */}
             </div>
           )}
         </div>
@@ -299,7 +299,7 @@ export default function AdminUserPage() {
             <table className="w-full min-w-[800px] text-left border-separate border-spacing-0">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-700">
-                  {['No.', 'User Info', 'Role', 'Subscription', 'Status', 'Action'].map((h, i) => (
+                  {['No.', 'User Info', 'Role', 'Subscription', 'Action'].map((h, i) => (
                     <th
                       key={h}
                       className={`px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ${i >= 4 ? 'text-right' : i === 3 ? 'text-center' : ''}`}
@@ -338,10 +338,29 @@ export default function AdminUserPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div
+                          {/* <div
                             className={`w-9 h-9 rounded-full ${getAvatarColor(user.M_UserFullName)} flex items-center justify-center text-white text-[12px] font-bold shadow-sm flex-shrink-0`}
                           >
                             {getInitials(user.M_UserFullName)}
+                          </div> */}
+
+                          <div className="relative w-9 h-9 flex-shrink-0">
+                            <div
+                              className={`absolute inset-0 rounded-full ${getAvatarColor(user.M_UserFullName)} text-[12px] flex items-center font-bold shadow-sm flex-shrink-0 justify-center`}
+                            >
+                              <span className="text-white text-[14px] font-semibold">
+                                {getInitials(user.M_UserFullName)}
+                              </span>
+                            </div>
+
+                            {user?.M_UserImage && (
+                              <img
+                                src={user.M_UserImage}
+                                alt={user.M_UserFullName}
+                                referrerPolicy="no-referrer"
+                                className="absolute inset-0 w-full h-full rounded-full object-cover"
+                              />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-100 truncate">
@@ -376,7 +395,7 @@ export default function AdminUserPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      {/* <td className="px-6 py-4 text-right">
                         <span
                           className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${
                             user.M_UserIsActive === 'Y'
@@ -386,7 +405,7 @@ export default function AdminUserPage() {
                         >
                           {user.M_UserIsActive === 'Y' ? 'Active' : 'Inactive'}
                         </span>
-                      </td>
+                      </td> */}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center justify-end gap-1.5">
                           <button

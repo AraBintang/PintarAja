@@ -325,7 +325,7 @@ export default function ReferralTab() {
                   ? '🎉 Kamu sudah dapat free 1 bulan! Siklus baru dimulai.'
                   : progress.to_next_free === 1
                     ? '🔥 Tinggal 1 orang lagi untuk mendapatkan free 1 bulan!'
-                    : `Undang ${progress.to_next_free} orang lagi untuk free 1 bulan. Setiap orang yang bergabung memberikan diskon 10%.`}
+                    : `Undang ${progress.to_next_free} orang lagi dan melakukan pembelian untuk free 1 bulan plan berbayar. Setiap orang yang bergabung memberikan diskon 10%.`}
               </p>
             </div>
 
@@ -336,7 +336,7 @@ export default function ReferralTab() {
                 {[
                   {
                     num: '1–6',
-                    desc: 'Setiap teman yang mendaftar & verifikasi +10% diskon untukmu (max 60%)',
+                    desc: 'Setiap teman yang mendaftar & melakukan pembelian berapapun +10% diskon untukmu (max 60%)',
                     color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20',
                   },
                   {

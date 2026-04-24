@@ -321,14 +321,16 @@ export default function CouponPage() {
               key={stat.label}
               className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow min-w-0"
             >
-              <div
-                className={`w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl ${stat.bgLight} flex items-center justify-center`}
-              >
-                <stat.icon className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${stat.textColor}`} />
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div
+                  className={`w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl ${stat.bgLight} flex items-center justify-center`}
+                >
+                  <stat.icon className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${stat.textColor}`} />
+                </div>
+                <span className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-100 block mt-2 sm:mt-3">
+                  {loading ? '—' : stat.value}
+                </span>
               </div>
-              <span className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-100 block mt-2 sm:mt-3">
-                {loading ? '—' : stat.value}
-              </span>
               <p className="text-[11px] sm:text-[13px] text-gray-500 dark:text-gray-400 font-medium mt-0.5 sm:mt-1">
                 {stat.label}
               </p>

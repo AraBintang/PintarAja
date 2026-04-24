@@ -1,4 +1,4 @@
-import { Edit2, Eye, FileText, Filter, Plus, Search, Trash2 } from 'lucide-react'
+import { CloudUpload, Edit2, Eye, FileText, Filter, Plus, Search, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import BlogForm from '@/components/blog/BlogForm'
@@ -15,6 +15,17 @@ import {
 import { useSnackbar } from '@/context/SnackbarContext'
 import { useBlogs } from '@/helpers/useBlogs'
 import { Debounce } from '@/utils/Debounce'
+
+const CATEGORIES = [
+  'AI',
+  'Tutorial',
+  'News',
+  'Technology',
+  'Business',
+  'Lifestyle',
+  'Education',
+  'Entertainment',
+]
 
 const PAGE_SIZE = 10
 
@@ -53,9 +64,9 @@ export default function BlogPage() {
     {
       label: 'Published',
       value: summary.published,
-      icon: Eye,
-      bgLight: 'bg-emerald-50 dark:bg-emerald-900/20',
-      textColor: 'text-emerald-600 dark:text-emerald-400',
+      icon: CloudUpload,
+      bgLight: 'bg-blue-50 dark:bg-blue-900/20',
+      textColor: 'text-blue-600 dark:text-blue-400',
     },
     {
       label: 'Draft',
@@ -63,6 +74,13 @@ export default function BlogPage() {
       icon: Edit2,
       bgLight: 'bg-amber-50 dark:bg-amber-900/20',
       textColor: 'text-amber-600 dark:text-amber-400',
+    },
+    {
+      label: 'Total Views',
+      value: summary.views,
+      icon: Eye,
+      bgLight: 'bg-emerald-50 dark:bg-emerald-900/20',
+      textColor: 'text-emerald-600 dark:text-emerald-400',
     },
   ]
 
@@ -138,7 +156,7 @@ export default function BlogPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mb-5 sm:mb-6 w-full">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-5 sm:mb-6 w-full">
           {stats.map((stat) => (
             <div
               key={stat.label}
@@ -205,9 +223,11 @@ export default function BlogPage() {
                 <SelectContent className="rounded-xl">
                   <SelectGroup>
                     <SelectItem value="all">Semua kategori</SelectItem>
-                    <SelectItem value="AI">AI</SelectItem>
-                    <SelectItem value="Tutorial">Tutorial</SelectItem>
-                    <SelectItem value="News">News</SelectItem>
+                    {CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>

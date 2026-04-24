@@ -9,6 +9,7 @@ export function useBlogs({ search = '', category = '', status = '', page = 1, pe
     total: 0,
     published: 0,
     draft: 0,
+    views: 0,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -32,6 +33,7 @@ export function useBlogs({ search = '', category = '', status = '', page = 1, pe
         total: res.summary?.total ?? 0,
         published: res.summary?.published ?? 0,
         draft: res.summary?.draft ?? 0,
+        views: res.summary?.views ?? 0,
       })
     } catch (err) {
       setError(err.message)

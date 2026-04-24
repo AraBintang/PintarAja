@@ -34,7 +34,7 @@ class BlogController extends Controller
     {
         $blogs = Blog::published()
             ->latest('M_BlogPublishedAt')
-            ->paginate(10);
+            ->paginate(9);
 
         $categories = Blog::published()
             ->whereNotNull('M_BlogCategory')
@@ -124,6 +124,7 @@ class BlogController extends Controller
             'total' => Blog::count(),
             'published' => Blog::where('M_BlogIsPublished', true)->count(),
             'draft' => Blog::where('M_BlogIsPublished', false)->count(),
+            'views' => Blog::sum('M_BlogViewCount'),
         ];
 
         return response()->json([

@@ -134,10 +134,8 @@ function UserProfileSection({ expanded, onUpgradeClick }) {
               onClick={onUpgradeClick}
               className="
                 w-full py-3.5 rounded-xl font-bold text-sm flex items-center text-center justify-center gap-2
-                bg-gray-900 text-white hover:bg-gray-800
-                dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100
-                transition-all active:scale-[0.98]
-              "
+              bg-blue-500/20 text-[#2686D4] hover:bg-blue-500/40
+              dark:bg-orange-500/20 dark:text-[#F2901E] dark:hover:bg-orange-500/40 transition-all active:scale-95"
             >
               <Zap className="w-4 h-4" />
               Upgrade Plan
@@ -163,8 +161,9 @@ export default function Sidebar({ onUpgradeClick }) {
         />
       )}
       <aside
-        className={`fixed top-0 left-0 h-dvh bg-white dark:bg-[#090d16] z-[60] flex flex-col transition-all duration-300 ease-in-out border-r border-gray-100 dark:border-gray-800
-                    ${expanded ? 'w-[260px] translate-x-0' : 'w-[64px] md:translate-x-0 -translate-x-full'}
+        className={`
+          fixed top-0 left-0 h-dvh bg-white dark:bg-[#090d16] z-[60] flex flex-col transition-all duration-300 ease-in-out border-r border-gray-100 dark:border-gray-800
+          ${expanded ? 'w-[260px] translate-x-0' : 'w-[64px] md:translate-x-0 -translate-x-full'}
         `}
       >
         <div className={`flex items-center h-14 ${expanded ? 'px-4' : 'px-0 justify-center'}`}>

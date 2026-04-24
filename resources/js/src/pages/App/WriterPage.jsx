@@ -1,8 +1,9 @@
 import { FileText } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import PromptLibraryModal from '@/components/writer/PromptModal'
+import SaveWorkbookModal from '@/components/writer/WorkbookModal'
 import WriterForm from '@/components/writer/WriterForm'
-import { PromptLibraryModal, SaveWorkbookModal } from '@/components/writer/WriterModals'
 import WriterOutput from '@/components/writer/WriterOutput'
 import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
@@ -109,6 +110,7 @@ export default function WriterPage() {
   /* ─── Fetch data ─── */
   useEffect(() => {
     setIsLoadingData(true)
+
     request('/writers')
       .then((res) => {
         setPapers(res.papers || [])

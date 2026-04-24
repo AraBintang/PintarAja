@@ -157,9 +157,8 @@ export default function PlanTab() {
           onClick={() => setPlanModalOpen(true)}
           className="
             w-full py-3.5 mb-6 rounded-xl font-bold text-sm flex items-center text-center justify-center gap-2
-            bg-gray-900 text-white hover:bg-gray-800
-            dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100
-            transition-all active:scale-[0.98]
+          bg-blue-500/20 text-[#2686D4] hover:bg-blue-500/40
+          dark:bg-orange-500/20 dark:text-[#F2901E] dark:hover:bg-orange-500/40 transition-all active:scale-95
           "
         >
           <Zap className="w-4 h-4" />
