@@ -1,10 +1,10 @@
 module.exports = {
   apps: [
     {
-      name: 'project-satu-worker',
+      name: 'pintaraja-worker',
       script: 'php',
       args: 'artisan queue:work --tries=3 --timeout=300',
-      cwd: '/var/www/project-satu',
+      cwd: '/var/www/apipintaraja',
       autorestart: true,
       watch: false,
     }
