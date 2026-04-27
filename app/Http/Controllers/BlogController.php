@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blog;
+use App\Models\BlogView;
 use Illuminate\Support\Facades\Storage;
 
 class BlogController extends Controller
@@ -57,11 +58,19 @@ class BlogController extends Controller
 
         $blog->incrementViewCount();
 
+        // Logging view event for admin analytics (does not affect user experience)
+        try {
+            BlogView::create([
+                'T_BlogViewM_BlogID' => $blog->M_BlogID,
+                'T_BlogViewCreated' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
         $relatedBlogs = Blog::published()
             ->where('M_BlogID', '!=', $blog->M_BlogID)
-            ->when($blog->M_BlogCategory, fn ($q) =>
-                $q->where('M_BlogCategory', $blog->M_BlogCategory)
-            )
+            ->when($blog->M_BlogCategory, fn ($q) => $q->where('M_BlogCategory', $blog->M_BlogCategory))
             ->latest('M_BlogPublishedAt')
             ->limit(3)
             ->get();
@@ -70,7 +79,7 @@ class BlogController extends Controller
             'blog' => $blog,
             'relatedBlogs' => $relatedBlogs,
             'title' => ($blog->M_BlogMetaTitle ?: $blog->M_BlogTitle) . ' - Pintaraja',
-            'description'  => $blog->M_BlogDescription ?: $blog->M_BlogExcerpt,
+            'description' => $blog->M_BlogDescription ?: $blog->M_BlogExcerpt,
         ]);
     }
 

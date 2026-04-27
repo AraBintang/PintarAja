@@ -23,9 +23,20 @@ export default function ParafrasePage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentHistoryId, setCurrentHistoryId] = useState(null)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
+  const [displayedWords, setDisplayedWords] = useState([])
+
   const dropdownRef = useRef(null)
 
-  const [isCopied, setIsCopied] = useState(false)
+  useEffect(() => {
+    if (!outputText) {
+      setDisplayedWords([])
+      return
+    }
+
+    const words = outputText.split(' ')
+    setDisplayedWords(words)
+  }, [outputText])
 
   useEffect(() => {
     const handleLoadHistory = (e) => {
@@ -364,25 +375,26 @@ export default function ParafrasePage() {
               {/* Scrollable content */}
               <div className="h-full overflow-y-auto px-6 py-6">
                 {isProcessing ? (
-                  <div className="flex items-center justify-center min-h-[250px] md:min-h-full">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="relative w-10 h-10">
-                        <div className="absolute inset-0 rounded-full border-2 border-blue-100 dark:border-gray-800" />
-                        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 dark:border-t-orange-400 animate-spin" />
-                      </div>
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">
-                          Paraphrasing...
-                        </span>
-                        <span className="text-[12px] text-gray-400 dark:text-gray-500">
-                          This may take a moment
-                        </span>
-                      </div>
-                    </div>
+                  <div className="flex flex-col gap-3 min-h-[250px] md:min-h-full pt-1">
+                    {[100, 88, 94, 75, 90, 55].map((w, i) => (
+                      <div
+                        key={i}
+                        className="skeleton-shimmer h-4 rounded-full"
+                        style={{ width: `${w}%`, animationDelay: `${i * 120}ms` }}
+                      />
+                    ))}
                   </div>
-                ) : outputText ? (
-                  <p className="text-[15px] text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
-                    {outputText}
+                ) : displayedWords.length > 0 ? (
+                  <p className="text-[15px] text-gray-700 dark:text-gray-200 leading-relaxed">
+                    {displayedWords.map((word, i) => (
+                      <span
+                        key={i}
+                        className="inline-block opacity-0 animate-fadeInWord mr-[0.25em]"
+                        style={{ animationDelay: `${i * 55}ms`, animationFillMode: 'forwards' }}
+                      >
+                        {word}
+                      </span>
+                    ))}
                   </p>
                 ) : (
                   <div className="flex items-center justify-center min-h-[250px] md:min-h-full">

@@ -12,6 +12,7 @@ class Transcribe extends Model
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'm_transcribe';
+
     protected $primaryKey = 'M_TranscribeID';
 
     protected $fillable = [
@@ -28,4 +29,9 @@ class Transcribe extends Model
     ];
 
     public $timestamps = false;
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'M_TranscribeM_UserID', 'M_UserID');
+    }
 }

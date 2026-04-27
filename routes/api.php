@@ -6,9 +6,11 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\MiscellaneousController;
 use App\Http\Controllers\PaperController;
 use App\Http\Controllers\ParaphraseController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlagiarismController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromptController;
@@ -18,7 +20,6 @@ use App\Http\Controllers\SettingAiController;
 use App\Http\Controllers\TranscribeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebSettingController;
-use App\Http\Controllers\PlagiarismController;
 use App\Http\Controllers\WorkbookController;
 use App\Http\Controllers\WriterController;
 use Illuminate\Support\Facades\Route;
@@ -193,5 +194,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/{id}', [WebSettingController::class, 'update']);
             Route::delete('/{id}', [WebSettingController::class, 'destroy']);
         });
+
+        Route::get('/miscellaneous', [MiscellaneousController::class, 'index']);
     });
 });

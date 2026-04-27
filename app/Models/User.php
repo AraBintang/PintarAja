@@ -126,7 +126,7 @@ class User extends Authenticatable
      * Generate kode referral unik untuk user ini.
      * Format: 8 karakter alfanumerik uppercase, contoh: "AB3X9K2M"
      */
-    private function generateReferralCode(): string
+    public function generateReferralCode(): string
     {
         $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         
@@ -136,6 +136,9 @@ class User extends Authenticatable
                 $code .= $chars[random_int(0, strlen($chars) - 1)];
             }
         } while (User::where('M_UserReferralCode', $code)->exists());
+
+        $this->M_UserReferralCode = $code;
+        $this->save();
 
         return $code;
     }

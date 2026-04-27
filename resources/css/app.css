@@ -383,3 +383,23 @@ body[data-scroll-locked] .fixed.inset-0 {
 .animate-shimmer {
   animation: shimmer 1.5s ease-in-out infinite;
 }
+
+@keyframes fadeInWord {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@utility animate-fadeInWord {
+  animation: fadeInWord 0.3s ease forwards;
+}
+
+.skeleton-paraphrase::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: shimmer 1.8s ease-in-out infinite;
+}

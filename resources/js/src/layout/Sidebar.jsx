@@ -1,4 +1,5 @@
 import {
+  ChartLine,
   ChevronRight,
   Cpu,
   FileSearch,
@@ -43,6 +44,7 @@ const adminMenuItems = [
   { label: 'Coupons', icon: Ticket, to: '/admin/coupons' },
   { label: 'User', icon: Users, to: '/admin/user' },
   { label: 'Web Settings', icon: Settings2, to: '/admin/web-settings' },
+  { label: 'Misc', icon: ChartLine, to: '/admin/misc' },
 ]
 
 function SidebarItem({ icon: Icon, label, to, expanded }) {
