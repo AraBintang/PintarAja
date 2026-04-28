@@ -1,7 +1,8 @@
-import { BookOpen, Loader2, Plus, Search, X } from 'lucide-react'
+import { BookOpen, ChevronRight, Edit2, Loader2, Plus, Search, Trash2, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import DeleteModal from '@/components/DeleteModal'
 import Pagination from '@/components/Pagination'
 import {
   Select,
@@ -16,8 +17,8 @@ import { buildQuery, request } from '@/utils/Http'
 
 const PER_PAGE = 5
 
-// ─── Add Custom Prompt Modal ──────────────────────────────────────────────────
-function AddPromptModal({ open, onClose, onSaved, papers, sections }) {
+function PromptFormModal({ open, onClose, onSaved, papers, sections, prompt }) {
+  const isEdit = Boolean(prompt)
   const { showSnackbar } = useSnackbar()
 
   const EMPTY = useMemo(() => ({ name: '', paperId: '', sectionId: '', value: '' }), [])
@@ -31,14 +32,30 @@ function AddPromptModal({ open, onClose, onSaved, papers, sections }) {
 
   useEffect(() => {
     if (open) {
-      setForm(EMPTY)
+      console.log(prompt)
+      setForm(
+        isEdit
+          ? {
+              name: prompt.name,
+              paperId: String(prompt.paperId),
+              sectionId: String(prompt.sectionId),
+              value: prompt.value,
+            }
+          : EMPTY,
+      )
       setError('')
     }
-  }, [open, EMPTY])
+  }, [open, prompt, isEdit, EMPTY])
 
+  // Reset section when paper changes — but skip the initial load when editing
+  const prevPaperId = useRef(null)
   useEffect(() => {
-    setForm((p) => ({ ...p, sectionId: '' }))
-  }, [form.paperId])
+    if (!open) return
+    if (prevPaperId.current !== null && prevPaperId.current !== form.paperId) {
+      setForm((p) => ({ ...p, sectionId: '' }))
+    }
+    prevPaperId.current = form.paperId
+  }, [form.paperId, open])
 
   if (!open) return null
 
@@ -52,19 +69,33 @@ function AddPromptModal({ open, onClose, onSaved, papers, sections }) {
     setSaving(true)
     setError('')
     try {
-      await request('/prompts', {
-        method: 'POST',
-        body: {
-          custom: true,
-          name: form.name,
-          paperId: Number(form.paperId),
-          sectionId: Number(form.sectionId),
-          value: form.value,
-        },
-      })
+      if (isEdit) {
+        await request(`/prompts/${prompt.id}`, {
+          method: 'PUT',
+          body: {
+            name: form.name,
+            paperId: Number(form.paperId),
+            sectionId: Number(form.sectionId),
+            value: form.value,
+          },
+        })
+        showSnackbar('success', 'Prompt berhasil diperbarui')
+      } else {
+        await request('/prompts', {
+          method: 'POST',
+          body: {
+            custom: true,
+            name: form.name,
+            paperId: Number(form.paperId),
+            sectionId: Number(form.sectionId),
+            value: form.value,
+          },
+        })
+        showSnackbar('success', 'Prompt berhasil ditambahkan')
+      }
       onSaved()
       onClose()
-    } catch {
+    } catch (err) {
       showSnackbar('error', err.message)
     } finally {
       setSaving(false)
@@ -87,9 +118,13 @@ function AddPromptModal({ open, onClose, onSaved, papers, sections }) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
           <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-              <Plus className="w-3.5 h-3.5 text-[#4A90D9]" />
+              {isEdit ? (
+                <Edit2 className="w-3.5 h-3.5 text-[#4A90D9]" />
+              ) : (
+                <Plus className="w-3.5 h-3.5 text-[#4A90D9]" />
+              )}
             </div>
-            Tambah Custom Prompt
+            {isEdit ? 'Edit Custom Prompt' : 'Tambah Custom Prompt'}
           </h4>
           <button
             onClick={onClose}
@@ -101,7 +136,6 @@ function AddPromptModal({ open, onClose, onSaved, papers, sections }) {
 
         {/* Body */}
         <div className="p-5 space-y-3.5">
-          {/* Nama prompt */}
           <div>
             <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block uppercase tracking-wide">
               Nama Prompt *
@@ -115,7 +149,6 @@ function AddPromptModal({ open, onClose, onSaved, papers, sections }) {
             />
           </div>
 
-          {/* Paper */}
           <div>
             <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block uppercase tracking-wide">
               Paper *
@@ -139,7 +172,6 @@ function AddPromptModal({ open, onClose, onSaved, papers, sections }) {
             </Select>
           </div>
 
-          {/* Section */}
           <div>
             <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block uppercase tracking-wide">
               Section *
@@ -164,7 +196,6 @@ function AddPromptModal({ open, onClose, onSaved, papers, sections }) {
             </Select>
           </div>
 
-          {/* Prompt Value */}
           <div>
             <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block uppercase tracking-wide">
               Prompt Value *
@@ -196,6 +227,8 @@ function AddPromptModal({ open, onClose, onSaved, papers, sections }) {
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : isEdit ? (
+              <Edit2 className="w-3.5 h-3.5" />
             ) : (
               <Plus className="w-3.5 h-3.5" />
             )}
@@ -208,18 +241,21 @@ function AddPromptModal({ open, onClose, onSaved, papers, sections }) {
 }
 
 export default function PromptLibraryModal({ open, onClose, onSelect, papers, sections }) {
+  const { showSnackbar } = useSnackbar()
   const [custom, setCustom] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedPaperId, setSelectedPaperId] = useState('all')
   const [selectedSectionId, setSelectedSectionId] = useState('all')
   const [page, setPage] = useState(1)
-  const [showAddModal, setShowAddModal] = useState(false)
+  const [showFormModal, setShowFormModal] = useState(false)
+  const [selectedPrompt, setSelectedPrompt] = useState(null) // null = add, object = edit
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
   const [prompts, setPrompts] = useState([])
   const [pagination, setPagination] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  // Cache: key = serialized query params → { prompts, pagination }
   const cache = useRef({})
 
   const fetchPrompts = useCallback(
@@ -236,7 +272,6 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
 
       const cacheKey = JSON.stringify(params)
 
-      // Gunakan cache kalau ada & tidak di-force
       if (!opts.force && cache.current[cacheKey]) {
         const cached = cache.current[cacheKey]
         setPrompts(cached.prompts)
@@ -262,10 +297,9 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
     [custom, page, search, selectedPaperId, selectedSectionId],
   )
 
-  // Reset saat modal dibuka
   useEffect(() => {
     if (open) {
-      cache.current = {} // clear cache saat modal dibuka ulang
+      cache.current = {}
       setSearch('')
       setSelectedPaperId('all')
       setSelectedSectionId('all')
@@ -274,20 +308,17 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
     }
   }, [open])
 
-  // Reset page saat filter berubah
   useEffect(() => {
     if (!open) return
     setPage(1)
   }, [search, selectedPaperId, selectedSectionId, custom, open])
 
-  // Fetch dengan debounce untuk search
   useEffect(() => {
     if (!open) return
     const timer = setTimeout(() => fetchPrompts(), search ? 300 : 0)
     return () => clearTimeout(timer)
   }, [open, fetchPrompts, search])
 
-  // Reset section saat paper berubah
   useEffect(() => {
     setSelectedSectionId('all')
   }, [selectedPaperId])
@@ -295,15 +326,42 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
   const filteredSections =
     selectedPaperId === 'all' ? [] : sections.filter((s) => String(s.paper_id) === selectedPaperId)
 
-  // Setelah add prompt baru, bust cache tab custom & refetch
   const handlePromptSaved = () => {
-    // Hapus semua cache entry yang custom=true
     Object.keys(cache.current).forEach((key) => {
       if (key.includes('"custom":true')) delete cache.current[key]
     })
     setCustom(true)
     setPage(1)
     fetchPrompts({ force: true })
+  }
+
+  const deletePrompt = async (id) => {
+    await request(`/prompts/${id}`, { method: 'DELETE' })
+    await fetchPrompts({ force: true })
+  }
+
+  const handleDeletePrompt = async () => {
+    if (!deleteTarget) return
+    setActionLoading(true)
+    try {
+      await deletePrompt(deleteTarget.id)
+      showSnackbar('success', 'Prompt berhasil dihapus')
+      setDeleteTarget(null)
+    } catch (err) {
+      showSnackbar('error', err.message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const openAdd = () => {
+    setSelectedPrompt(null)
+    setShowFormModal(true)
+  }
+
+  const openEdit = (prompt) => {
+    setSelectedPrompt(prompt)
+    setShowFormModal(true)
   }
 
   return (
@@ -375,7 +433,6 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
               {/* Filters */}
               <div className="px-4 py-3 border-y border-gray-100 dark:border-gray-700/60 space-y-2.5">
                 <div className="flex items-center gap-2">
-                  {/* Search */}
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -395,10 +452,9 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
                     )}
                   </div>
 
-                  {/* Add Custom Prompt button — hanya di tab library */}
                   {custom && prompts.length !== 0 && (
                     <button
-                      onClick={() => setShowAddModal(true)}
+                      onClick={openAdd}
                       className="h-9 px-3 flex items-center gap-1.5 text-[12px] font-semibold text-white bg-[#4A90D9] hover:bg-blue-600 rounded-xl transition-all shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -407,7 +463,6 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
                   )}
                 </div>
 
-                {/* Paper + Section filter */}
                 <div className="grid grid-cols-2 gap-2">
                   <Select value={selectedPaperId} onValueChange={setSelectedPaperId}>
                     <SelectTrigger className="h-9 text-[12px] border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800">
@@ -485,7 +540,7 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
                         <button
                           onClick={() => {
                             setCustom(false)
-                            setShowAddModal(true)
+                            openAdd()
                           }}
                           className="mt-3 px-4 py-1.5 text-[12px] font-semibold text-[#4A90D9] border border-[#4A90D9]/30 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all"
                         >
@@ -495,19 +550,21 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
                     </div>
                   ) : (
                     prompts.map((prompt, idx) => (
-                      <button
+                      <div
                         key={prompt.id}
-                        onClick={() => {
-                          onSelect(prompt.value)
-                          onClose()
-                        }}
-                        className="group w-full text-left p-4 rounded-xl border border-transparent hover:border-blue-200 dark:hover:border-blue-800/60 bg-gray-50/60 dark:bg-gray-800/40 hover:bg-blue-50/80 dark:hover:bg-blue-900/20 transition-all duration-150"
+                        className="group w-full p-4 rounded-xl border border-transparent hover:border-blue-200 dark:hover:border-blue-800/60 bg-gray-50/60 dark:bg-gray-800/40 hover:bg-blue-50/80 dark:hover:bg-blue-900/20 transition-all duration-150"
                       >
                         <div className="flex items-start gap-3">
                           <div className="mt-0.5 w-6 h-6 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 flex items-center justify-center shrink-0 text-[11px] font-bold text-gray-400 group-hover:border-blue-300 dark:group-hover:border-blue-700 group-hover:text-blue-500 transition-all">
                             {(page - 1) * PER_PAGE + idx + 1}
                           </div>
-                          <div className="flex-1 min-w-0">
+                          <div
+                            className="flex-1 min-w-0 cursor-pointer"
+                            onClick={() => {
+                              onSelect(prompt.value)
+                              onClose()
+                            }}
+                          >
                             <span className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors mb-1">
                               {prompt.name}
                             </span>
@@ -529,13 +586,35 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
                               {prompt.value}
                             </span>
                           </div>
-                          <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1 mt-0.5">
-                            <div className="text-[10px] font-semibold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-md whitespace-nowrap">
-                              Use →
+
+                          {/* ── Action buttons ── */}
+                          <div className="shrink-0 flex items-center gap-2 ml-1 mt-0.5">
+                            <div className="text-[10px] h-7 px-2 flex items-center font-semibold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 py-1 rounded-md whitespace-nowrap">
+                              <span>Use</span> <ChevronRight className="w-3 h-3" />
                             </div>
+                            {custom && (
+                              <>
+                                <button
+                                  onClick={() => openEdit(prompt)}
+                                  disabled={actionLoading}
+                                  className="w-7 h-7 text-yellow-500 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 rounded-md flex items-center justify-center hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 transition-all"
+                                  title="Edit"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteTarget(prompt)}
+                                  disabled={actionLoading}
+                                  className="w-7 h-7 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/30 rounded-md flex items-center justify-center hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all disabled:opacity-50"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
-                      </button>
+                      </div>
                     ))
                   )}
                 </div>
@@ -556,13 +635,26 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
             </motion.div>
           </motion.div>
 
-          {/* Add Custom Prompt Modal */}
-          <AddPromptModal
-            open={showAddModal}
-            onClose={() => setShowAddModal(false)}
+          {/* Unified Form Modal */}
+          <PromptFormModal
+            open={showFormModal}
+            onClose={() => {
+              setShowFormModal(false)
+              setSelectedPrompt(null)
+            }}
             onSaved={handlePromptSaved}
             papers={papers}
             sections={sections}
+            prompt={selectedPrompt}
+          />
+
+          <DeleteModal
+            open={Boolean(deleteTarget)}
+            onClose={() => setDeleteTarget(null)}
+            onConfirm={handleDeletePrompt}
+            loading={actionLoading}
+            data={'Prompt'}
+            name={deleteTarget?.name ?? ''}
           />
         </>
       )}
