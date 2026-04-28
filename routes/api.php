@@ -82,6 +82,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/delete-file', [WriterController::class, 'deleteFile']);
     });
 
+    Route::prefix('prompts')->group(function () {
+        Route::get('/', [PromptController::class, 'index']);
+        Route::post('/', [PromptController::class, 'store']);
+        Route::put('/{id}', [PromptController::class, 'update']);
+        Route::delete('/{id}', [PromptController::class, 'destroy']);
+    });
+
     Route::prefix('workbooks')->group(function () {
         Route::get('/', [WorkbookController::class, 'index']);
         Route::post('/', [WorkbookController::class, 'store']);
@@ -150,13 +157,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/', [PaperController::class, 'store']);
             Route::put('/{id}', [PaperController::class, 'update']);
             Route::delete('/{id}', [PaperController::class, 'destroy']);
-        });
-
-        Route::prefix('prompts')->group(function () {
-            Route::get('/', [PromptController::class, 'index']);
-            Route::post('/', [PromptController::class, 'store']);
-            Route::put('/{id}', [PromptController::class, 'update']);
-            Route::delete('/{id}', [PromptController::class, 'destroy']);
         });
 
         Route::prefix('settings')->group(function () {
