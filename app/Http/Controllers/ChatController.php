@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Chat;
 use App\Services\AiUploadFileService;
 use App\Services\AiProviderService;
+use App\Services\UsageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Http;
 
 class ChatController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, UsageService $usageService)
     {
         $user = $request->user();
 
@@ -42,7 +43,10 @@ class ChatController extends Controller
             END")
             ->get();
 
-        return response()->json($aiProviders);
+        return response()->json([
+            'ai' => $aiProviders,
+            'quota' => $usageService->getQuotaByUser($user->M_UserID),
+        ]);
     }
 
     public function index2(Request $request, $conversationId)
@@ -90,7 +94,7 @@ class ChatController extends Controller
         ]);
     }
 
-    public function generate(Request $request, AiProviderService $aiService)
+    public function generate(Request $request, AiProviderService $aiService, UsageService $usageService)
     {
         $request->validate([
             'providerId' => 'required|integer',
@@ -118,6 +122,14 @@ class ChatController extends Controller
             return response()->json([
                 'message' => 'AI provider configuration is missing API key.'
             ], 500);
+        }
+
+        if (!$usageService->checkQuota($user->M_UserID, $provider->M_SettingCode)) {
+            $remaining = $usageService->getRemainingQuota($user->M_UserID, $provider->M_SettingCode);
+            return response()->json([
+                'message' => 'Batas penggunaan harian tercapai. Coba lagi besok.',
+                'quota_remaining' => $remaining,
+            ], 429);
         }
 
         $conversationId = $request->conversationId;
@@ -169,7 +181,11 @@ class ChatController extends Controller
         ];
 
         try {
-            return $handlers[$driver]();
+            $response = $handlers[$driver]();
+            
+            $usageService->increment($user->M_UserID, $provider->M_SettingCode);
+            
+            return $response;
         } catch (\Throwable $e) {
             return response()->json([
                 'message' => 'AI generation failed',

@@ -9,13 +9,14 @@ use App\Models\Section;
 use App\Models\UserFile;
 use App\Models\Workbook;
 use App\Services\AiProviderService;
+use App\Services\UsageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class WriterController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, UsageService $usageService)
     {
         $user = $request->user();
     
@@ -81,6 +82,7 @@ class WriterController extends Controller
             'papers' => $papers,
             'sections' => $sections,
             'ai' => $aiProviders,
+            'quota' => $usageService->getQuotaByUser($user->M_UserID),
             'workbooks' => $workbooks,
             'documents' => $paginated->items(),
             'pagination'=> [
@@ -311,7 +313,7 @@ class WriterController extends Controller
         ]);
     }
 
-    public function generate(Request $request, AiProviderService $aiService)
+    public function generate(Request $request, AiProviderService $aiService, UsageService $usageService)
     {
         $request->validate([
             'providerId' => 'required|integer',
@@ -333,6 +335,13 @@ class WriterController extends Controller
  
         if (empty($provider->M_SettingKey)) {
             return response()->json(['message' => 'AI provider configuration is missing API key.'], 500);
+        }
+
+        if (!$usageService->checkQuota($user->M_UserID, $provider->M_SettingCode)) {
+            return response()->json([
+                'message' => 'Batas penggunaan harian tercapai. Coba lagi besok.',
+                'quota_remaining' => 0,
+            ], 429);
         }
  
         $providerMap = [
@@ -377,8 +386,12 @@ class WriterController extends Controller
             if (!isset($handlers[$aiName])) {
                 return response()->json(['message' => "AI handler for {$aiName} is not implemented."], 500);
             }
+
+            $result = $handlers[$aiName]();
+        
+            $usageService->increment($user->M_UserID, $provider->M_SettingCode);
  
-            return $handlers[$aiName]();
+            return $result;
         } catch (\Exception $e) {
             return response()->json(['message' => 'AI request failed.', 'error' => $e->getMessage()], 500);
         }

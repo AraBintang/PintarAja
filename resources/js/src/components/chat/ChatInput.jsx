@@ -109,10 +109,13 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
               ) : (
                 aiProviders.map((ai) => {
                   const m = AI_CODE_MAP[ai.code] ?? { label: ai.code, icon: <AutoIcon /> }
+
                   const modelInfo = (AI_MODELS[ai.code] ?? []).find(
                     (item) => item.value === ai.model || item.label === ai.model,
                   )
+
                   const isSelected = String(ai.id) === String(value)
+
                   return (
                     <button
                       key={ai.id}
@@ -296,6 +299,7 @@ export default function ChatInput({
   canSend,
   onSubmit,
   isStreaming,
+  getQuota,
 }) {
   const textareaRef = useRef(null)
   const imageRef = useRef(null)
@@ -541,8 +545,28 @@ export default function ChatInput({
                     onChange={onAiChange}
                     aiProviders={aiProviders}
                     disabled={isStreaming}
+                    getQuota={getQuota}
                   />
                 </div>
+
+                {(() => {
+                  const q = getQuota?.(selectedProvider?.code)
+                  if (!q) return null
+                  return (
+                    <div
+                      className={`flex items-center gap-1 px-3 py-2.5 rounded-full text-[11px] font-semibold border ${
+                        q.remaining === 0
+                          ? 'bg-red-50 border-red-200 text-red-500 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'
+                          : q.remaining <= 2
+                            ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400'
+                            : 'bg-gray-100 border-gray-200 text-gray-500 dark:bg-gray-800 dark:border-gray-700'
+                      }`}
+                    >
+                      <span>{q.remaining === 0 ? '⚠' : '⚡'}</span>
+                      <span>{q.remaining === 0 ? 'Limit' : `${q.remaining}/${q.limit}`}</span>
+                    </div>
+                  )
+                })()}
               </div>
 
               <div className="pr-1">

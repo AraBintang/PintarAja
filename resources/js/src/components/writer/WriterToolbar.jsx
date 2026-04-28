@@ -20,6 +20,7 @@ const WriterToolbar = memo(function WriterToolbar({
   onJumlahChange,
   panjang,
   onPanjangChange,
+  getQuota,
 }) {
   const selectedAi = aiProviders.find((a) => String(a.id) === selectedAiId)
 
@@ -140,6 +141,25 @@ const WriterToolbar = memo(function WriterToolbar({
             </SelectContent>
           </Select>
         </div>
+
+        {(() => {
+          const q = getQuota?.(selectedAi?.code)
+          if (!q) return null
+          return (
+            <div
+              className={`flex items-center gap-1 px-3 py-2.5 rounded-xl text-[11px] font-semibold border ${
+                q.remaining === 0
+                  ? 'bg-red-50 border-red-200 text-red-500 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'
+                  : q.remaining <= 2
+                    ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400'
+                    : 'bg-gray-100 border-gray-200 text-gray-500 dark:bg-gray-800 dark:border-gray-700'
+              }`}
+            >
+              <span>{q.remaining === 0 ? '⚠' : '⚡'}</span>
+              <span>{q.remaining === 0 ? 'Limit' : `${q.remaining}/${q.limit}`}</span>
+            </div>
+          )
+        })()}
 
         {/* Jumlah Paragraf */}
         <div className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl whitespace-nowrap flex-shrink-0">

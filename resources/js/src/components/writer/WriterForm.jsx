@@ -83,6 +83,7 @@ const WriterForm = memo(function WriterForm({
   isGptProvider,
   selectedFiles,
   onFilesChange,
+  getQuota,
 }) {
   const [pickerOpen, setPickerOpen] = useState(false)
 
@@ -325,6 +326,7 @@ const WriterForm = memo(function WriterForm({
           onJumlahChange={onJumlahChange}
           panjang={panjang}
           onPanjangChange={onPanjangChange}
+          getQuota={getQuota}
         />
 
         {/* Generate Button */}

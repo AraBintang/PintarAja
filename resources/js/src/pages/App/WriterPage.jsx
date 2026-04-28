@@ -7,6 +7,7 @@ import WriterForm from '@/components/writer/WriterForm'
 import WriterOutput from '@/components/writer/WriterOutput'
 import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
+import { useQuota } from '@/hooks/useQuota'
 import { request } from '@/utils/Http'
 
 function buildPrompt({
@@ -50,6 +51,7 @@ function buildPromptData({ topik, instruksi, paperName, sectionName, bahasa, jum
 export default function WriterPage() {
   const { user } = useAuth()
   const { showSnackbar } = useSnackbar()
+  const { initQuota, decrement, rollback, getQuota } = useQuota()
 
   /* ─── Master data ─── */
   const [papers, setPapers] = useState([])
@@ -116,6 +118,7 @@ export default function WriterPage() {
         setPapers(res.papers || [])
         setAllSections(res.sections || [])
         setAiProviders(res.ai || [])
+        initQuota(res.quota || [])
         setWorkbooks(res.workbooks || [])
         if (res.papers?.length) setSelectedPaperId(String(res.papers[0].id))
         if (res.ai?.length) setSelectedAiId(String(res.ai[0].id))
@@ -225,6 +228,9 @@ export default function WriterPage() {
       if (abortRef.current) abortRef.current.abort()
       abortRef.current = new AbortController()
 
+      const code = selectedProvider?.code
+      decrement(code)
+
       setIsGenerating(true)
       const existingContent = editorContent.trim()
       setIsGenerated(false)
@@ -263,7 +269,13 @@ export default function WriterPage() {
           signal: abortRef.current.signal,
         })
 
+        if (res.status === 429) {
+          throw new Error('Batas harian tercapai, coba lagi besok!')
+        }
+
         if (!res.ok) {
+          rollback(code)
+
           const err = await res.json().catch(() => ({ message: 'Generate gagal' }))
           throw new Error(err.message || 'Generate gagal')
         }
@@ -305,9 +317,14 @@ export default function WriterPage() {
       } catch (err) {
         if (err.name === 'AbortError') return
         showSnackbar('error', err.message || 'Gagal generate konten')
-        setIsGenerated(false)
-        setInputCollapsed(false)
-        setEditorContent('')
+
+        if (!editorContent) {
+          setIsGenerated(false)
+          setInputCollapsed(false)
+          setEditorContent('')
+        } else {
+          setIsGenerated(true)
+        }
       } finally {
         setIsGenerating(false)
       }
@@ -324,6 +341,9 @@ export default function WriterPage() {
       selectedFiles,
       showSnackbar,
       editorContent,
+      selectedProvider,
+      decrement,
+      rollback,
     ],
   )
 
@@ -590,6 +610,7 @@ export default function WriterPage() {
           isGptProvider={isGptProvider}
           selectedFiles={selectedFiles}
           onFilesChange={setSelectedFiles}
+          getQuota={getQuota}
         />
 
         {isGenerating && !isGenerated && (

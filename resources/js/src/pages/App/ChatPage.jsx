@@ -5,6 +5,7 @@ import ChatInput from '@/components/chat/ChatInput'
 import ChatMessages from '@/components/chat/ChatMessages'
 import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
+import { useQuota } from '@/hooks/useQuota'
 import { request } from '@/utils/Http'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -94,8 +95,10 @@ const classifyFiles = (files) => {
 export default function ChatPage() {
   const location = useLocation()
   const navigate = useNavigate()
+
   const { user } = useAuth()
   const { showSnackbar } = useSnackbar()
+  const { initQuota, decrement, rollback, getQuota } = useQuota()
 
   const [aiProviders, setAiProviders] = useState([])
   const [selectedAiId, setSelectedAiId] = useState('')
@@ -129,14 +132,12 @@ export default function ChatPage() {
   useEffect(() => {
     request('/chats')
       .then((res) => {
-        const providers = Array.isArray(res) ? res : []
-        if (providers.length) {
-          setAiProviders(providers)
-          setSelectedAiId(String(providers[0].id))
-        }
+        setAiProviders(res?.ai)
+        initQuota(res?.quota)
+        setSelectedAiId(String(res?.ai[0].id))
       })
       .catch(() => {})
-  }, [])
+  }, [initQuota])
 
   useEffect(() => {
     if (location.pathname === '/new') {
@@ -255,7 +256,12 @@ export default function ChatPage() {
   }, [hasMoreChats, isLoadingMore, conversationId, nextCursor, loadConversation])
 
   const sendTextMessage = async (convId, text, contextMessages) => {
+    const selectedProvider = aiProviders.find((ai) => String(ai.id) === String(selectedAiId))
+    const code = selectedProvider?.code
+    decrement(code)
+
     const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+
     const response = await fetch('/api/chats', {
       method: 'POST',
       headers: {
@@ -272,29 +278,40 @@ export default function ChatPage() {
       }),
       signal: abortRef.current.signal,
     })
+
+    if (response.status === 429) {
+      throw new Error('Batas harian tercapai, coba lagi besok!')
+    }
+
     if (!response.ok) {
+      rollback(code)
       const err = await response.json().catch(() => ({}))
       throw new Error(err.message || 'Generate gagal')
     }
+
     const fullRaw = await readStream(response, (raw) => {
       setStreamingContent(parseSseContent(raw))
     })
+
     return { content: parseSseContent(fullRaw), annotations: [] }
   }
 
   const sendFileMessage = async (convId, text, files) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
     const oversized = files.filter((f) => f.size > MAX_FILE_SIZE)
+
     if (oversized.length) {
       throw new Error(
         `File "${oversized[0].name}" melebihi batas ukuran ${MAX_FILE_SIZE / 1024 / 1024}MB`,
       )
     }
+
     const form = new FormData()
     form.append('providerId', selectedAiId)
     form.append('conversationId', convId)
     form.append('message', text)
     files.forEach((f) => form.append('files[]', f))
+
     const response = await fetch('/api/chats/gff', {
       method: 'POST',
       headers: {
@@ -304,10 +321,12 @@ export default function ChatPage() {
       body: form,
       signal: abortRef.current.signal,
     })
+
     if (!response.ok) {
       const err = await response.json().catch(() => ({}))
       throw new Error(err.message || 'Generate gagal')
     }
+
     const contentType = response.headers.get('Content-Type') ?? ''
     if (contentType.includes('text/event-stream')) {
       const fullRaw = await readStream(response, (raw) => {
@@ -316,24 +335,31 @@ export default function ChatPage() {
       })
       return parseGffSse(fullRaw)
     }
+
     const json = await response.json()
     if (json?.error) throw new Error(json.error.message || 'AI provider error')
     if (!json?.reply && json?.message) throw new Error(json.message)
     const reply = json.reply ?? ''
+
     setStreamingContent(reply)
+
     return { content: reply, annotations: [] }
   }
 
   const handleSendMessage = async () => {
     const text = inputValue.trim()
+
     if (!text && !attachedFiles.length) return
+
     if (!selectedAiId) {
       showSnackbar('error', 'Pilih model AI terlebih dahulu')
       return
     }
+
     if (isStreaming) return
 
     const files = [...attachedFiles]
+
     setInputValue('')
     setAttachedFiles([])
 
@@ -353,6 +379,7 @@ export default function ChatPage() {
 
     const { images, docs } = classifyFiles(files)
     const imageBase64Map = {}
+
     if (images.length > 0) {
       const base64Results = await Promise.all(images.map(fileToBase64))
       images.forEach((img, idx) => {
@@ -379,6 +406,7 @@ export default function ChatPage() {
       annotations: [],
       time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
     }
+
     setMessages((prev) => [...prev, userMsg])
 
     const contextMessages = [...messages, userMsg]
@@ -387,6 +415,7 @@ export default function ChatPage() {
 
     setIsStreaming(true)
     setStreamingContent('')
+
     if (abortRef.current) abortRef.current.abort()
     abortRef.current = new AbortController()
 
@@ -399,6 +428,7 @@ export default function ChatPage() {
         } else {
           const preResolvedBase64 = images.map((img) => imageBase64Map[img.name + img.size])
           const prevContext = contextMessages.slice(0, -1)
+
           const userContentParts = [
             { type: 'text', text },
             ...preResolvedBase64.map((b64) => ({
@@ -406,8 +436,10 @@ export default function ChatPage() {
               image_url: { url: b64 },
             })),
           ]
+
           const messagesPayload = [...prevContext, { role: 'user', content: userContentParts }]
           const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+
           const response = await fetch('/api/chats', {
             method: 'POST',
             headers: {
@@ -424,13 +456,16 @@ export default function ChatPage() {
             }),
             signal: abortRef.current.signal,
           })
+
           if (!response.ok) {
             const err = await response.json().catch(() => ({}))
             throw new Error(err.message || 'Generate gagal')
           }
+
           const fullRaw = await readStream(response, (raw) => {
             setStreamingContent(parseSseContent(raw))
           })
+
           result = { content: parseSseContent(fullRaw), annotations: [] }
         }
       } else {
@@ -438,6 +473,7 @@ export default function ChatPage() {
       }
 
       const ai = aiProviders.find((a) => String(a.id) === selectedAiId)
+
       setMessages((prev) => [
         ...prev,
         {
@@ -449,6 +485,7 @@ export default function ChatPage() {
           time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         },
       ])
+
       setStreamingContent('')
     } catch (err) {
       if (err.name === 'AbortError') return
@@ -538,6 +575,7 @@ export default function ChatPage() {
           canSend={canSend}
           onSubmit={handleSendMessage}
           isStreaming={isStreaming}
+          getQuota={getQuota}
         />
       )}
     </div>
