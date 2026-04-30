@@ -76,11 +76,117 @@ class MiscellaneousController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            // If table not migrated yet, keep zeros.
             $blogViewsByDay = collect();
         }
 
+        $couponRedemptionByDay = collect();
+        try {
+            $couponRedemptionByDay = DB::table('m_coupon_redemption as cr')
+                ->join('m_coupon as c', 'cr.M_RedemptionCouponID', '=', 'c.M_CouponID')
+                ->selectRaw(
+                    "DATE(cr.M_RedemptionDate) as d,
+                    SUM(CASE WHEN c.M_CouponMaxUses IS NULL OR c.M_CouponMaxUses = '' THEN 1 ELSE 0 END) as regular_count,
+                    SUM(CASE WHEN c.M_CouponMaxUses IS NOT NULL AND c.M_CouponMaxUses != '' THEN 1 ELSE 0 END) as campaign_count"
+                )
+                ->whereBetween('cr.M_RedemptionDate', [$from, $to])
+                ->groupBy('d')
+                ->get();
+
+            foreach ($couponRedemptionByDay as $row) {
+                $k = (string) $row->d;
+                if (isset($buckets[$k])) {
+                    $buckets[$k]['coupon_redeemed_regular'] = (int) $row->regular_count;
+                    $buckets[$k]['coupon_redeemed_campaign'] = (int) $row->campaign_count;
+                    $buckets[$k]['coupon_redeemed_total'] = (int) $row->regular_count + (int) $row->campaign_count;
+                }
+            }
+        } catch (\Throwable $e) {
+            $couponRedemptionByDay = collect();
+        }
+
+        $transcribeByDay = collect();
+        try {
+            $transcribeByDay = DB::table('m_transcribe')
+                ->selectRaw('DATE(M_TranscribeCreated) as d, COUNT(*) as c')
+                ->whereBetween('M_TranscribeCreated', [$from, $to])
+                ->groupBy('d')
+                ->get();
+
+            foreach ($transcribeByDay as $row) {
+                $k = (string) $row->d;
+                if (isset($buckets[$k])) {
+                    $buckets[$k]['transcribe'] = (int) $row->c;
+                }
+            }
+        } catch (\Throwable $e) {
+            $transcribeByDay = collect();
+        }
+
+        $paraphraseByDay = collect();
+        try {
+            $paraphraseByDay = DB::table('m_paraphrase')
+                ->selectRaw('DATE(M_ParaphraseCreated) as d, COUNT(*) as c')
+                ->whereBetween('M_ParaphraseCreated', [$from, $to])
+                ->groupBy('d')
+                ->get();
+
+            foreach ($paraphraseByDay as $row) {
+                $k = (string) $row->d;
+                if (isset($buckets[$k])) {
+                    $buckets[$k]['paraphrase'] = (int) $row->c;
+                }
+            }
+        } catch (\Throwable $e) {
+            $paraphraseByDay = collect();
+        }
+
+        $humanizerByDay = collect();
+        try {
+            $humanizerByDay = DB::table('m_humanizer')
+                ->selectRaw('DATE(M_HumanizerCreated) as d, COUNT(*) as c')
+                ->whereBetween('M_HumanizerCreated', [$from, $to])
+                ->groupBy('d')
+                ->get();
+
+            foreach ($humanizerByDay as $row) {
+                $k = (string) $row->d;
+                if (isset($buckets[$k])) {
+                    $buckets[$k]['humanizer'] = (int) $row->c;
+                }
+            }
+        } catch (\Throwable $e) {
+            $humanizerByDay = collect();
+        }
+
+        $conversationByDay = collect();
+        try {
+            $conversationByDay = DB::table('t_conversation')
+                ->selectRaw('DATE(T_ConversationCreated) as d, COUNT(*) as c')
+                ->whereBetween('T_ConversationCreated', [$from, $to])
+                ->groupBy('d')
+                ->get();
+
+            foreach ($conversationByDay as $row) {
+                $k = (string) $row->d;
+                if (isset($buckets[$k])) {
+                    $buckets[$k]['conversation'] = (int) $row->c;
+                }
+            }
+        } catch (\Throwable $e) {
+            $conversationByDay = collect();
+        }
+
         $series = array_values($buckets);
+
+        $dayCount = max(1, count(array_filter($buckets, fn ($b) =>
+            $b['users'] || $b['tx_paid'] || $b['plagiarism'] ||
+            $b['blog_views'] || $b['coupon_redeemed_total'] ||
+            $b['transcribe'] || $b['paraphrase'] || $b['humanizer'] || $b['conversation']
+        )));
+
+        if ($dayCount == 0) {
+            $dayCount = ($from->diffInDays($to) + 1);
+        }
 
         $topBlogs = [];
         try {
@@ -110,18 +216,35 @@ class MiscellaneousController extends Controller
 
         $totals = [
             'users' => $usersByDay->sum('c'),
+            'users_avg' => round($usersByDay->sum('c') / $dayCount, 2),
             'tx_paid' => $txPaidByDay->sum('paid_count'),
+            'tx_paid_avg' => round($txPaidByDay->sum('paid_count') / $dayCount, 2),
             'tx_revenue' => (int) $txPaidByDay->sum('revenue'),
+            'tx_revenue_avg' => round($txPaidByDay->sum('revenue') / max(1, $txPaidByDay->sum('paid_count')), 2),
             'plagiarism' => $plagiarismByDay->sum('c'),
+            'plagiarism_avg' => round($plagiarismByDay->sum('c') / $dayCount, 2),
             'plagiarism_waiting_payment' => $plagiarismByDay->sum('waiting_payment'),
+            'plagiarism_waiting_payment_avg' => round($plagiarismByDay->sum('waiting_payment') / $dayCount, 2),
             'blog_views' => $blogViewsByDay->sum('c'),
+            'blog_views_avg' => round($blogViewsByDay->sum('c') / $dayCount, 2),
+            'coupon_redeemed_regular'  => $couponRedemptionByDay->sum('regular_count'),
+            'coupon_redeemed_regular_avg' => round($couponRedemptionByDay->sum('regular_count') / $dayCount, 2),
+            'coupon_redeemed_campaign' => $couponRedemptionByDay->sum('campaign_count'),
+            'coupon_redeemed_campaign_avg' => round($couponRedemptionByDay->sum('campaign_count') / $dayCount, 2),
+            'coupon_redeemed_total' => $couponRedemptionByDay->sum('regular_count') + $couponRedemptionByDay->sum('campaign_count'),
+            'coupon_redeemed_total_avg' => round(($couponRedemptionByDay->sum('regular_count') + $couponRedemptionByDay->sum('campaign_count')) / $dayCount, 2),
+            'transcribe' => $transcribeByDay->sum('c'),
+            'transcribe_avg' => round($transcribeByDay->sum('c') / $dayCount, 2),
+            'paraphrase' => $paraphraseByDay->sum('c'),
+            'paraphrase_avg' => round($paraphraseByDay->sum('c') / $dayCount, 2),
+            'humanizer' => $humanizerByDay->sum('c'),
+            'humanizer_avg' => round($humanizerByDay->sum('c') / $dayCount, 2),
+            'conversation' => $conversationByDay->sum('c'),
+            'conversation_avg' => round($conversationByDay->sum('c') / $dayCount, 2),
         ];
 
         return response()->json([
-            'range' => [
-                'from' => $from->toDateString(),
-                'to' => $to->toDateString(),
-            ],
+            'range' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
             'totals' => $totals,
             'series' => $series,
             'topBlogs' => $topBlogs,
@@ -135,7 +258,6 @@ class MiscellaneousController extends Controller
 
         if (! $fromQ && ! $toQ) {
             $d = now();
-
             return [$d->copy()->startOfDay(), $d->copy()->endOfDay()];
         }
 
@@ -146,7 +268,6 @@ class MiscellaneousController extends Controller
             [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
         }
 
-        // safety cap: max 366 days
         if ($from->diffInDays($to) > 366) {
             $to = $from->copy()->addDays(366)->endOfDay();
         }
@@ -170,6 +291,13 @@ class MiscellaneousController extends Controller
                 'plagiarism' => 0,
                 'plagiarism_waiting_payment' => 0,
                 'blog_views' => 0,
+                'coupon_redeemed_regular' => 0,
+                'coupon_redeemed_campaign' => 0,
+                'coupon_redeemed_total' => 0,
+                'transcribe' => 0,
+                'paraphrase' => 0,
+                'humanizer' => 0,
+                'conversation' => 0,
             ];
             $cursor->addDay();
         }

@@ -48,8 +48,9 @@ class WriterController extends Controller
                 WHEN s.M_SettingCode = 'SETTING-GPT' THEN 1
                 WHEN s.M_SettingCode = 'SETTING-GMN' THEN 2
                 WHEN s.M_SettingCode = 'SETTING-CLD' THEN 3
-                WHEN s.M_SettingCode = 'SETTING-DSK' THEN 4
-                WHEN s.M_SettingCode = 'SETTING-QWN' THEN 5
+                WHEN s.M_SettingCode = 'SETTING-XAI' THEN 4
+                WHEN s.M_SettingCode = 'SETTING-DSK' THEN 5
+                WHEN s.M_SettingCode = 'SETTING-QWN' THEN 6
                 ELSE 6
             END")
             ->get();
@@ -345,11 +346,12 @@ class WriterController extends Controller
         }
  
         $providerMap = [
-            'SETTING-GPT' => 'OpenAI',
-            'SETTING-CLD' => 'Claude',
-            'SETTING-GMN' => 'Gemini',
-            'SETTING-DSK' => 'DeepSeek',
-            'SETTING-QWN' => 'Qwen',
+            'SETTING-GPT' => 'openai',
+            'SETTING-GMN' => 'gemini',
+            'SETTING-CLD' => 'claude',
+            'SETTING-XAI' => 'grok',
+            'SETTING-DSK' => 'deepseek',
+            'SETTING-QWN' => 'qwen',
         ];
  
         $aiName = $providerMap[$provider->M_SettingCode] ?? null;
@@ -366,7 +368,7 @@ class WriterController extends Controller
         $vectorStoreIds = array_values(array_unique($vectorStoreIds));
  
         try {
-            if ($aiName === 'OpenAI' && !empty($vectorStoreIds)) {
+            if ($aiName === 'openai' && !empty($vectorStoreIds)) {
                 return $this->streamOpenAIWithFileSearch(
                     $provider->M_SettingKey,
                     $provider->M_SettingModel ?? 'gpt-4o',
@@ -376,11 +378,12 @@ class WriterController extends Controller
             }
  
             $handlers = [
-                'OpenAI' => fn() => $aiService->streamOpenAI($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
-                'Gemini' => fn() => $aiService->streamGemini($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
-                'DeepSeek' => fn() => $aiService->streamDeepSeek($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
-                'Claude' => fn() => $aiService->streamClaude($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
-                'Qwen' => fn() => $aiService->streamQwen($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
+                'openai' => fn() => $aiService->streamOpenAI($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
+                'gemini' => fn() => $aiService->streamGemini($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
+                'claude' => fn() => $aiService->streamClaude($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
+                'grok' => fn() => $aiService->streamGrok($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
+                'deepseek' => fn() => $aiService->streamDeepSeek($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
+                'qwen' => fn() => $aiService->streamQwen($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
             ];
  
             if (!isset($handlers[$aiName])) {

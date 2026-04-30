@@ -333,7 +333,7 @@ export default function BlogForm({ open, onClose, onSubmit, initialData, loading
                       <img
                         src={imagePreview}
                         alt="Preview"
-                        className="w-32 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
+                        className="w-96 h-60 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
                       />
                       <button
                         type="button"
@@ -350,30 +350,32 @@ export default function BlogForm({ open, onClose, onSubmit, initialData, loading
                 </div>
 
                 {/* Published Status */}
-                <div className="space-y-2 col-span-1 md:col-span-2">
-                  <label className={labelClass}>Status Publikasi</label>
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit border border-gray-200 dark:border-gray-700">
+                  {[
+                    { value: false, label: 'Draft' },
+                    { value: true, label: 'Published' },
+                  ].map(({ value, label }) => (
+                    <label
+                      key={label}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer text-sm font-medium transition-all duration-200 select-none
+                       ${
+                         formData.is_published === value
+                           ? value
+                             ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 shadow-sm'
+                             : 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 shadow-sm'
+                           : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                       }`}
+                    >
                       <input
                         type="radio"
                         name="is_published"
-                        checked={!formData.is_published}
-                        onChange={() => setFormData((prev) => ({ ...prev, is_published: false }))}
-                        className="w-4 h-4 text-blue-600 dark:text-orange-500 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-orange-500"
+                        checked={formData.is_published === value}
+                        onChange={() => setFormData((prev) => ({ ...prev, is_published: value }))}
+                        className="sr-only"
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Draft</span>
+                      {label}
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="is_published"
-                        checked={formData.is_published}
-                        onChange={() => setFormData((prev) => ({ ...prev, is_published: true }))}
-                        className="w-4 h-4 text-blue-600 dark:text-orange-500 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-orange-500"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Published</span>
-                    </label>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>

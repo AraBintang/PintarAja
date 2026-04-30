@@ -5,6 +5,7 @@ import claudeAiIcon from '@/assets/icons/claude-ai-icon.svg'
 import deepseekAiIcon from '@/assets/icons/deepseek-ai-icon.svg'
 import googleGeminiIcon from '@/assets/icons/google-gemini-icon.svg'
 import gptAiIcon from '@/assets/icons/gpt-ai-icon.svg'
+import grokAiIcon from '@/assets/icons/grok-ai-icon.svg'
 import qwenAiIcon from '@/assets/icons/qwen-ai-icon.svg'
 
 export const AutoIcon = () => createElement(Zap, { className: 'w-3.5 h-3.5 text-amber-500' })
@@ -14,21 +15,31 @@ const OpenAILogo = createElement('img', {
   alt: 'GPT',
   className: 'w-3.5 h-3.5 object-contain dark:invert',
 })
+
 const GeminiLogo = createElement('img', {
   src: googleGeminiIcon,
   alt: 'Gemini',
   className: 'w-3.5 h-3.5 object-contain',
 })
+
 const ClaudeLogo = createElement('img', {
   src: claudeAiIcon,
   alt: 'Claude',
   className: 'w-3.5 h-3.5 object-contain',
 })
+
+const GrokLogo = createElement('img', {
+  src: grokAiIcon,
+  alt: 'Grok',
+  className: 'w-3.5 h-3.5 object-contain dark:invert',
+})
+
 const DeepSeekLogo = createElement('img', {
   src: deepseekAiIcon,
   alt: 'DeepSeek',
   className: 'w-3.5 h-3.5 object-contain',
 })
+
 const QwenLogo = createElement('img', {
   src: qwenAiIcon,
   alt: 'Qwen',
@@ -39,6 +50,7 @@ export const AI_CODE_MAP = {
   'SETTING-GPT': { label: 'ChatGPT', icon: OpenAILogo },
   'SETTING-GMN': { label: 'Gemini', icon: GeminiLogo },
   'SETTING-CLD': { label: 'Claude', icon: ClaudeLogo },
+  'SETTING-XAI': { label: 'Grok', icon: GrokLogo },
   'SETTING-DSK': { label: 'DeepSeek', icon: DeepSeekLogo },
   'SETTING-QWN': { label: 'Qwen', icon: QwenLogo },
 }
@@ -116,7 +128,7 @@ export const AI_MODELS = {
     {
       value: 'gemini-2.0-flash-lite',
       label: 'Gemini 2.0 Flash-Lite',
-      desc: 'Most cost-efficient for high-volume tasks',
+      desc: 'High-volume tasks',
     },
   ],
 
@@ -145,6 +157,34 @@ export const AI_MODELS = {
       value: 'claude-haiku-4-5-20251001',
       label: 'Claude Haiku 4.5',
       desc: 'Fastest Claude, near-instant responses',
+    },
+  ],
+
+  'SETTING-XAI': [
+    {
+      value: 'grok-4.20-0309-reasoning',
+      label: 'Grok 4.20 Reasoning',
+      desc: 'Latest Grok, deep thinking & complex problem solving',
+    },
+    {
+      value: 'grok-4.20-0309-non-reasoning',
+      label: 'Grok 4.20',
+      desc: 'Latest Grok, fast response for everyday tasks',
+    },
+    {
+      value: 'grok-4.20-multi-agent-0309',
+      label: 'Grok 4.20 Multi-Agent',
+      desc: 'Optimized for multi-agent pipelines & orchestration',
+    },
+    {
+      value: 'grok-code-fast-1',
+      label: 'Grok Code Fast',
+      desc: 'Specialized for coding tasks with fast response',
+    },
+    {
+      value: 'grok-imagine-image-pro',
+      label: 'Grok Imagine Pro',
+      desc: 'Highest quality image generation by xAI',
     },
   ],
 
@@ -224,12 +264,19 @@ export const AI_DOC_CONFIG = {
     bgColor: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700/50',
     iconColor: 'text-orange-500',
   },
-  'SETTING-DSK': {
-    label: 'DeepSeek Model Docs',
-    url: 'https://api-docs.deepseek.com/quick_start/pricing',
+  'SETTING-XAI': {
+    label: 'xAI Grok Model Docs',
+    url: 'https://docs.x.ai/docs/models',
     color: 'text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300',
     bgColor: 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-700/50',
     iconColor: 'text-sky-500',
+  },
+  'SETTING-DSK': {
+    label: 'DeepSeek Model Docs',
+    url: 'https://api-docs.deepseek.com/quick_start/pricing',
+    color: 'text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300',
+    bgColor: 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-700/50',
+    iconColor: 'text-indigo-500',
   },
   'SETTING-QWN': {
     label: 'Qwen Model Docs',

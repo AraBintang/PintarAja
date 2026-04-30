@@ -7,6 +7,7 @@ import claudeAiIcon from '@/assets/icons/claude-ai-icon.svg'
 import deepseekAiIcon from '@/assets/icons/deepseek-ai-icon.svg'
 import googleGeminiIcon from '@/assets/icons/google-gemini-icon.svg'
 import gptAiIcon from '@/assets/icons/gpt-ai-icon.svg'
+import grokAiIcon from '@/assets/icons/grok-ai-icon.svg'
 import qwenAiIcon from '@/assets/icons/qwen-ai-icon.svg'
 import {
   Select,
@@ -25,6 +26,9 @@ const GeminiLogo = () => (
 )
 const ClaudeLogo = () => (
   <img src={claudeAiIcon} alt="Claude" className="w-3.5 h-3.5 object-contain" />
+)
+const GrokLogo = () => (
+  <img src={grokAiIcon} alt="Claude" className="w-3.5 h-3.5 object-contain dark:invert" />
 )
 const DeepSeekLogo = () => (
   <img src={deepseekAiIcon} alt="DeepSeek" className="w-3.5 h-3.5 object-contain" />
@@ -174,6 +178,12 @@ export default function AIForm({
                             <div className="flex flex-row items-center gap-2">
                               <ClaudeLogo />
                               <span>Claude</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="SETTING-XAI">
+                            <div className="flex flex-row items-center gap-2">
+                              <GrokLogo />
+                              <span>Grok</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="SETTING-DSK">

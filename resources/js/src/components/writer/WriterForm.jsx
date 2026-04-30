@@ -7,7 +7,6 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
@@ -262,24 +261,25 @@ const WriterForm = memo(function WriterForm({
                     <span className="font-medium text-gray-700 dark:text-gray-200">
                       {bahasa.split(' (')[0]}
                     </span>
+                    <span className="text-gray-400 dark:text-gray-500 text-[11px] ml-auto hidden sm:inline-block">
+                      {bahasa.includes('(') ? bahasa.split('(')[1].replace(')', '') : ''}
+                    </span>
                   </div>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="max-h-[300px] rounded-xl dark:bg-gray-800 dark:border-gray-700">
                 <SelectGroup>
-                  <SelectLabel>Language</SelectLabel>
                   {LANGUAGES.map((lang) => (
-                    <SelectItem
-                      key={lang.text}
-                      value={lang.text}
-                      className="cursor-pointer py-2.5 pl-8 pr-3 hover:bg-blue-50 focus:bg-blue-50 dark:hover:bg-gray-700 dark:focus:bg-gray-700 transition-colors rounded-lg mx-1 my-0.5"
-                    >
+                    <SelectItem key={lang.text} value={lang.text} className="py-2.5 pl-8 pr-3">
                       <div className="flex items-center gap-3">
                         <span
                           className={`${lang.img} rounded-[2px] w-[22px] h-[16px] shadow-[0_0_2px_rgba(0,0,0,0.4)] block bg-cover bg-center`}
                         />
                         <span className="font-medium text-gray-700 dark:text-gray-200">
                           {lang.text.split(' (')[0]}
+                        </span>
+                        <span className="text-gray-400 dark:text-gray-500 text-[11px] ml-auto hidden sm:inline-block">
+                          {lang.text.includes('(') ? lang.text.split('(')[1].replace(')', '') : ''}
                         </span>
                       </div>
                     </SelectItem>

@@ -286,6 +286,7 @@ export default function CouponPage() {
     { label: 'Valid Until', align: '' },
     { label: 'Status', align: 'text-center' },
     { label: 'Usage', align: '' },
+    { label: 'Created By', align: '' },
     { label: 'Action', align: 'text-right' },
   ]
 
@@ -516,12 +517,14 @@ export default function CouponPage() {
                           <UsageCell coupon={coupon} />
                         </td>
 
+                        <td className="px-6 py-4 text-center text-sm">{coupon.creatorEmail}</td>
+
                         {/* Action */}
-                        <td className="px-4 py-3.5 text-right">
+                        <td className="px-4 py-3.5 text-center">
                           <button
                             onClick={() => setDeleteTarget(coupon)}
                             title="Hapus"
-                            className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 flex items-center justify-center text-red-500 transition-colors ml-auto"
+                            className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 flex items-center justify-center text-red-500 transition-colors mx-auto"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

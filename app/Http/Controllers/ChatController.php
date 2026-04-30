@@ -37,8 +37,9 @@ class ChatController extends Controller
                 WHEN s.M_SettingCode = 'SETTING-GPT' THEN 1
                 WHEN s.M_SettingCode = 'SETTING-GMN' THEN 2
                 WHEN s.M_SettingCode = 'SETTING-CLD' THEN 3
-                WHEN s.M_SettingCode = 'SETTING-DSK' THEN 4
-                WHEN s.M_SettingCode = 'SETTING-QWN' THEN 5
+                WHEN s.M_SettingCode = 'SETTING-XAI' THEN 4
+                WHEN s.M_SettingCode = 'SETTING-DSK' THEN 5
+                WHEN s.M_SettingCode = 'SETTING-QWN' THEN 6
                 ELSE 6
             END")
             ->get();
@@ -176,6 +177,7 @@ class ChatController extends Controller
             'openai' => fn() => $aiService->streamOpenAI($provider->M_SettingKey, $provider->M_SettingModel, $messages, false, $conversationId, $provider->M_SettingCode),
             'gemini' => fn() => $aiService->streamGemini($provider->M_SettingKey, $provider->M_SettingModel, $messages, false, $conversationId, $provider->M_SettingCode),
             'claude' => fn() => $aiService->streamClaude($provider->M_SettingKey, $provider->M_SettingModel, $messages, false, $conversationId, $provider->M_SettingCode),
+            'grok' => fn() => $aiService->streamGrok($provider->M_SettingKey, $provider->M_SettingModel, $messages, false, $conversationId, $provider->M_SettingCode),
             'deepseek' => fn() => $aiService->streamDeepSeek($provider->M_SettingKey, $provider->M_SettingModel, $messages, false, $conversationId, $provider->M_SettingCode),
             'qwen' => fn() => $aiService->streamQwen($provider->M_SettingKey, $provider->M_SettingModel, $messages, false, $conversationId, $provider->M_SettingCode),
         ];
@@ -274,6 +276,7 @@ class ChatController extends Controller
             'SETTING-GPT' => 'openai',
             'SETTING-GMN' => 'gemini',
             'SETTING-CLD' => 'claude',
+            'SETTING-XAI' => 'grok',
             'SETTING-DSK' => 'deepseek',
             'SETTING-QWN' => 'qwen',
         ][$code] ?? null;

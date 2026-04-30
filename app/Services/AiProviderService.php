@@ -187,6 +187,60 @@ class AiProviderService
         ]);
     }
 
+    public function streamGrok($apiKey, $model = null, $userMessage, $format = true, $converId = null, $provider = null)
+    {
+        return response()->stream(function () use ($apiKey, $model, $userMessage, $format, $converId, $provider) {
+            $client = new Client();
+
+            $messages = $format === false
+                ? $this->normalizeMessagesForOpenAI($userMessage)
+                : [['role' => 'user', 'content' => $userMessage]];
+
+            $response = $client->post('https://api.x.ai/v1/chat/completions', [
+                'headers' => [
+                    'Authorization' => "Bearer $apiKey",
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'text/event-stream',
+                ],
+                'json'   => [
+                    'model' => $model ?? 'grok-2',
+                    'messages' => $messages,
+                    'stream' => true,
+                ],
+                'stream' => true,
+            ]);
+
+            $body = $response->getBody();
+            $output = '';
+
+            while (!$body->eof()) {
+                $line = trim($this->readLine($body));
+
+                if (!Str::startsWith($line, 'data: ')) continue;
+                $jsonLine = trim(Str::replaceFirst('data: ', '', $line));
+                if ($jsonLine === '[DONE]') break;
+
+                $data  = json_decode($jsonLine, true);
+                $chunk = $data['choices'][0]['delta']['content'] ?? null;
+                if ($chunk !== null && $chunk !== '') {
+                    $out = $format ? $this->formatMessage($chunk) : $chunk;
+                    $output .= $out;
+                    echo $out;
+                    ob_flush();
+                    flush();
+                }
+            }
+
+            if ($format == false && $converId) {
+                $this->inputAssistantChatByConversationId($converId, $provider, $output);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection' => 'keep-alive',
+        ]);
+    }
+
     public function streamDeepSeek($apiKey, $model = null, $userMessage, $format = true, $converId = null, $provider = null)
     {
         return response()->stream(function () use ($apiKey, $model, $userMessage, $format, $converId, $provider) {
@@ -332,12 +386,12 @@ class AiProviderService
         return array_map(function ($msg) {
             if (is_array($msg['content'] ?? null)) {
                 return [
-                    'role'    => $msg['role'],
+                    'role' => $msg['role'],
                     'content' => $msg['content'],
                 ];
             }
             return [
-                'role'    => $msg['role'],
+                'role' => $msg['role'],
                 'content' => (string) ($msg['content'] ?? ''),
             ];
         }, $messages);

@@ -4,7 +4,6 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
@@ -12,7 +11,7 @@ import {
 export default function LanguageSelector({ selectedLang, onLangChange }) {
   return (
     <Select value={selectedLang} onValueChange={onLangChange}>
-      <SelectTrigger className="w-[180px] h-10 bg-white dark:bg-[#252b3b] border-gray-200 dark:border-gray-700 focus:ring-1 focus:ring-blue-500 dark:focus:ring-orange-500 text-[14px] shadow-sm rounded-lg hover:bg-gray-50 dark:hover:bg-[#2a3142] transition-colors">
+      <SelectTrigger className="w-[230px] h-10 md:h-11 border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50">
         <SelectValue placeholder="Pilih Bahasa">
           <div className="flex items-center gap-2">
             <span
@@ -21,12 +20,14 @@ export default function LanguageSelector({ selectedLang, onLangChange }) {
             <span className="font-medium text-gray-700 dark:text-gray-200">
               {selectedLang.split(' (')[0]}
             </span>
+            <span className="text-gray-400 dark:text-gray-500 text-[11px] ml-auto hidden sm:inline-block">
+              {selectedLang.includes('(') ? selectedLang.split('(')[1].replace(')', '') : ''}
+            </span>
           </div>
         </SelectValue>
       </SelectTrigger>
       <SelectContent className="max-h-[350px] z-50 rounded-xl shadow-xl dark:bg-[#1e2330] dark:border-gray-700">
         <SelectGroup>
-          <SelectLabel>Bahasa</SelectLabel>
           {LANGUAGES.map((lang) => (
             <SelectItem
               key={lang.text}

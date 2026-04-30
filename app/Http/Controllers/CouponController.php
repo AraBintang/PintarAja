@@ -20,7 +20,8 @@ class CouponController extends Controller
         $search = $request->input('search');
 
         $query = Coupon::query()
-            ->leftJoin('m_user', 'm_coupon.M_CouponM_UserID', '=', 'm_user.M_UserID')
+            ->leftJoin('m_user as creator', 'm_coupon.M_CouponCreatedBy', '=', 'creator.M_UserID')
+            ->leftJoin('m_user as redeemer', 'm_coupon.M_CouponM_UserID', '=', 'redeemer.M_UserID')
             ->leftJoin('m_plan', 'm_coupon.M_CouponM_PlanID', '=', 'm_plan.M_PlanID')
             ->leftJoin(
                 DB::raw('(SELECT M_RedemptionCouponID, COUNT(*) as redeem_count FROM m_coupon_redemption GROUP BY M_RedemptionCouponID) as r'),
@@ -35,7 +36,8 @@ class CouponController extends Controller
                 'm_coupon.M_CouponExpired as expired',
                 'm_coupon.M_CouponCreated as createdAt',
                 'm_coupon.M_CouponMaxUses as maxUses',
-                'm_user.M_UserEmail as userEmail',
+                'creator.M_UserEmail as creatorEmail',
+                'redeemer.M_UserEmail as redeemerEmail',
                 'm_plan.M_PlanID as planId',
                 'm_plan.M_PlanName as planName',
                 DB::raw('COALESCE(r.redeem_count, 0) as usedCount'),
@@ -140,6 +142,8 @@ class CouponController extends Controller
                     'M_CouponExpired' => $validated['expired'],
                     'M_CouponMaxUses' => $validated['maxUses'] ?? null,
                     'M_CouponUsed' => 'N',
+                    'M_CouponCreatedBy' => auth()->id(),
+                    'M_CouponCreated' => now(),
                 ]);
  
             } else {

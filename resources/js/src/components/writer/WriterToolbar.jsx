@@ -90,13 +90,13 @@ const WriterToolbar = memo(function WriterToolbar({
                       <SelectItem
                         key={ai.id}
                         value={String(ai.id)}
-                        className={`cursor-pointer py-2.5 px-3 transition-colors rounded-xl my-0.5 [&>span:first-child]:hidden ${
+                        className={`py-2.5 px-3 transition-colors rounded-xl my-0.5 [&>span:first-child]:hidden ${
                           isSelected
                             ? 'bg-[#4A90D9]/8 dark:bg-[#4A90D9]/15'
                             : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 w-full">
+                        <div className="flex items-center gap-2.5 mx-2">
                           <div
                             className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-[#4A90D9]/8 dark:bg-[#4A90D9]/15' : 'hover:bg-gray-50 dark:hover:bg-gray-700/60'}`}
                           >

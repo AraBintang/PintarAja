@@ -345,6 +345,15 @@ export default function BlogPage() {
                       <td className="px-4 py-3.5">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
+                            onClick={() =>
+                              window.open(`${window.location.origin}/blog/${blog.slug}`, '_blank')
+                            }
+                            title="Preview"
+                            className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-emerald-900/20 hover:bg-blue-100 dark:hover:bg-emerald-900/40 flex items-center justify-center text-blue-600 dark:text-emerald-400 transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
                             onClick={() => handleOpenEdit(blog)}
                             title="Edit"
                             className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-orange-900/20 hover:bg-blue-100 dark:hover:bg-orange-900/40 flex items-center justify-center text-blue-600 dark:text-orange-400 transition-colors"
