@@ -110,6 +110,8 @@ class CouponController extends Controller
 
     public function store(Request $request)
     {
+        $user = $request->user();
+
         $validated = $request->validate([
             'planId' => 'required|integer|exists:m_plan,M_PlanID',
             'days' => 'required|integer|min:1',
@@ -142,7 +144,7 @@ class CouponController extends Controller
                     'M_CouponExpired' => $validated['expired'],
                     'M_CouponMaxUses' => $validated['maxUses'] ?? null,
                     'M_CouponUsed' => 'N',
-                    'M_CouponCreatedBy' => auth()->id(),
+                    'M_CouponCreatedBy' => $user->M_UserID,
                     'M_CouponCreated' => now(),
                 ]);
  
@@ -170,6 +172,8 @@ class CouponController extends Controller
                         'M_CouponExpired' => $validated['expired'],
                         'M_CouponMaxUses' => $validated['maxUses'] ?? null,
                         'M_CouponUsed' => 'N',
+                        'M_CouponCreatedBy' => $user->M_UserID,
+                        'M_CouponCreated' => now(),
                     ];
                     $updateIds[] = $poolCode->M_CouponsID;
                 }

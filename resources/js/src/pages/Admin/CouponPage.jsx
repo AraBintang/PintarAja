@@ -137,8 +137,8 @@ function UsageCell({ coupon }) {
   // Single-use legacy
   if (!isMulti) {
     return (
-      <span className="text-[13px] text-gray-500 dark:text-gray-400 truncate max-w-[180px] block">
-        {coupon.userEmail ?? '—'}
+      <span className="text-gray-500 dark:text-gray-400 truncate max-w-[180px] block">
+        {coupon.userEmail ?? '-'}
       </span>
     )
   }
@@ -285,9 +285,9 @@ export default function CouponPage() {
     { label: 'Type', align: '' },
     { label: 'Valid Until', align: '' },
     { label: 'Status', align: 'text-center' },
-    { label: 'Usage', align: '' },
-    { label: 'Created By', align: '' },
-    { label: 'Action', align: 'text-right' },
+    { label: 'Usage', align: 'text-center' },
+    { label: 'Created By', align: 'text-center' },
+    { label: 'Action', align: 'text-center' },
   ]
 
   return (
@@ -513,11 +513,13 @@ export default function CouponPage() {
                         </td>
 
                         {/* Usage */}
-                        <td className="px-4 py-3.5">
+                        <td className="px-4 py-3.5 text-center">
                           <UsageCell coupon={coupon} />
                         </td>
 
-                        <td className="px-6 py-4 text-center text-sm">{coupon.creatorEmail}</td>
+                        <td className="px-6 py-4 text-center text-sm truncate">
+                          {coupon.creatorEmail ?? '-'}
+                        </td>
 
                         {/* Action */}
                         <td className="px-4 py-3.5 text-center">

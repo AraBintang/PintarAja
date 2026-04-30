@@ -110,16 +110,16 @@ function StatSection({ title, icon: Icon, color, bgColor, borderColor, children 
 }
 
 // ─── Chart Card ───────────────────────────────────────────────────────────────
-function ChartCard({ title, subtitle, children }) {
+function ChartCard({ title, subtitle, children, right = false }) {
   return (
-    <section className="bg-white dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-700/60 shadow-sm overflow-hidden">
+    <section className="bg-white dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-700/60 shadow-sm overflow-hidden pb-2">
       <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
         <p className="text-[13px] font-bold text-gray-800 dark:text-gray-100">{title}</p>
         {subtitle && (
           <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{subtitle}</p>
         )}
       </div>
-      <div className="h-[260px] pr-8 py-3">{children}</div>
+      <div className={`h-[260px] ${right ? 'pr-0' : 'pr-8'} py-3`}>{children}</div>
     </section>
   )
 }
@@ -256,7 +256,7 @@ export default function MiscellaneousPage() {
 
         {/* ── Stat Cards by Category ── */}
         <div className="space-y-3">
-          {/* User & Transaction */}
+          {/* User & AI Features */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <StatSection
               title="Users"
@@ -286,7 +286,14 @@ export default function MiscellaneousPage() {
                 value={totals.conversation ?? 0}
                 subtext={`Avg ${(totals.conversation_avg ?? 0).toFixed(1)}/hari`}
                 loading={loading}
-                accent="#8b5cf6"
+                accent="#ff0000"
+              />
+              <StatCard
+                label="Document"
+                value={totals.document ?? 0}
+                subtext={`Avg ${(totals.document_avg ?? 0).toFixed(1)}/hari`}
+                loading={loading}
+                accent="#f59e0b"
               />
               <StatCard
                 label="Paraphrase"
@@ -300,19 +307,19 @@ export default function MiscellaneousPage() {
                 value={totals.humanizer ?? 0}
                 subtext={`Avg ${(totals.humanizer_avg ?? 0).toFixed(1)}/hari`}
                 loading={loading}
-                accent="#f59e0b"
+                accent="#3b82f6"
               />
               <StatCard
                 label="Transcribe"
                 value={totals.transcribe ?? 0}
                 subtext={`Avg ${(totals.transcribe_avg ?? 0).toFixed(1)}/hari`}
                 loading={loading}
-                accent="#3b82f6"
+                accent="#8b5cf6"
               />
             </StatSection>
           </div>
 
-          {/* Plagiarism & Blog */}
+          {/* Plagiarism & Transaction */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <StatSection
               title="Plagiarism"
@@ -361,7 +368,7 @@ export default function MiscellaneousPage() {
             </StatSection>
           </div>
 
-          {/* Coupon & AI Features */}
+          {/* Coupon & Blog */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <StatSection
               title="Coupon"
@@ -450,7 +457,7 @@ export default function MiscellaneousPage() {
           {/* AI Features — Line */}
           <ChartCard
             title="AI Features"
-            subtitle="Conversation · Paraphrase · Humanizer · Transcribe"
+            subtitle="Conversation · Writer Document · Paraphrase · Humanizer · Transcribe"
           >
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={series} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
@@ -463,7 +470,15 @@ export default function MiscellaneousPage() {
                   type="monotone"
                   dataKey="conversation"
                   name="Conversation"
-                  stroke="#8b5cf6"
+                  stroke="#ff0000"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="document"
+                  name="Document"
+                  stroke="#f59e0b"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -479,7 +494,7 @@ export default function MiscellaneousPage() {
                   type="monotone"
                   dataKey="humanizer"
                   name="Humanizer"
-                  stroke="#f59e0b"
+                  stroke="#3b82f6"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -487,7 +502,7 @@ export default function MiscellaneousPage() {
                   type="monotone"
                   dataKey="transcribe"
                   name="Transcribe"
-                  stroke="#3b82f6"
+                  stroke="#8b5cf6"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -526,7 +541,7 @@ export default function MiscellaneousPage() {
           </ChartCard>
 
           {/* Transaction — Composed */}
-          <ChartCard title="Transaction" subtitle="Count paid + revenue per hari">
+          <ChartCard title="Transaction" subtitle="Count paid + revenue per hari" right={true}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={series} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={isDark ? 0.08 : 0.5} />
@@ -599,7 +614,7 @@ export default function MiscellaneousPage() {
                 Event views per hari
               </p>
             </div>
-            <div className="h-[200px] px-4 pt-3">
+            <div className="h-[200px] pr-8 pt-3">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={series} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                   <defs>
