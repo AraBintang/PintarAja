@@ -208,6 +208,7 @@ CREATE TABLE `m_prompt` (
   `M_PromptM_SectionID` int(11) NOT NULL DEFAULT 0,
   `M_PromptName` varchar(45) NOT NULL,
   `M_PromptValue` text NOT NULL,
+  `M_PromptFor` varchar(20) NOT NULL DEFAULT 'writer',
   `M_PromptCreated` datetime NOT NULL DEFAULT current_timestamp(),
   `M_PromptLastUpdated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`M_PromptID`),

@@ -17,6 +17,11 @@ import { usePrompts } from '@/helpers/usePrompts'
 import { Debounce } from '@/utils/Debounce'
 
 const PAGE_SIZE = 10
+const PROMPT_FOR_LABELS = {
+  writer: 'AI Writer',
+  chat: 'AI Chat',
+  both: 'Writer & Chat',
+}
 
 function getPaperStyle(paperName = '') {
   if (paperName === 'Bisnis')
@@ -330,6 +335,9 @@ export default function PromptAIPage() {
                             <span>{paperStyle.icon}</span>
                             {prompt.paperName} » {prompt.sectionName}
                           </span>
+                          <span className="ml-2 inline-flex items-center px-2.5 py-1 rounded-lg text-[12px] font-semibold border bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30">
+                            {PROMPT_FOR_LABELS[prompt.promptFor] ?? 'AI Writer'}
+                          </span>
                         </td>
                         <td className="px-6 py-5">
                           <p
@@ -413,12 +421,17 @@ export default function PromptAIPage() {
                 {(() => {
                   const s = getPaperStyle(previewTarget.paperName)
                   return (
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-semibold border ${s.bg} ${s.text} ${s.border}`}
-                    >
-                      <span>{s.icon}</span>
-                      {previewTarget.paperName} » {previewTarget.sectionName}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-semibold border ${s.bg} ${s.text} ${s.border}`}
+                      >
+                        <span>{s.icon}</span>
+                        {previewTarget.paperName} » {previewTarget.sectionName}
+                      </span>
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[12px] font-semibold border bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30">
+                        {PROMPT_FOR_LABELS[previewTarget.promptFor] ?? 'AI Writer'}
+                      </span>
+                    </div>
                   )
                 })()}
               </div>

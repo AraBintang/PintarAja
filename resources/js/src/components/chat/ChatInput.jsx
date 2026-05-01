@@ -1,4 +1,4 @@
-import { ArrowUp, FileText, Image, Lock, Plus, X as XIcon } from 'lucide-react'
+import { ArrowUp, BookOpen, FileText, Image, Lock, Plus, X as XIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -287,6 +287,7 @@ function guessLang(text) {
 
 export default function ChatInput({
   inputValue,
+  onPromptLibraryOpen,
   onInputChange,
   attachedFiles,
   onRemoveFile,
@@ -304,8 +305,8 @@ export default function ChatInput({
   const textareaRef = useRef(null)
   const imageRef = useRef(null)
   const docRef = useRef(null)
-  const [toast, setToast] = useState(null)
 
+  const [toast, setToast] = useState(null)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
 
   useEffect(() => {
@@ -569,7 +570,15 @@ export default function ChatInput({
                 })()}
               </div>
 
-              <div className="pr-1">
+              <div className="pr-1 flex gap-2">
+                <button
+                  type="button"
+                  onClick={onPromptLibraryOpen}
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all bg-black dark:bg-white text-white dark:text-black hover:scale-105"
+                >
+                  <BookOpen className="w-[18px] h-[18px]" />
+                </button>
+
                 <button
                   type="submit"
                   disabled={!canSend}

@@ -666,6 +666,7 @@ export default function WriterPage() {
         open={promptOpen}
         onClose={() => setPromptOpen(false)}
         onSelect={setInstruksi}
+        inputValue={instruksi}
         papers={papers}
         sections={allSections}
       />

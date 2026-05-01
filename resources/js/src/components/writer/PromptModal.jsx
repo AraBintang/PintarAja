@@ -16,12 +16,26 @@ import { useSnackbar } from '@/context/SnackbarContext'
 import { buildQuery, request } from '@/utils/Http'
 
 const PER_PAGE = 5
+const PROMPT_FOR_OPTIONS = [
+  { value: 'writer', label: 'AI Writer' },
+  { value: 'chat', label: 'AI Chat' },
+  { value: 'both', label: 'AI Writer & Chat' },
+]
 
-function PromptFormModal({ open, onClose, onSaved, papers, sections, prompt }) {
+const PROMPT_FOR_LABELS = {
+  writer: 'AI Writer',
+  chat: 'AI Chat',
+  both: 'Writer & Chat',
+}
+
+function PromptFormModal({ open, onClose, onSaved, papers = [], sections = [], prompt }) {
   const isEdit = Boolean(prompt)
   const { showSnackbar } = useSnackbar()
 
-  const EMPTY = useMemo(() => ({ name: '', paperId: '', sectionId: '', value: '' }), [])
+  const EMPTY = useMemo(
+    () => ({ name: '', paperId: '', sectionId: '', value: '', promptFor: 'writer' }),
+    [],
+  )
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -29,17 +43,18 @@ function PromptFormModal({ open, onClose, onSaved, papers, sections, prompt }) {
   const filteredSections = form.paperId
     ? sections.filter((s) => String(s.paper_id) === form.paperId)
     : []
+  const needsPaperSection = form.promptFor !== 'chat'
 
   useEffect(() => {
     if (open) {
-      console.log(prompt)
       setForm(
         isEdit
           ? {
-              name: prompt.name,
-              paperId: String(prompt.paperId),
-              sectionId: String(prompt.sectionId),
-              value: prompt.value,
+              name: prompt.name ?? '',
+              paperId: String(prompt.paperId ?? ''),
+              sectionId: String(prompt.sectionId ?? ''),
+              value: prompt.value ?? '',
+              promptFor: prompt.promptFor ?? 'writer',
             }
           : EMPTY,
       )
@@ -62,7 +77,11 @@ function PromptFormModal({ open, onClose, onSaved, papers, sections, prompt }) {
   const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target?.value ?? e }))
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.paperId || !form.sectionId || !form.value.trim()) {
+    if (
+      !form.name.trim() ||
+      (papers.length > 0 && needsPaperSection && (!form.paperId || !form.sectionId)) ||
+      !form.value.trim()
+    ) {
       setError('Semua field wajib diisi.')
       return
     }
@@ -74,9 +93,10 @@ function PromptFormModal({ open, onClose, onSaved, papers, sections, prompt }) {
           method: 'PUT',
           body: {
             name: form.name,
-            paperId: Number(form.paperId),
-            sectionId: Number(form.sectionId),
+            paperId: needsPaperSection && form.paperId ? Number(form.paperId) : undefined,
+            sectionId: needsPaperSection && form.sectionId ? Number(form.sectionId) : undefined,
             value: form.value,
+            promptFor: form.promptFor || 'writer',
           },
         })
         showSnackbar('success', 'Prompt berhasil diperbarui')
@@ -86,9 +106,10 @@ function PromptFormModal({ open, onClose, onSaved, papers, sections, prompt }) {
           body: {
             custom: true,
             name: form.name,
-            paperId: Number(form.paperId),
-            sectionId: Number(form.sectionId),
+            paperId: needsPaperSection && form.paperId ? Number(form.paperId) : undefined,
+            sectionId: needsPaperSection && form.sectionId ? Number(form.sectionId) : undefined,
             value: form.value,
+            promptFor: form.promptFor || 'writer',
           },
         })
         showSnackbar('success', 'Prompt berhasil ditambahkan')
@@ -151,20 +172,17 @@ function PromptFormModal({ open, onClose, onSaved, papers, sections, prompt }) {
 
           <div>
             <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block uppercase tracking-wide">
-              Paper *
+              Digunakan Untuk
             </label>
-            <Select
-              value={form.paperId}
-              onValueChange={(v) => setForm((p) => ({ ...p, paperId: v }))}
-            >
+            <Select value={form.promptFor} onValueChange={set('promptFor')}>
               <SelectTrigger className="h-10 text-[13px] border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800">
-                <SelectValue placeholder="Pilih paper" />
+                <SelectValue placeholder="Pilih penggunaan prompt" />
               </SelectTrigger>
               <SelectContent className="max-h-[200px]">
                 <SelectGroup>
-                  {papers.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)} className="text-[12px]">
-                      {p.name}
+                  {PROMPT_FOR_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="text-[12px]">
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -172,29 +190,58 @@ function PromptFormModal({ open, onClose, onSaved, papers, sections, prompt }) {
             </Select>
           </div>
 
-          <div>
-            <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block uppercase tracking-wide">
-              Section *
-            </label>
-            <Select
-              value={form.sectionId}
-              onValueChange={(v) => setForm((p) => ({ ...p, sectionId: v }))}
-              disabled={!form.paperId}
-            >
-              <SelectTrigger className="h-10 text-[13px] border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 disabled:opacity-50">
-                <SelectValue placeholder={!form.paperId ? 'Pilih paper dulu' : 'Pilih section'} />
-              </SelectTrigger>
-              <SelectContent className="max-h-[200px]">
-                <SelectGroup>
-                  {filteredSections.map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)} className="text-[12px]">
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+          {papers.length > 0 && needsPaperSection && (
+            <>
+              <div>
+                <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block uppercase tracking-wide">
+                  Paper *
+                </label>
+                <Select
+                  value={form.paperId}
+                  onValueChange={(v) => setForm((p) => ({ ...p, paperId: v }))}
+                >
+                  <SelectTrigger className="h-10 text-[13px] border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800">
+                    <SelectValue placeholder="Pilih paper" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    <SelectGroup>
+                      {papers.map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)} className="text-[12px]">
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block uppercase tracking-wide">
+                  Section *
+                </label>
+                <Select
+                  value={form.sectionId}
+                  onValueChange={(v) => setForm((p) => ({ ...p, sectionId: v }))}
+                  disabled={!form.paperId}
+                >
+                  <SelectTrigger className="h-10 text-[13px] border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 disabled:opacity-50">
+                    <SelectValue
+                      placeholder={!form.paperId ? 'Pilih paper dulu' : 'Pilih section'}
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    <SelectGroup>
+                      {filteredSections.map((s) => (
+                        <SelectItem key={s.id} value={String(s.id)} className="text-[12px]">
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
 
           <div>
             <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block uppercase tracking-wide">
@@ -240,7 +287,15 @@ function PromptFormModal({ open, onClose, onSaved, papers, sections, prompt }) {
   )
 }
 
-export default function PromptLibraryModal({ open, onClose, onSelect, papers, sections }) {
+export default function PromptLibraryModal({
+  open,
+  onClose,
+  onSelect,
+  inputValue,
+  papers = [],
+  sections = [],
+  isChat = false,
+}) {
   const { showSnackbar } = useSnackbar()
   const [custom, setCustom] = useState(false)
   const [search, setSearch] = useState('')
@@ -268,6 +323,7 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
         search: search.trim() || undefined,
         paperId: selectedPaperId !== 'all' ? selectedPaperId : undefined,
         sectionId: selectedSectionId !== 'all' ? selectedSectionId : undefined,
+        promptFor: isChat ? 'chat' : 'writer',
       }
 
       const cacheKey = JSON.stringify(params)
@@ -294,7 +350,7 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
         setLoading(false)
       }
     },
-    [custom, page, search, selectedPaperId, selectedSectionId],
+    [custom, isChat, page, search, selectedPaperId, selectedSectionId],
   )
 
   useEffect(() => {
@@ -463,51 +519,53 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <Select value={selectedPaperId} onValueChange={setSelectedPaperId}>
-                    <SelectTrigger className="h-9 text-[12px] border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800">
-                      <SelectValue placeholder="All Paper" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[220px]">
-                      <SelectGroup>
-                        <SelectItem value="all" className="text-[12px]">
-                          All Paper
-                        </SelectItem>
-                        {papers.map((p) => (
-                          <SelectItem key={p.id} value={String(p.id)} className="text-[12px]">
-                            {p.name}
+                {papers.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select value={selectedPaperId} onValueChange={setSelectedPaperId}>
+                      <SelectTrigger className="h-9 text-[12px] border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800">
+                        <SelectValue placeholder="All Paper" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[220px]">
+                        <SelectGroup>
+                          <SelectItem value="all" className="text-[12px]">
+                            All Paper
                           </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                          {papers.map((p) => (
+                            <SelectItem key={p.id} value={String(p.id)} className="text-[12px]">
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
 
-                  <Select
-                    value={selectedSectionId}
-                    onValueChange={setSelectedSectionId}
-                    disabled={selectedPaperId === 'all'}
-                  >
-                    <SelectTrigger className="h-9 text-[12px] border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 disabled:opacity-50">
-                      <SelectValue
-                        placeholder={
-                          selectedPaperId === 'all' ? 'Select Paper First' : 'All Sections'
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[220px]">
-                      <SelectGroup>
-                        <SelectItem value="all" className="text-[12px]">
-                          All Sections
-                        </SelectItem>
-                        {filteredSections.map((s) => (
-                          <SelectItem key={s.id} value={String(s.id)} className="text-[12px]">
-                            {s.name}
+                    <Select
+                      value={selectedSectionId}
+                      onValueChange={setSelectedSectionId}
+                      disabled={selectedPaperId === 'all'}
+                    >
+                      <SelectTrigger className="h-9 text-[12px] border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 disabled:opacity-50">
+                        <SelectValue
+                          placeholder={
+                            selectedPaperId === 'all' ? 'Select Paper First' : 'All Sections'
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[220px]">
+                        <SelectGroup>
+                          <SelectItem value="all" className="text-[12px]">
+                            All Sections
                           </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
+                          {filteredSections.map((s) => (
+                            <SelectItem key={s.id} value={String(s.id)} className="text-[12px]">
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               {/* List */}
@@ -561,14 +619,24 @@ export default function PromptLibraryModal({ open, onClose, onSelect, papers, se
                           <div
                             className="flex-1 min-w-0 cursor-pointer"
                             onClick={() => {
-                              onSelect(prompt.value)
+                              if (inputValue) {
+                                onSelect(inputValue + '\n\n' + prompt.value)
+                              } else {
+                                onSelect(prompt.value)
+                              }
+
                               onClose()
                             }}
                           >
                             <span className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors mb-1">
                               {prompt.name}
                             </span>
-                            {(prompt.paperName || prompt.sectionName) && (
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20">
+                                {PROMPT_FOR_LABELS[prompt.promptFor] ?? 'AI Writer'}
+                              </span>
+                            </div>
+                            {!isChat && (prompt.paperName || prompt.sectionName) && (
                               <div className="flex items-center gap-1.5 mb-2">
                                 {prompt.paperName && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20">

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import ChatInput from '@/components/chat/ChatInput'
 import ChatMessages from '@/components/chat/ChatMessages'
+import PromptLibraryModal from '@/components/writer/PromptModal'
 import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { useQuota } from '@/hooks/useQuota'
@@ -101,6 +102,7 @@ export default function ChatPage() {
   const { initQuota, decrement, rollback, getQuota } = useQuota()
 
   const [aiProviders, setAiProviders] = useState([])
+  const [promptOpen, setPromptOpen] = useState(false)
   const [selectedAiId, setSelectedAiId] = useState('')
   const [conversationId, setConversationId] = useState(null)
   const [messages, setMessages] = useState([])
@@ -563,6 +565,7 @@ export default function ChatPage() {
       ) : (
         <ChatInput
           inputValue={inputValue}
+          onPromptLibraryOpen={() => setPromptOpen(true)}
           onInputChange={setInputValue}
           attachedFiles={attachedFiles}
           onRemoveFile={handleFileRemove}
@@ -578,6 +581,14 @@ export default function ChatPage() {
           getQuota={getQuota}
         />
       )}
+
+      <PromptLibraryModal
+        open={promptOpen}
+        onClose={() => setPromptOpen(false)}
+        onSelect={setInputValue}
+        inputValue={inputValue}
+        isChat={true}
+      />
     </div>
   )
 }

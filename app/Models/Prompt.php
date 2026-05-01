@@ -23,6 +23,7 @@ class Prompt extends Model
         'M_PromptM_SectionID',
         'M_PromptName',
         'M_PromptValue',
+        'M_PromptFor',
         'M_PromptCreated',
         'M_PromptLastUpdated',
     ];

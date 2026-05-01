@@ -1,5 +1,5 @@
 import { BookOpen, ChevronDown, ChevronUp, Loader2, Paperclip, Sparkles, X } from 'lucide-react'
-import { memo, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 
 import { LANGUAGES } from '@/assets/languages'
 import {
@@ -85,6 +85,19 @@ const WriterForm = memo(function WriterForm({
   getQuota,
 }) {
   const [pickerOpen, setPickerOpen] = useState(false)
+  const instruksiRef = useRef(null)
+
+  // Auto-grow textarea for additional instructions
+  useEffect(() => {
+    const textarea = instruksiRef.current
+    if (textarea) {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = 'auto'
+      // Set the height based on scrollHeight, max 5 rows (~100px with current line-height)
+      const maxHeight = 120 // Approximately 5 rows
+      textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px'
+    }
+  }, [instruksi])
 
   const handleRemoveFile = (fileId) => {
     onFilesChange(selectedFiles.filter((f) => f.fileId !== fileId))
@@ -309,11 +322,12 @@ const WriterForm = memo(function WriterForm({
             </button>
           </div>
           <textarea
+            ref={instruksiRef}
             value={instruksi}
             onChange={(e) => onInstruksiChange(e.target.value)}
             placeholder="Add special instructions..."
-            rows={2}
-            className="w-full bg-transparent text-[13px] md:text-[14px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed"
+            rows={1}
+            className="w-full bg-transparent text-[13px] md:text-[14px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed min-h-[24px] overflow-y-auto"
           />
         </div>
 

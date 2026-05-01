@@ -16,7 +16,14 @@ const EMPTY_FORM = {
   paperId: '',
   sectionId: '',
   value: '',
+  promptFor: 'writer',
 }
+
+const PROMPT_FOR_OPTIONS = [
+  { value: 'writer', label: 'AI Writer' },
+  { value: 'chat', label: 'AI Chat' },
+  { value: 'both', label: 'AI Writer & Chat' },
+]
 
 export default function PromptForm({
   open,
@@ -40,6 +47,7 @@ export default function PromptForm({
               paperId: String(initialData.paperId ?? ''),
               sectionId: String(initialData.sectionId ?? ''),
               value: initialData.value ?? '',
+              promptFor: initialData.promptFor ?? 'writer',
             }
           : EMPTY_FORM,
       )
@@ -61,13 +69,23 @@ export default function PromptForm({
   if (!open) return null
 
   const handleSubmit = () => {
+    const needsPaperSection = formData.promptFor !== 'chat'
+
     onSubmit({
       name: formData.name,
-      paperId: Number(formData.paperId),
-      sectionId: Number(formData.sectionId),
+      paperId: needsPaperSection && formData.paperId ? Number(formData.paperId) : undefined,
+      sectionId: needsPaperSection && formData.sectionId ? Number(formData.sectionId) : undefined,
       value: formData.value,
+      promptFor: formData.promptFor || 'writer',
     })
   }
+
+  const needsPaperSection = formData.promptFor !== 'chat'
+  const saveDisabled =
+    loading ||
+    !formData.name.trim() ||
+    !formData.value.trim() ||
+    (needsPaperSection && (!formData.paperId || !formData.sectionId))
 
   const inputClass =
     'w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 h-11 text-[14px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 hover:border-gray-300 dark:hover:border-gray-500 focus:border-blue-400 dark:focus:border-orange-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-orange-900/30 focus:bg-white dark:focus:bg-gray-800 focus:outline-none transition-colors'
@@ -119,17 +137,17 @@ export default function PromptForm({
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className={labelClass}>Paper</label>
-                  <Select value={formData.paperId} onValueChange={handlePaperChange}>
+                <div className="space-y-2 md:col-span-2">
+                  <label className={labelClass}>Digunakan Untuk</label>
+                  <Select value={formData.promptFor} onValueChange={set('promptFor')}>
                     <SelectTrigger className={triggerClass}>
-                      <SelectValue placeholder="Pilih Paper" />
+                      <SelectValue placeholder="Pilih penggunaan prompt" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       <SelectGroup>
-                        {papers.map((p) => (
-                          <SelectItem key={p.id} value={String(p.id)}>
-                            {p.name}
+                        {PROMPT_FOR_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectGroup>
@@ -137,44 +155,66 @@ export default function PromptForm({
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className={labelClass}>
-                    Section Paper
-                    {formData.paperId && filteredSections.length === 0 && (
-                      <span className="ml-2 text-[11px] font-normal text-amber-500 dark:text-amber-400">
-                        No sections available for this paper
-                      </span>
-                    )}
-                  </label>
-                  <Select
-                    value={formData.sectionId}
-                    onValueChange={set('sectionId')}
-                    disabled={!formData.paperId || filteredSections.length === 0}
-                  >
-                    <SelectTrigger
-                      className={`${triggerClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      <SelectValue
-                        placeholder={
-                          !formData.paperId
-                            ? 'Select a paper first'
-                            : filteredSections.length === 0
-                              ? 'No sections available'
-                              : 'Pilih Section Paper'
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectGroup>
-                        {filteredSections.map((s) => (
-                          <SelectItem key={s.id} value={String(s.id)}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {needsPaperSection && (
+                  <>
+                    <div className="space-y-2">
+                      <label className={labelClass}>Paper</label>
+                      <Select value={formData.paperId} onValueChange={handlePaperChange}>
+                        <SelectTrigger className={triggerClass}>
+                          <SelectValue placeholder="Pilih Paper" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectGroup>
+                            {papers.map((p) => (
+                              <SelectItem key={p.id} value={String(p.id)}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className={labelClass}>
+                        Section Paper
+                        {formData.paperId && filteredSections.length === 0 && (
+                          <span className="ml-2 text-[11px] font-normal text-amber-500 dark:text-amber-400">
+                            No sections available for this paper
+                          </span>
+                        )}
+                      </label>
+                      <Select
+                        value={formData.sectionId}
+                        onValueChange={set('sectionId')}
+                        disabled={!formData.paperId || filteredSections.length === 0}
+                      >
+                        <SelectTrigger
+                          className={`${triggerClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          <SelectValue
+                            placeholder={
+                              !formData.paperId
+                                ? 'Select a paper first'
+                                : filteredSections.length === 0
+                                  ? 'No sections available'
+                                  : 'Pilih Section Paper'
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectGroup>
+                            {filteredSections.map((s) => (
+                              <SelectItem key={s.id} value={String(s.id)}>
+                                {s.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="space-y-2 pt-1">
@@ -198,7 +238,7 @@ export default function PromptForm({
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={loading}
+                disabled={saveDisabled}
                 className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 dark:bg-orange-500 hover:bg-blue-700 dark:hover:bg-orange-600 disabled:opacity-60 rounded-xl shadow-sm hover:shadow-md hover:shadow-blue-200 dark:hover:shadow-orange-900/30 transition-all uppercase tracking-wide"
               >
                 {loading ? 'Saving...' : 'Save Prompt'}

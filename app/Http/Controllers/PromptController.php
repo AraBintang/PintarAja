@@ -10,6 +10,13 @@ use Illuminate\Http\Request;
 
 class PromptController extends Controller
 {
+    private const PROMPT_FOR_OPTIONS = ['writer', 'chat', 'both'];
+
+    private function normalizePromptFor(?string $value): string
+    {
+        return in_array($value, self::PROMPT_FOR_OPTIONS, true) ? $value : 'writer';
+    }
+
     public function index(Request $request)
     {
         $custom = $request->input('custom');
@@ -32,6 +39,18 @@ class PromptController extends Controller
             ->when($request->filled('sectionId'), function ($q) use ($request) {
                 $q->where('M_PromptM_SectionID', $request->sectionId);
             })
+            ->when($request->filled('promptFor'), function ($q) use ($request) {
+                $promptFor = $this->normalizePromptFor($request->input('promptFor'));
+
+                $q->where(function ($query) use ($promptFor) {
+                    $query->where('M_PromptFor', $promptFor)
+                        ->orWhere('M_PromptFor', 'both');
+
+                    if ($promptFor === 'writer') {
+                        $query->orWhereNull('M_PromptFor');
+                    }
+                });
+            })
             ->orderBy('M_PromptID', 'DESC');
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
@@ -41,6 +60,7 @@ class PromptController extends Controller
                 'id' => $prompt->M_PromptID,
                 'name' => $prompt->M_PromptName,
                 'value' => $prompt->M_PromptValue,
+                'promptFor' => $prompt->M_PromptFor ?: 'writer',
                 'paperId' => $prompt->M_PromptM_PaperID,
                 'paperName' => optional($prompt->paper)->M_PaperName,
                 'sectionId' => $prompt->M_PromptM_SectionID,
@@ -94,9 +114,10 @@ class PromptController extends Controller
         $validated = $request->validate([
             'custom' => 'sometimes|boolean',
             'name' => 'required|string',
-            'paperId' => 'required|integer',
-            'sectionId' => 'required|integer',
+            'paperId' => 'nullable|integer',
+            'sectionId' => 'nullable|integer',
             'value' => 'required|string',
+            'promptFor' => 'nullable|in:writer,chat,both',
         ]);
 
         $userId = null;
@@ -107,10 +128,11 @@ class PromptController extends Controller
 
         Prompt::create([
             'M_PromptM_UserID' =>  $userId,
-            'M_PromptM_PaperID' => $validated['paperId'],
-            'M_PromptM_SectionID' => $validated['sectionId'],
+            'M_PromptM_PaperID' => $validated['paperId'] ?? 0,
+            'M_PromptM_SectionID' => $validated['sectionId'] ?? 0,
             'M_PromptName' => $validated['name'],
             'M_PromptValue' => $validated['value'],
+            'M_PromptFor' => $this->normalizePromptFor($validated['promptFor'] ?? null),
             'M_PromptCreated' => now(),
             'M_PromptLastUpdated' => now(),
         ]);
@@ -123,17 +145,19 @@ class PromptController extends Controller
         $prompt = Prompt::findOrFail($id);
 
         $validated = $request->validate([
-            'paperId' => 'required|integer',
-            'sectionId' => 'required|integer',
+            'paperId' => 'nullable|integer',
+            'sectionId' => 'nullable|integer',
             'name' => 'required|string',
             'value' => 'required|string',
+            'promptFor' => 'nullable|in:writer,chat,both',
         ]);
 
         $prompt->update([
-            'M_PromptM_PaperID' => $validated['paperId'],
-            'M_PromptM_SectionID' => $validated['sectionId'],
+            'M_PromptM_PaperID' => $validated['paperId'] ?? 0,
+            'M_PromptM_SectionID' => $validated['sectionId'] ?? 0,
             'M_PromptName' => $validated['name'],
             'M_PromptValue' => $validated['value'],
+            'M_PromptFor' => $this->normalizePromptFor($validated['promptFor'] ?? null),
             'M_PromptLastUpdated' => now(),
         ]);
 

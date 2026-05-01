@@ -1,0 +1,320 @@
+# 📋 Pintaraja Project Documentation
+
+## ⚠️ IMPORTANT RULES
+- **BEFORE running ANY terminal commands**: Always ask the user for permission first
+- **NEVER run destructive commands** without explicit user approval
+- **ALWAYS check file contents** before making edits
+
+---
+
+## 📁 Project Structure
+
+```
+pintaraja/
+├── app/                          # Laravel Application Code
+│   ├── Http/
+│   │   ├── Controllers/          # API Controllers
+│   │   └── Middleware/           # Request Middleware
+│   ├── Jobs/                     # Background Jobs
+│   │   └── TranscribeJob.php     # Audio transcription
+│   ├── Mail/                     # Email Classes
+│   │   ├── OtpMail.php
+│   │   └── OtpReset.php
+│   ├── Models/                   # Eloquent Models
+│   │   ├── User.php              # User model
+│   │   ├── Paper.php             # Paper documents
+│   │   ├── Section.php           # Document sections
+│   │   ├── Prompt.php            # Custom prompts
+│   │   ├── Plan.php              # Writing plans
+│   │   ├── Usage.php             # Token usage tracking
+│   │   ├── Transaction.php       # Payment transactions
+│   │   └── ...                   # Other models
+│   ├── Services/                 # Business Logic
+│   │   ├── AiProviderService.php # AI provider integration
+│   │   ├── AiUploadFileService.php
+│   │   └── UsageService.php      # Usage tracking
+│   └── Providers/
+│       └── AppServiceProvider.php
+├── resources/
+│   ├── js/
+│   │   └── src/
+│   │       ├── components/       # React Components
+│   │       │   ├── writer/       # Writer module components
+│   │       │   │   ├── WriterForm.jsx         # Main form with auto-grow textarea
+│   │       │   │   ├── WriterToolbar.jsx      # AI provider & settings
+│   │       │   │   ├── PromptModal.jsx        # Prompt library modal
+│   │       │   │   ├── FilePickerModal.jsx    # File upload modal
+│   │       │   │   └── ...
+│   │       │   ├── ui/           # UI Components (shadcn/ui based)
+│   │       │   │   ├── select.jsx
+│   │       │   │   ├── input.jsx
+│   │       │   │   └── ...
+│   │       │   └── ...
+│   │       ├── context/          # React Context (state management)
+│   │       │   └── SnackbarContext.jsx
+│   │       ├── utils/
+│   │       │   └── Http.jsx      # API request utilities
+│   │       └── App.jsx           # Root component
+│   ├── css/                      # Global styles
+│   └── views/                    # Blade templates
+├── routes/
+│   ├── api.php                   # API routes
+│   ├── web.php                   # Web routes
+│   └── console.php
+├── config/                       # Configuration files
+│   ├── app.php
+│   ├── database.php
+│   ├── mail.php
+│   ├── gemini.php                # Gemini API config
+│   ├── services.php
+│   └── ...
+├── database/
+│   ├── migrations/               # Database schema
+│   ├── factories/
+│   └── seeders/
+├── public/                       # Public assets
+├── storage/                      # File storage
+├── vendor/                       # Composer dependencies
+├── vite.config.js                # Vite build config
+├── tailwind.config.js            # Tailwind CSS config
+├── package.json                  # NPM dependencies
+├── composer.json                 # PHP dependencies
+└── artisan                        # Laravel CLI
+```
+
+---
+
+## 🎨 Styling & Design Standards
+
+### Tailwind CSS
+- **Framework**: Tailwind CSS v4+ with dark mode
+- **Color Scheme**:
+  - Primary: `#4A90D9` (Blue)
+  - Accent: `#F2901E` (Orange) - for dark mode
+  - Dark: `dark:bg-gray-900`, `dark:text-gray-100`
+  - Borders: `border-gray-200 dark:border-gray-700`
+
+### Component Styling Patterns
+
+**Common Classes**:
+```jsx
+// Backgrounds
+"bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl"
+
+// Cards
+"border border-white/50 dark:border-gray-700 rounded-[16px] md:rounded-[20px] shadow-sm hover:shadow-md"
+
+// Inputs & Textareas
+"bg-transparent text-[13px] md:text-[14px] text-gray-700 dark:text-gray-200 outline-none"
+
+// Buttons
+"px-4 py-2 text-[13px] font-bold rounded-xl transition-all"
+"bg-[#4A90D9] hover:bg-blue-600 dark:from-orange-500 dark:to-orange-600"
+```
+
+### Typography
+- **Sizes**: `text-[11px]`, `text-[12px]`, `text-[13px]`, `text-[14px]`, `text-[15px]`
+- **Weights**: `font-normal`, `font-medium`, `font-semibold`, `font-bold`
+- **Tracking**: `tracking-wider`, `tracking-widest` for labels
+
+### Responsive Design
+- **Mobile-first** approach
+- **Breakpoints**: `sm:`, `md:` (768px), `lg:` (1024px)
+- **Spacing**: Use `gap-`, `p-`, `m-` utilities with md variants
+
+### Dark Mode
+- All components should support dark mode
+- Use `dark:` prefix for dark mode styles
+- Test with `className="dark"`
+
+---
+
+## 🔧 Key Technologies
+
+| Layer | Tech | Version |
+|-------|------|---------|
+| **Backend** | Laravel 11+ | Latest |
+| **Frontend** | React 18+ | Latest |
+| **Build** | Vite | Latest |
+| **Styling** | Tailwind CSS | v4+ |
+| **UI Library** | shadcn/ui | Custom |
+| **Animations** | Motion (Framer Motion) | Latest |
+| **Icons** | Lucide React | Latest |
+| **State** | React Context API | Built-in |
+| **Database** | PostgreSQL/MySQL | - |
+| **API** | REST (Laravel Sanctum) | - |
+
+---
+
+## 📝 React Components Important Notes
+
+### Auto-grow Textarea
+**Example** (in WriterForm.jsx):
+```jsx
+const instruksiRef = useRef(null)
+
+useEffect(() => {
+  const textarea = instruksiRef.current
+  if (textarea) {
+    textarea.style.height = 'auto'
+    const maxHeight = 120 // ~5 rows
+    textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px'
+  }
+}, [instruksi])
+
+<textarea
+  ref={instruksiRef}
+  className="overflow-y-auto min-h-[24px]"
+/>
+```
+
+### Modal Patterns
+- Use `AnimatePresence` + `motion` for animations
+- Backdrop: `bg-black/40 backdrop-blur-sm` or `bg-black/50`
+- Content: `scale-95 opacity-0 → scale-1 opacity-1` transition
+
+### File Handling
+- File picker returns array of `{ fileId, fileName, fileSize }`
+- Always check `selectedFiles.length` before access
+- Use `onFilesChange()` to update file state
+
+---
+
+## 🚀 Common Commands
+
+### Backend (Laravel)
+```bash
+php artisan serve              # Start dev server
+php artisan migrate            # Run migrations
+php artisan db:seed            # Seed database
+php artisan optimize:clear     # Clear optimizations
+php artisan tinker             # Interactive shell
+```
+
+### Frontend (Node/Vite)
+```bash
+npm run dev                    # Start Vite dev server
+npm run build                  # Build for production
+npm run preview                # Preview production build
+npm run lint                   # Run ESLint
+```
+
+### Database
+```bash
+php artisan migrate:fresh      # Drop & re-run migrations
+php artisan make:migration     # Create new migration
+php artisan make:model         # Create new model
+```
+
+---
+
+## 🔌 API Endpoints (Important)
+
+### Prompts
+- `GET /api/prompts` - List prompts (filters: custom, view, page, search, paperId, sectionId)
+- `POST /api/prompts` - Create custom prompt
+- `PUT /api/prompts/{id}` - Update prompt
+- `DELETE /api/prompts/{id}` - Delete prompt
+
+### Writer/Generation
+- `POST /api/generate` - Generate content
+- `POST /api/upload-file` - Upload reference file (GPT)
+
+### User
+- `GET /api/user` - Current user info
+- `GET /api/quota` - Usage quota
+
+---
+
+## 💾 Database Models (Key Fields)
+
+### User
+- `id`, `name`, `email`, `password`
+- `quota` (token limit)
+- `ai_provider_id` (selected AI)
+
+### Paper
+- `id`, `user_id`, `name`, `type`
+- `created_at`, `updated_at`
+
+### Section
+- `id`, `paper_id`, `name`
+- `content` (generated text)
+
+### Prompt
+- `id`, `user_id`, `name`, `value`
+- `paperId`, `sectionId` (optional)
+- `custom` (boolean)
+
+### Usage
+- `id`, `user_id`, `ai_provider_id`
+- `prompt_tokens`, `completion_tokens`
+- `created_at`
+
+---
+
+## ⚙️ Important Config Files
+
+### `config/gemini.php`
+- Gemini API configuration
+- Model settings: `gemini-pro`, `gemini-1.5-pro`, etc.
+
+### `config/services.php`
+- AI provider credentials
+- OpenAI, Gemini settings
+
+### `vite.config.js`
+- React plugin configured
+- Alias: `@/` → `resources/js/src/`
+
+### `tailwind.config.js`
+- Dark mode: `class` strategy
+- Content: `resources/views/**/*.blade.php`, `resources/js/src/**/*.{js,jsx}`
+
+---
+
+## 📌 Best Practices
+
+✅ **DO**:
+- Always check if props exist before accessing (use default values)
+- Use `useCallback` for handlers that are passed to child components
+- Implement error boundaries for critical sections
+- Use `memo()` to prevent unnecessary re-renders
+- Validate user input before sending to API
+- Use proper TypeScript/JSDoc comments
+
+❌ **DON'T**:
+- Directly mutate state
+- Use `any` types without good reason
+- Add inline styles, use Tailwind classes
+- Make API calls in render logic
+- Log sensitive data to console in production
+
+---
+
+## 🎯 Current Focus Areas
+
+1. **WriterForm Component** - Main content generation form
+2. **Prompt Library** - Custom & pre-made prompts system
+3. **File Handling** - GPT file reference uploads
+4. **Auto-grow Textareas** - Better UX for multi-line input
+5. **Dark Mode Support** - Full implementation across all components
+
+---
+
+## 📞 Quick Reference
+
+**Questions to ask before changes**:
+- ✅ Does this break existing functionality?
+- ✅ Is this responsive on mobile/tablet?
+- ✅ Does this work in dark mode?
+- ✅ Are there any edge cases (empty state, loading, error)?
+
+**Before running terminal commands**:
+- 🛑 **STOP** - Ask user permission
+- 📋 Explain what will happen
+- ⏸️ Wait for approval
+
+---
+
+*Last Updated: May 1, 2026*
