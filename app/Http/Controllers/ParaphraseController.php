@@ -9,6 +9,9 @@ use OpenAI;
 
 class ParaphraseController extends Controller
 {
+    private const FREE_PLAN_ID = 1;
+    private const FREE_PLAN_WORD_LIMIT = 125;
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -50,49 +53,25 @@ class ParaphraseController extends Controller
         ]);
 
         $user = $request->user();
-
-        if ($user->M_UserPlan === 1) {
-            return response()->json(['error' => 'Your current plan does not include access to this feature. Please upgrade to continue.'], 403);
-        }
         
-        $text = $request->text;
+        $text = trim($request->text);
         $mode = $request->mode;
         $language = $request->language;
+        $wordCount = $this->countWords($text);
+
+        if ((int) $user->M_UserPlan === self::FREE_PLAN_ID && $wordCount > self::FREE_PLAN_WORD_LIMIT) {
+            return response()->json([
+                'message' => 'Plan gratis hanya bisa memparafrase maksimal ' . self::FREE_PLAN_WORD_LIMIT . ' kata.',
+            ], 422);
+        }
 
         $client = OpenAI::client(config('services.openai.key'));
 
-        $systemPrompt = "
-You are a professional AI paraphrasing assistant.
-
-Your task is to rewrite the user's text while preserving the original meaning.
-
-Instructions:
-- Language: {$language}
-- Mode: {$mode}
-
-Modes explanation:
-- standard: rewrite naturally
-- fluency: improve grammar and readability
-- formal: academic or professional tone
-- academic: rewrite the text in a scholarly and academic tone suitable for essays, research papers, or formal writing
-- simple: rewrite the text using simpler words and easier sentence structures so it is easier to understand
-- creative: use varied vocabulary
-- expand: elaborate the text slightly
-- shorten: make the text shorter while keeping meaning
-
-Rules:
-- Preserve the original meaning
-- Avoid plagiarism
-- Improve grammar, spelling, and punctuation
-- Correct any grammatical errors
-- Follow proper writing standards for the selected language (e.g., EYD/PUEBI for Indonesian)
-- Write naturally like a human
-- Return ONLY the paraphrased text
-- Do not explain anything
-";
+        $systemPrompt = "Paraphrase the user's text in {$language}. Mode: {$mode}. Preserve meaning, improve grammar/spelling/punctuation, write naturally, and return only the paraphrased text. Mode notes: standard=natural rewrite; fluency=readability; formal=professional; academic=scholarly; simple=easier wording; creative=varied vocabulary; expand=slightly elaborate; shorten=shorter with same meaning.";
 
         $response = $client->responses()->create([
-            'model' => 'gpt-4',
+            'model' => config('services.openai.paraphrase_model', 'gpt-4o-mini'),
+            'max_output_tokens' => $this->maxOutputTokens($wordCount, $mode),
             'input' => [
                 [
                     'role' => 'system',
@@ -119,6 +98,22 @@ Rules:
             'data' => $paraphrase,
             'id' => $paraphraseId->M_ParaphraseID
         ]);
+    }
+
+    private function countWords(string $text): int
+    {
+        if ($text === '') {
+            return 0;
+        }
+
+        return count(preg_split('/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY));
+    }
+
+    private function maxOutputTokens(int $wordCount, string $mode): int
+    {
+        $multiplier = strtolower($mode) === 'expand' ? 3.0 : 2.0;
+
+        return max(256, min(4096, (int) ceil($wordCount * $multiplier * 1.6)));
     }
 
     public function update(Request $request, $id)

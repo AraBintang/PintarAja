@@ -77,6 +77,7 @@ class GoogleController extends Controller
         }
  
         $token = $user->createToken('auth')->plainTextToken;
+        $user->recordLoginFromRequest($request);
  
         return redirect("/google-auth?token={$token}");
     }

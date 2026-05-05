@@ -47,6 +47,7 @@ class AuthController extends Controller
             : now()->addMinutes(30);
 
         $token = $user->createToken('auth', expiresAt: $expiry)->plainTextToken;
+        $user->recordLoginFromRequest($request);
 
         return response()->json([
             'token' => $token,
@@ -150,6 +151,7 @@ class AuthController extends Controller
         ]);
     
         $token = $user->createToken('auth')->plainTextToken;
+        $user->recordLoginFromRequest($request);
     
         return response()->json([
             'token' => $token,
@@ -211,4 +213,3 @@ class AuthController extends Controller
         ]);
     }
 }
-

@@ -502,8 +502,8 @@ function MessageBubble({ msg }) {
         <div
           className={`px-4 py-3 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
             isUser
-              ? 'bg-[#eeedeb] dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tr-none max-w-[85%] md:max-w-[75%]'
-              : 'max-w-[95%] bg-[#eeedeb] dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-tl-none'
+              ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tr-none max-w-[85%] md:max-w-[75%]'
+              : 'max-w-[95%] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-tl-none'
           }`}
         >
           <MessageContent content={textContent} />
@@ -513,7 +513,7 @@ function MessageBubble({ msg }) {
 
           {/* Footer: AI model info + waktu */}
           {!isUser && (
-            <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex items-center gap-1.5 opacity-50">
+            <div className="mt-2 pt-2 border-t border-gray-300 dark:border-gray-700 flex items-center gap-1.5 opacity-50">
               {msg.code && AI_CODE_MAP[msg.code] && (
                 <>
                   <span className="w-3.5 h-3.5 flex-shrink-0">{AI_CODE_MAP[msg.code].icon}</span>
@@ -567,7 +567,7 @@ function SkeletonMessages() {
           <div
             className={`max-w-[75%] px-4 py-4 rounded-2xl shadow-sm space-y-2 ${
               i % 2 === 0
-                ? 'bg-[#eeedeb] dark:bg-gray-800 rounded-tr-none'
+                ? 'bg-white dark:bg-gray-800 rounded-tr-none'
                 : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-tl-none w-full'
             }`}
           >

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Chat;
-use App\Services\AiUploadFileService;
+use App\Models\Paper;
+use App\Models\Section;
 use App\Services\AiProviderService;
+use App\Services\AiUploadFileService;
 use App\Services\UsageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -44,9 +46,17 @@ class ChatController extends Controller
             END")
             ->get();
 
+        $papers = Paper::select('M_PaperID as id', 'M_PaperName as name')
+            ->orderBy('M_PaperName')->get();
+    
+        $sections = Section::select('M_SectionID as id', 'M_SectionM_PaperID as paper_id', 'M_SectionName as name')
+            ->orderBy('M_SectionID', 'asc')->get();
+
         return response()->json([
             'ai' => $aiProviders,
             'quota' => $usageService->getQuotaByUser($user->M_UserID),
+            'papers' => $papers,
+            'sections' => $sections,
         ]);
     }
 

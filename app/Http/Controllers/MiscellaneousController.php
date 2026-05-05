@@ -32,6 +32,20 @@ class MiscellaneousController extends Controller
             }
         }
 
+        $activeUsersByDay = User::query()
+            ->selectRaw('DATE(M_UserLastActive) as d, COUNT(*) as c')
+            ->whereNotNull('M_UserLastActive')
+            ->whereBetween('M_UserLastActive', [$from, $to])
+            ->groupBy('d')
+            ->get();
+
+        foreach ($activeUsersByDay as $row) {
+            $k = (string) $row->d;
+            if (isset($buckets[$k])) {
+                $buckets[$k]['active_users'] = (int) $row->c;
+            }
+        }
+
         $conversationByDay = collect();
         try {
             $conversationByDay = DB::table('t_conversation')
@@ -232,9 +246,47 @@ class MiscellaneousController extends Controller
             $topBlogs = [];
         }
 
+        $deviceBreakdown = User::query()
+            ->selectRaw("COALESCE(NULLIF(M_UserLastDevice, ''), 'Unknown') as device, COUNT(*) as users")
+            ->whereNotNull('M_UserLastActive')
+            ->groupBy('device')
+            ->orderByDesc('users')
+            ->limit(8)
+            ->get()
+            ->map(fn ($r) => [
+                'device' => $r->device,
+                'users' => (int) $r->users,
+            ])
+            ->all();
+
+        $recentActiveUsers = User::query()
+            ->select([
+                'M_UserID as id',
+                'M_UserFullName as name',
+                'M_UserEmail as email',
+                'M_UserLastActive as last_active',
+                'M_UserLastLogin as last_login',
+                'M_UserLastDevice as device',
+                'M_UserLastActiveIP as ip',
+            ])
+            ->whereNotNull('M_UserLastActive')
+            ->orderByDesc('M_UserLastActive')
+            ->limit(8)
+            ->get();
+
         $totals = [
             'users' => $usersByDay->sum('c'),
             'users_avg' => round($usersByDay->sum('c') / $dayCount, 2),
+            'active_users' => $activeUsersByDay->sum('c'),
+            'active_users_avg' => round($activeUsersByDay->sum('c') / $dayCount, 2),
+            'active_users_7d' => User::query()
+                ->whereNotNull('M_UserLastActive')
+                ->where('M_UserLastActive', '>=', now()->subDays(7))
+                ->count(),
+            'active_users_30d' => User::query()
+                ->whereNotNull('M_UserLastActive')
+                ->where('M_UserLastActive', '>=', now()->subDays(30))
+                ->count(),
             'conversation' => $conversationByDay->sum('c'),
             'conversation_avg' => round($conversationByDay->sum('c') / $dayCount, 2),
             'document' => $documentByDay->sum('c'),
@@ -268,6 +320,8 @@ class MiscellaneousController extends Controller
             'totals' => $totals,
             'series' => $series,
             'topBlogs' => $topBlogs,
+            'deviceBreakdown' => $deviceBreakdown,
+            'recentActiveUsers' => $recentActiveUsers,
         ]);
     }
 
@@ -306,6 +360,7 @@ class MiscellaneousController extends Controller
             $buckets[$k] = [
                 'date' => $k,
                 'users' => 0,
+                'active_users' => 0,
                 'conversation' => 0,
                 'document' => 0,
                 'paraphrase' => 0,

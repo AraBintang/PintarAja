@@ -102,6 +102,8 @@ export default function ChatPage() {
   const { initQuota, decrement, rollback, getQuota } = useQuota()
 
   const [aiProviders, setAiProviders] = useState([])
+  const [papers, setPapers] = useState([])
+  const [allSections, setAllSections] = useState([])
   const [promptOpen, setPromptOpen] = useState(false)
   const [selectedAiId, setSelectedAiId] = useState('')
   const [conversationId, setConversationId] = useState(null)
@@ -135,6 +137,8 @@ export default function ChatPage() {
     request('/chats')
       .then((res) => {
         setAiProviders(res?.ai)
+        setPapers(res?.papers)
+        setAllSections(res?.sections)
         initQuota(res?.quota)
         setSelectedAiId(String(res?.ai[0].id))
       })
@@ -588,6 +592,8 @@ export default function ChatPage() {
         onSelect={setInputValue}
         inputValue={inputValue}
         isChat={true}
+        papers={papers}
+        sections={allSections}
       />
     </div>
   )

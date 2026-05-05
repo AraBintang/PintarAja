@@ -1,6 +1,7 @@
 import { BookOpen, ChevronRight, Edit2, Loader2, Plus, Search, Trash2, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 
 import DeleteModal from '@/components/DeleteModal'
 import Pagination from '@/components/Pagination'
@@ -190,7 +191,7 @@ function PromptFormModal({ open, onClose, onSaved, papers = [], sections = [], p
             </Select>
           </div>
 
-          {papers.length > 0 && needsPaperSection && (
+          {needsPaperSection && (
             <>
               <div>
                 <label className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block uppercase tracking-wide">
@@ -420,6 +421,9 @@ export default function PromptLibraryModal({
     setShowFormModal(true)
   }
 
+  const location = useLocation()
+  const filterAppear = location.pathname === '/writer'
+
   return (
     <AnimatePresence>
       {open && (
@@ -519,7 +523,7 @@ export default function PromptLibraryModal({
                   )}
                 </div>
 
-                {papers.length > 0 && (
+                {filterAppear && papers.length > 0 && (
                   <div className="grid grid-cols-2 gap-2">
                     <Select value={selectedPaperId} onValueChange={setSelectedPaperId}>
                       <SelectTrigger className="h-9 text-[12px] border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800">

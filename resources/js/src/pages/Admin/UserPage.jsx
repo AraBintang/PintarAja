@@ -1,3 +1,4 @@
+import { differenceInHours, parseISO } from 'date-fns'
 import {
   Crown,
   Edit2,
@@ -46,6 +47,27 @@ function getAvatarColor(name = '') {
   let hash = 0
   for (let i = 0; i < name?.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
   return avatarColors[Math.abs(hash) % avatarColors?.length]
+}
+
+function getLastActiveStyle(lastActive) {
+  if (!lastActive) {
+    return 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-gray-600'
+  }
+
+  const now = new Date()
+  const lastActiveDate = parseISO(lastActive)
+  const hoursDiff = differenceInHours(now, lastActiveDate)
+
+  if (hoursDiff <= 1) {
+    // Active within 1 hour - Green
+    return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
+  } else if (hoursDiff <= 24) {
+    // Active within 24 hours - Yellow/Amber
+    return 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30'
+  } else {
+    // Inactive for more than 24 hours - Red
+    return 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
+  }
 }
 
 const PAGE_SIZE = 10
@@ -299,14 +321,16 @@ export default function AdminUserPage() {
             <table className="w-full min-w-[800px] text-left border-separate border-spacing-0">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-700">
-                  {['No.', 'User Info', 'Role', 'Subscription', 'Action'].map((h, i) => (
-                    <th
-                      key={h}
-                      className={`px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ${i >= 4 ? 'text-right' : i === 3 ? 'text-center' : ''}`}
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  {['No.', 'User Info', 'Role', 'Subscription', 'Last Active', 'Action'].map(
+                    (h, i) => (
+                      <th
+                        key={h}
+                        className={`px-6 py-4 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ${i >= 5 ? 'text-right' : i >= 2 ? 'text-center' : ''}`}
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
@@ -370,7 +394,7 @@ export default function AdminUserPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3.5 text-center">
                         {user.M_UserRole === 'A' ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-orange-700 dark:text-amber-400 text-[12px] font-semibold border border-orange-100 dark:border-amber-900/30">
                             <Crown className="w-3 h-3" />
@@ -395,17 +419,13 @@ export default function AdminUserPage() {
                           </span>
                         )}
                       </td>
-                      {/* <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-center">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${
-                            user.M_UserIsActive === 'Y'
-                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
-                              : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
-                          }`}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${getLastActiveStyle(user.M_UserLastActive)}`}
                         >
-                          {user.M_UserIsActive === 'Y' ? 'Active' : 'Inactive'}
+                          {user.M_UserLastActive ?? '-'}
                         </span>
-                      </td> */}
+                      </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center justify-end gap-1.5">
                           <button

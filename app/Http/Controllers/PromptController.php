@@ -87,7 +87,7 @@ class PromptController extends Controller
             ->get();
 
         $sections = Section::select('M_SectionID as id', 'M_SectionM_PaperID as paper_id', 'M_SectionName as name')
-            ->orderBy('M_SectionName')
+            ->orderBy('M_SectionID', 'asc')
             ->get();
 
         $summary = [

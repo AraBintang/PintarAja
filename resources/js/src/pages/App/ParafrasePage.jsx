@@ -3,17 +3,24 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 
 import LanguageSelector from '@/components/LanguageSelector'
+import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
 
 const MODES = ['Standard', 'Fluency', 'Formal', 'Academic', 'Simple', 'Creative']
 const MORE_MODES = ['Expand', 'Shorten']
+const FREE_PLAN_WORD_LIMIT = 125
 
 const sampleText = `Teknologi blockchain telah mulai merevolusi sistem keuangan digital global dengan menawarkan desentralisasi dan keamanan tinggi. Sistem ini memungkinkan transaksi dilakukan secara transparan tanpa memerlukan partisipasi dari pihak ketiga tradisional seperti bank. Di masa depan, integrasi blockchain diperkirakan akan menyebar luas ke sektor lain seperti rantai pasokan dan administrasi medis.`
 
 const countWords = (text) => (text.trim() ? text.trim().split(/\s+/).length : 0)
+const limitWords = (text, maxWords) => {
+  const words = text.split(/\s+/).filter(Boolean)
+  return words.length > maxWords ? words.slice(0, maxWords).join(' ') : text
+}
 
 export default function ParafrasePage() {
+  const { user } = useAuth()
   const { showSnackbar } = useSnackbar()
 
   const [inputText, setInputText] = useState('')
@@ -27,6 +34,14 @@ export default function ParafrasePage() {
   const [displayedWords, setDisplayedWords] = useState([])
 
   const dropdownRef = useRef(null)
+  const isFreePlan = Number(user?.plan_id) === 1
+  const wordLimit = isFreePlan ? FREE_PLAN_WORD_LIMIT : null
+
+  useEffect(() => {
+    if (wordLimit && countWords(inputText) > wordLimit) {
+      setInputText(limitWords(inputText, wordLimit))
+    }
+  }, [inputText, wordLimit])
 
   useEffect(() => {
     if (!outputText) {
@@ -76,14 +91,19 @@ export default function ParafrasePage() {
 
   const handleInputText = (e) => {
     const text = e.target.value
+    if (!wordLimit) {
+      setInputText(text)
+      return
+    }
+
     const words = countWords(text)
 
-    if (words <= 125) {
+    if (words <= wordLimit) {
       setInputText(text)
     } else if (text.length < inputText.length) {
       setInputText(text)
     } else {
-      const cut = text.trim().split(/\s+/).slice(0, 125).join(' ')
+      const cut = text.trim().split(/\s+/).slice(0, wordLimit).join(' ')
       setInputText(cut + (text.endsWith(' ') ? ' ' : ''))
     }
   }
@@ -93,8 +113,7 @@ export default function ParafrasePage() {
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText()
-      const words = text.split(/\s+/).filter(Boolean)
-      setInputText(words.length > 125 ? words.slice(0, 125).join(' ') : text)
+      setInputText(wordLimit ? limitWords(text, wordLimit) : text)
     } catch {
       // Fallback: no-op
     }
@@ -111,7 +130,7 @@ export default function ParafrasePage() {
     }
   }
 
-  const canParaphrase = inputText.trim() && !isProcessing && wordCount <= 125
+  const canParaphrase = inputText.trim() && !isProcessing && (!wordLimit || wordCount <= wordLimit)
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0]
@@ -123,8 +142,7 @@ export default function ParafrasePage() {
       const reader = new FileReader()
       reader.onload = (e) => {
         const text = e.target.result
-        const words = text.split(/\s+/).filter(Boolean)
-        onFileLoaded(words.length > 125 ? words.slice(0, 125).join(' ') : text)
+        setInputText(wordLimit ? limitWords(text, wordLimit) : text)
       }
       reader.readAsText(file)
     } else if (fileType === 'docx') {
@@ -132,8 +150,7 @@ export default function ParafrasePage() {
       reader.onload = async (e) => {
         try {
           const result = await mammoth.extractRawText({ arrayBuffer: e.target.result })
-          const words = result.value.split(/\s+/).filter(Boolean)
-          onFileLoaded(words.length > 125 ? words.slice(0, 125).join(' ') : result.value)
+          setInputText(wordLimit ? limitWords(result.value, wordLimit) : result.value)
         } catch (error) {
           console.error('Error parsing docx:', error)
           alert('Gagal membaca file Word.')
@@ -335,23 +352,31 @@ export default function ParafrasePage() {
             <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-800">
               <div className="flex items-center gap-2">
                 <div
-                  className={`h-1 w-16 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800`}
+                  className={`h-1 w-16 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 ${isFreePlan ? '' : 'hidden'}`}
                 >
                   <div
                     className={`h-full rounded-full transition-all duration-300 ${
-                      wordCount >= 125
+                      wordLimit && wordCount >= wordLimit
                         ? 'bg-red-400'
-                        : wordCount > 80
+                        : wordLimit && wordCount > wordLimit * 0.64
                           ? 'bg-orange-400'
                           : 'bg-blue-400 dark:bg-orange-400'
                     }`}
-                    style={{ width: `${Math.min((wordCount / 125) * 100, 100)}%` }}
+                    style={{
+                      width: wordLimit
+                        ? `${Math.min((wordCount / wordLimit) * 100, 100)}%`
+                        : '100%',
+                    }}
                   />
                 </div>
                 <span
-                  className={`text-[12px] font-medium ${wordCount >= 125 ? 'text-red-500' : 'text-gray-400 dark:text-gray-500'}`}
+                  className={`text-[12px] font-medium ${
+                    wordLimit && wordCount >= wordLimit
+                      ? 'text-red-500'
+                      : 'text-gray-400 dark:text-gray-500'
+                  }`}
                 >
-                  {wordCount} / 125 Words
+                  {wordLimit ? `${wordCount} / ${wordLimit} Words` : `${wordCount} Words`}
                 </span>
               </div>
               <button
@@ -390,7 +415,10 @@ export default function ParafrasePage() {
                       <span
                         key={i}
                         className="inline-block opacity-0 animate-fadeInWord mr-[0.25em]"
-                        style={{ animationDelay: `${i * 55}ms`, animationFillMode: 'forwards' }}
+                        style={{
+                          animationDelay: `${Math.min(i * 10, 700)}ms`,
+                          animationFillMode: 'forwards',
+                        }}
                       >
                         {word}
                       </span>

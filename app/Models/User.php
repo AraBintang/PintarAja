@@ -8,6 +8,7 @@ use App\Models\ReferralUsage;
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -39,6 +40,12 @@ class User extends Authenticatable
         'M_UserReferralCode',
         'M_UserReferredBy',
         'M_UserSubsExp',
+        'M_UserLastLogin',
+        'M_UserLastActive',
+        'M_UserLastLoginIP',
+        'M_UserLastActiveIP',
+        'M_UserLastDevice',
+        'M_UserLastUserAgent',
         'M_UserCreated',
         'M_UserLastUpdated',
     ];
@@ -78,10 +85,67 @@ class User extends Authenticatable
         return [
             'M_UserPassword' => 'hashed',
             'M_UserSubsExp' => 'datetime',
+            'M_UserLastLogin' => 'datetime',
+            'M_UserLastActive' => 'datetime',
             'M_UserCreated' => 'datetime',
             'M_UserLastUpdated' => 'datetime',
             'M_UserQuota' => 'integer',
         ];
+    }
+
+    public function recordLoginFromRequest(Request $request): void
+    {
+        $now = now();
+
+        $this->forceFill([
+            'M_UserLastLogin' => $now,
+            'M_UserLastActive' => $now,
+            'M_UserLastLoginIP' => $request->ip(),
+            'M_UserLastActiveIP' => $request->ip(),
+            'M_UserLastDevice' => self::deviceLabel($request->userAgent() ?? ''),
+            'M_UserLastUserAgent' => substr($request->userAgent() ?? '', 0, 1000),
+        ])->save();
+    }
+
+    public function recordActivityFromRequest(Request $request): void
+    {
+        $this->forceFill([
+            'M_UserLastActive' => now(),
+            'M_UserLastActiveIP' => $request->ip(),
+            'M_UserLastDevice' => self::deviceLabel($request->userAgent() ?? ''),
+            'M_UserLastUserAgent' => substr($request->userAgent() ?? '', 0, 1000),
+        ])->save();
+    }
+
+    private static function deviceLabel(string $userAgent): string
+    {
+        $ua = strtolower($userAgent);
+
+        $device = str_contains($ua, 'tablet') || str_contains($ua, 'ipad')
+            ? 'Tablet'
+            : (str_contains($ua, 'mobile') || str_contains($ua, 'iphone') || str_contains($ua, 'android')
+                ? 'Mobile'
+                : 'Desktop');
+
+        $os = match (true) {
+            str_contains($ua, 'windows') => 'Windows',
+            str_contains($ua, 'mac os') || str_contains($ua, 'macintosh') => 'macOS',
+            str_contains($ua, 'iphone') || str_contains($ua, 'ipad') => 'iOS',
+            str_contains($ua, 'android') => 'Android',
+            str_contains($ua, 'linux') => 'Linux',
+            default => 'Unknown OS',
+        };
+
+        $browser = match (true) {
+            str_contains($ua, 'edg/') => 'Edge',
+            str_contains($ua, 'opr/') || str_contains($ua, 'opera') => 'Opera',
+            str_contains($ua, 'chrome/') && !str_contains($ua, 'chromium') => 'Chrome',
+            str_contains($ua, 'firefox/') => 'Firefox',
+            str_contains($ua, 'safari/') && !str_contains($ua, 'chrome/') => 'Safari',
+            default => 'Unknown Browser',
+        };
+
+        return "{$device} - {$os} - {$browser}";
     }
 
     public function plan()

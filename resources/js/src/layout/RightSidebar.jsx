@@ -476,7 +476,7 @@ export default function RightSidebar() {
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-14 px-5 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between h-14 px-5 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-2.5">
             <IconComponent className="w-[18px] h-[18px] text-[#2686D4] dark:text-[#F2901E]" />
             <h2 className="text-[15px] font-semibold text-gray-800 dark:text-gray-200">
@@ -492,7 +492,7 @@ export default function RightSidebar() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col border-b border-gray-50 dark:border-gray-800">
+        <div className="flex flex-col border-b border-gray-200 dark:border-gray-800">
           {location.pathname === '/writer' && (
             <div className="px-4 pt-4 pb-1">
               <label className="text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
@@ -815,7 +815,7 @@ export default function RightSidebar() {
                                     {canRename && (
                                       <button
                                         onClick={(e) => startEditing(e, item)}
-                                        className="p-1 rounded-md text-gray-300 hover:text-[#4A90D9] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all opacity-0 group-hover:opacity-100"
+                                        className="p-1 rounded-md text-gray-500 hover:text-[#4A90D9] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all opacity-0 group-hover:opacity-100"
                                         title="Rename"
                                       >
                                         <Pencil className="w-3 h-3" />
@@ -825,7 +825,7 @@ export default function RightSidebar() {
                                     {canDelete && (
                                       <button
                                         onClick={(e) => startDelete(e, item)}
-                                        className="p-1 rounded-md text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
+                                        className="p-1 rounded-md text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
                                         title="Delete"
                                       >
                                         <Trash2 className="w-3 h-3" />

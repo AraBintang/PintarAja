@@ -5,6 +5,7 @@ import {
   CircleDollarSign,
   FileSearch,
   FileText,
+  MonitorSmartphone,
   RefreshCcw,
   Ticket,
   Users,
@@ -156,6 +157,8 @@ export default function MiscellaneousPage() {
   const series = data?.series ?? []
   const totals = data?.totals ?? {}
   const topBlogs = data?.topBlogs ?? []
+  const deviceBreakdown = data?.deviceBreakdown ?? []
+  const recentActiveUsers = data?.recentActiveUsers ?? []
 
   const PRESETS = [
     { key: 'today', label: 'Today' },
@@ -271,6 +274,27 @@ export default function MiscellaneousPage() {
                 subtext={`Avg ${(totals.users_avg ?? 0).toFixed(1)}/hari`}
                 loading={loading}
                 accent="#2563eb"
+              />
+              <StatCard
+                label="Active User"
+                value={totals.active_users ?? 0}
+                subtext={`Avg ${(totals.active_users_avg ?? 0).toFixed(1)}/hari`}
+                loading={loading}
+                accent="#10b981"
+              />
+              <StatCard
+                label="Active 7D"
+                value={totals.active_users_7d ?? 0}
+                subtext="Last active 7 hari"
+                loading={loading}
+                accent="#0f766e"
+              />
+              <StatCard
+                label="Active 30D"
+                value={totals.active_users_30d ?? 0}
+                subtext="Last active 30 hari"
+                loading={loading}
+                accent="#0891b2"
               />
             </StatSection>
 
@@ -428,29 +452,31 @@ export default function MiscellaneousPage() {
         {/* ── Charts ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* New User — Area */}
-          <ChartCard title="New User / Day" subtitle="Jumlah registrasi per hari">
+          <ChartCard title="User Activity / Day" subtitle="Registrasi dan user aktif per hari">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={series} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="gradUsers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={series} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={isDark ? 0.08 : 0.5} />
                 <XAxis dataKey="date" tickFormatter={labelDate} {...chartAxis} />
                 <YAxis allowDecimals={false} {...chartAxis} />
                 <Tooltip content={<TooltipBox />} labelFormatter={(v) => v} />
-                <Area
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Line
                   type="monotone"
                   dataKey="users"
-                  name="Users"
+                  name="New Users"
                   stroke="#2563eb"
                   strokeWidth={2}
-                  fill="url(#gradUsers)"
                   dot={false}
                 />
-              </AreaChart>
+                <Line
+                  type="monotone"
+                  dataKey="active_users"
+                  name="Active Users"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
             </ResponsiveContainer>
           </ChartCard>
 
@@ -668,6 +694,86 @@ export default function MiscellaneousPage() {
                         {b.views}
                       </span>
                     </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="bg-white dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-700/60 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
+              <p className="text-[13px] font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                <MonitorSmartphone className="w-4 h-4 text-emerald-500" />
+                Devices
+              </p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                Device terakhir dari user aktif
+              </p>
+            </div>
+            <div className="px-5 py-4">
+              {deviceBreakdown.length === 0 ? (
+                <div className="text-[12px] text-gray-400 dark:text-gray-500">Belum ada data</div>
+              ) : (
+                <div className="space-y-2.5">
+                  {deviceBreakdown.map((item) => (
+                    <div key={item.device} className="flex items-center gap-3 text-[12px]">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-gray-700 dark:text-gray-200 truncate">
+                          {item.device}
+                        </div>
+                        <div className="mt-1 h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-emerald-500"
+                            style={{
+                              width: `${Math.min((item.users / Math.max(1, totals.active_users_30d ?? item.users)) * 100, 100)}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <span className="font-black text-emerald-600 dark:text-emerald-400 shrink-0">
+                        {item.users}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="bg-white dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-700/60 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
+              <p className="text-[13px] font-bold text-gray-800 dark:text-gray-100">
+                Recent Active Users
+              </p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                User aktif terbaru beserta device dan IP
+              </p>
+            </div>
+            <div className="px-5 py-4">
+              {recentActiveUsers.length === 0 ? (
+                <div className="text-[12px] text-gray-400 dark:text-gray-500">Belum ada data</div>
+              ) : (
+                <div className="space-y-1">
+                  {recentActiveUsers.map((u) => (
+                    <div
+                      key={u.id}
+                      className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto] gap-2 md:items-center text-[12px] rounded-lg px-2 py-2 -mx-2 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-700 dark:text-gray-200 truncate">
+                          {u.name || u.email}
+                        </div>
+                        <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+                          {u.email}
+                        </div>
+                      </div>
+                      <div className="text-gray-500 dark:text-gray-400 truncate">
+                        {u.device || 'Unknown'} · {u.ip || '-'}
+                      </div>
+                      <div className="font-mono text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                        {u.last_active || '-'}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

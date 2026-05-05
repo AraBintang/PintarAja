@@ -42,7 +42,7 @@ Route::middleware('guest:sanctum')->group(function () {
     Route::post('/new-password', [ResetController::class, 'newPassword']);
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::prefix('referrals')->group(function () {

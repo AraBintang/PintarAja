@@ -54,6 +54,7 @@ return [
 
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
+        'paraphrase_model' => env('OPENAI_PARAPHRASE_MODEL', 'gpt-4o-mini'),
     ],
 
     'gemini' => [
