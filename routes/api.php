@@ -28,7 +28,7 @@ Route::get('/plans', [PlanController::class, 'index']);
 
 Route::get('/settings/public', [WebSettingController::class, 'public']);
 
-Route::post('/payments/notify', [PaymentController::class, 'notify']);
+Route::post('/payment/notify', [PaymentController::class, 'notify']);
 
 Route::post('/bepro/callback', [PlagiarismController::class, 'callback']);
 
