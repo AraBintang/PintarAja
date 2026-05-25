@@ -25,6 +25,7 @@ import {
 import UserModal from '@/components/user/UserForm'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { useUsers } from '@/helpers/useUsers'
+import { formatLastActive } from '@/utils/DateUtils'
 import { Debounce } from '@/utils/Debounce'
 
 function getInitials(name = '') {
@@ -420,11 +421,21 @@ export default function AdminUserPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${getLastActiveStyle(user.M_UserLastActive)}`}
-                        >
-                          {user.M_UserLastActive ?? '-'}
-                        </span>
+                        {(() => {
+                          const { label, sub } = formatLastActive(user.M_UserLastActive)
+                          return (
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${getLastActiveStyle(user.M_UserLastActive)}`}
+                              >
+                                {label}
+                              </span>
+                              {sub && (
+                                <span className="text-[10px] text-gray-400 mt-0.5">{sub}</span>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center justify-end gap-1.5">

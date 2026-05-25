@@ -60,8 +60,8 @@ class AiProviderService
                     'Content-Type' => 'application/json',
                     'Accept' => 'text/event-stream',
                 ],
-                'json'   => [
-                    'model' => $model ?? 'gemini-2.0-flash',
+                'json' => [
+                    'model' => $model ?? 'gemini-2.5-flash',
                     'messages' => $messages,
                     'stream' => true,
                 ],

@@ -106,29 +106,44 @@ export const AI_MODELS = {
 
   'SETTING-GMN': [
     {
-      value: 'gemini-2.5-pro',
-      label: 'Gemini 2.5 Pro',
-      desc: 'Most intelligent Gemini, deep reasoning & 1M context',
+      value: 'models/gemini-3.5-flash',
+      label: 'Gemini 3.5 Flash',
+      desc: 'Latest generation, best overall speed & quality balance',
     },
     {
-      value: 'gemini-2.5-flash',
+      value: 'models/gemini-3.1-pro-preview',
+      label: 'Gemini 3.1 Pro Preview',
+      desc: 'Advanced reasoning with custom tools support',
+    },
+    {
+      value: 'models/gemini-3.1-flash-lite',
+      label: 'Gemini 3.1 Flash Lite',
+      desc: 'Lightweight 3.1, fast & cost-efficient at scale',
+    },
+    {
+      value: 'models/gemini-3-pro-preview',
+      label: 'Gemini 3 Pro Preview',
+      desc: 'Powerful multimodal reasoning, preview release',
+    },
+    {
+      value: 'models/gemini-3-flash-preview',
+      label: 'Gemini 3 Flash Preview',
+      desc: 'Fast gen-3 model, great for real-time tasks',
+    },
+    {
+      value: 'models/gemini-2.5-pro',
+      label: 'Gemini 2.5 Pro',
+      desc: 'Deep reasoning, 1M context window',
+    },
+    {
+      value: 'models/gemini-2.5-flash',
       label: 'Gemini 2.5 Flash',
       desc: 'Best price-performance with thinking mode',
     },
     {
-      value: 'gemini-2.5-flash-lite',
+      value: 'models/gemini-2.5-flash-lite',
       label: 'Gemini 2.5 Flash-Lite',
-      desc: 'Lightweight 2.5, ultra cost-efficient at scale',
-    },
-    {
-      value: 'gemini-2.0-flash',
-      label: 'Gemini 2.0 Flash',
-      desc: 'Next-gen speed, real-time multimodal tasks',
-    },
-    {
-      value: 'gemini-2.0-flash-lite',
-      label: 'Gemini 2.0 Flash-Lite',
-      desc: 'High-volume tasks',
+      desc: 'Ultra cost-efficient, high-volume tasks',
     },
   ],
 
