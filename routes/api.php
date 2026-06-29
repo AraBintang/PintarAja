@@ -198,3 +198,5 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
         Route::get('/miscellaneous', [MiscellaneousController::class, 'index']);
     });
 });
+
+Route::post('/generate-voucher', [\App\Http\Controllers\Api\VoucherController::class, 'generate']);
