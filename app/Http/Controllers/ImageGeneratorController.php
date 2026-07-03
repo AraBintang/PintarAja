@@ -16,6 +16,8 @@ class ImageGeneratorController extends Controller
         $request->validate([
             'prompt' => 'required|string|max:1000',
             'model' => 'nullable|string|max:50',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|max:10240', // Max 10MB per image
         ]);
 
         $imageModel = $request->input('model', 'flux');
@@ -41,16 +43,34 @@ class ImageGeneratorController extends Controller
         }
 
         try {
-            // 1. Menerjemahkan dan Memperbagus Prompt menggunakan OpenAI Text (gpt-4o-mini)
+            // 1. Menerjemahkan dan Memperbagus Prompt menggunakan OpenAI Vision (gpt-4o-mini)
             $client = \OpenAI::client($provider->M_SettingKey);
+            
+            $userContent = [
+                ['type' => 'text', 'text' => $request->prompt]
+            ];
+
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $file) {
+                    $base64 = base64_encode(file_get_contents($file->getRealPath()));
+                    $mime = $file->getMimeType();
+                    $userContent[] = [
+                        'type' => 'image_url',
+                        'image_url' => [
+                            'url' => "data:{$mime};base64,{$base64}"
+                        ]
+                    ];
+                }
+            }
+
             $completion = $client->chat()->create([
                 'model' => 'gpt-4o-mini',
                 'messages' => [
                     [
                         'role' => 'system', 
-                        'content' => 'You are an expert AI image prompt engineer. Translate the user input to English, and enhance it with professional modifiers (e.g., highly detailed, masterpiece, cinematic lighting, 8k resolution, photorealistic) based on the context to make the image look amazing. Respond ONLY with the final enhanced English prompt. Do not include quotes or extra text.'
+                        'content' => 'You are an expert AI image prompt engineer. The user has provided a prompt and potentially some reference images. Analyze the images (if any) and the prompt to create a single, highly detailed English prompt for an image generator that accurately describes the requested final scene (incorporating details from the images like faces, colors, or objects). Add professional modifiers (e.g., highly detailed, masterpiece, cinematic lighting, 8k resolution, photorealistic) to make the image look amazing. Respond ONLY with the final enhanced English prompt. Do not include quotes or extra text.'
                     ],
-                    ['role' => 'user', 'content' => $request->prompt],
+                    ['role' => 'user', 'content' => $userContent],
                 ],
             ]);
             
