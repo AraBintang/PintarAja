@@ -113,12 +113,12 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
         Route::delete('/{id}', [ParaphraseController::class, 'destroy']);
     });
 
-    // Route::prefix('humans')->group(function () {
-    //     Route::get('/', [HumanizerController::class, 'index']);
-    //     Route::post('/', [HumanizerController::class, 'humanize']);
-    //     Route::put('/{id}', [HumanizerController::class, 'update']);
-    //     Route::delete('/{id}', [HumanizerController::class, 'destroy']);  // Coming Soon
-    // });
+    Route::prefix('humans')->group(function () {
+        Route::get('/', [HumanizerController::class, 'index']);
+        Route::post('/', [HumanizerController::class, 'humanize']);
+        Route::put('/{id}', [HumanizerController::class, 'update']);
+        Route::delete('/{id}', [HumanizerController::class, 'destroy']);
+    });
 
     Route::prefix('transcribes')->group(function () {
         Route::get('/', [TranscribeController::class, 'index']);
