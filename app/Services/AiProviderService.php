@@ -494,22 +494,10 @@ class AiProviderService
 
     public function generateImageOpenAI($apiKey, $prompt, $size = '1024x1024')
     {
-        $client = new Client();
+        // Menggunakan Pollinations AI sebagai alternatif gratis karena API Key OpenAI saat ini menolak model DALL-E
+        $encodedPrompt = urlencode($prompt);
+        $url = "https://image.pollinations.ai/prompt/{$encodedPrompt}?width=1024&height=1024&nologo=true";
         
-        $response = $client->post('https://api.openai.com/v1/images/generations', [
-            'headers' => [
-                'Authorization' => "Bearer $apiKey",
-                'Content-Type' => 'application/json',
-            ],
-            'json' => [
-                'model' => 'dall-e-2',
-                'prompt' => $prompt,
-                'n' => 1,
-                'size' => $size,
-            ],
-        ]);
-
-        $body = json_decode($response->getBody(), true);
-        return $body['data'][0]['url'] ?? null;
+        return $url;
     }
 }
