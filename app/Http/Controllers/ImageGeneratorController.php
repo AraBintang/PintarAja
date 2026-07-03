@@ -41,8 +41,27 @@ class ImageGeneratorController extends Controller
         }
 
         try {
-            // Generate dari OpenAI (Atau Pollinations API Fallback)
-            $imageUrl = $aiService->generateImageOpenAI($provider->M_SettingKey, $request->prompt, '1024x1024', $imageModel);
+            // 1. Menerjemahkan dan Memperbagus Prompt menggunakan OpenAI Text (gpt-4o-mini)
+            $client = \OpenAI::client($provider->M_SettingKey);
+            $completion = $client->chat()->create([
+                'model' => 'gpt-4o-mini',
+                'messages' => [
+                    [
+                        'role' => 'system', 
+                        'content' => 'You are an expert AI image prompt engineer. Translate the user input to English, and enhance it with professional modifiers (e.g., highly detailed, masterpiece, cinematic lighting, 8k resolution, photorealistic) based on the context to make the image look amazing. Respond ONLY with the final enhanced English prompt. Do not include quotes or extra text.'
+                    ],
+                    ['role' => 'user', 'content' => $request->prompt],
+                ],
+            ]);
+            
+            $enhancedPrompt = trim($completion->choices[0]->message->content);
+
+            if (empty($enhancedPrompt)) {
+                $enhancedPrompt = $request->prompt; // Fallback jika OpenAI gagal membalas
+            }
+
+            // 2. Generate dari Pollinations API menggunakan Enhanced Prompt
+            $imageUrl = $aiService->generateImageOpenAI($provider->M_SettingKey, $enhancedPrompt, '1024x1024', $imageModel);
 
             if (!$imageUrl) {
                 throw new \Exception('Gagal mendapatkan gambar dari AI.');
