@@ -58,28 +58,29 @@ class HumanizerController extends Controller
 
     public function humanize(Request $request)
     {
-        $request->validate([
-            'language' => 'required|string',
-            'mode' => 'required|string',
-            'text' => 'required|string'
-        ]);
+        try {
+            $request->validate([
+                'language' => 'required|string',
+                'mode' => 'required|string',
+                'text' => 'required|string'
+            ]);
 
-        $user = $request->user();
-        
-        $text = trim($request->text);
-        $mode = $request->mode;
-        $language = $request->language;
-        $wordCount = $this->countWords($text);
+            $user = $request->user();
+            
+            $text = trim($request->text);
+            $mode = $request->mode;
+            $language = $request->language;
+            $wordCount = $this->countWords($text);
 
-        if ((int) $user->M_UserPlan === self::FREE_PLAN_ID && $wordCount > self::FREE_PLAN_WORD_LIMIT) {
-            return response()->json([
-                'message' => 'Plan gratis hanya bisa memproses maksimal ' . self::FREE_PLAN_WORD_LIMIT . ' kata.',
-            ], 422);
-        }
+            if ((int) $user->M_UserPlan === self::FREE_PLAN_ID && $wordCount > self::FREE_PLAN_WORD_LIMIT) {
+                return response()->json([
+                    'message' => 'Plan gratis hanya bisa memproses maksimal ' . self::FREE_PLAN_WORD_LIMIT . ' kata.',
+                ], 422);
+            }
 
-        $client = OpenAI::client(config('services.openai.key'));
+            $client = OpenAI::client(config('services.openai.key'));
 
-        $systemPrompt = "You are an expert human copywriter. Your task is to rewrite the user's text in {$language} so that it completely bypasses AI detectors like Turnitin and GPTZero. Mode: {$mode}.
+            $systemPrompt = "You are an expert human copywriter. Your task is to rewrite the user's text in {$language} so that it completely bypasses AI detectors like Turnitin and GPTZero. Mode: {$mode}.
 CRITICAL RULES:
 1. Maximize 'perplexity' and 'burstiness'.
 2. Use highly varied sentence lengths and structures (mix very short sentences with complex ones).
@@ -88,37 +89,44 @@ CRITICAL RULES:
 5. Return ONLY the rewritten text without any quotes, prefaces, or explanations.
 Mode notes: basic=natural and human-like; advanced=highly undetectable, maximum burstiness, more varied and nuanced.";
 
-        $response = $client->chat()->create([
-            'model' => config('services.openai.paraphrase_model', 'gpt-4o-mini'),
-            'max_tokens' => $this->maxOutputTokens($wordCount, $mode),
-            'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => $systemPrompt,
-                ],
-                [
-                    'role' => 'user',
-                    'content' => $text,
+            $response = $client->chat()->create([
+                'model' => config('services.openai.paraphrase_model', 'gpt-4o-mini'),
+                'max_tokens' => $this->maxOutputTokens($wordCount, $mode),
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => $systemPrompt,
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $text,
+                    ]
                 ]
-            ]
-        ]);
+            ]);
 
-        $humanizedText = trim($response->choices[0]->message->content);
+            $humanizedText = trim($response->choices[0]->message->content);
 
-        $humanizer = Humanizer::create([
-            'M_HumanizerM_UserID' => $user->M_UserID,
-            'M_HumanizerName' => 'Humanizer ' . now()->format('Y-m-d H:i'),
-            'M_HumanizerData' => json_encode([
-                'origin' => $text,
-                'data' => $humanizedText
-            ]),
-        ]);
+            $humanizer = Humanizer::create([
+                'M_HumanizerM_UserID' => $user->M_UserID,
+                'M_HumanizerName' => 'Humanizer ' . now()->format('Y-m-d H:i'),
+                'M_HumanizerData' => json_encode([
+                    'origin' => $text,
+                    'data' => $humanizedText
+                ]),
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $humanizedText,
-            'id' => $humanizer->M_HumanizerID
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $humanizedText,
+                'id' => $humanizer->M_HumanizerID
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Server Error: ' . $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
+        }
     }
 
     private function countWords(string $text): int
