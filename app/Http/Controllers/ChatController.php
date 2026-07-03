@@ -147,6 +147,25 @@ class ChatController extends Controller
         $message = $request->message;
         $messages = $request->messageToAi ?? [];
 
+        // Injeksi Instruksi Sistem untuk Generasi Gambar (Text-to-Image)
+        $systemInstruction = "You are an intelligent AI assistant. If the user explicitly asks you to draw, generate, or create an image/picture (e.g., 'gambarkan', 'buatkan gambar', 'draw'), you MUST NOT reply with any explanations, pleasantries, or text. Instead, you MUST reply ONLY with a markdown image tag using Pollinations AI. Use this EXACT format: ![Generated Image](https://image.pollinations.ai/prompt/{detailed-english-description}?width=1024&height=1024&nologo=true&model=flux). Replace {detailed-english-description} with a highly detailed, URL-encoded prompt in English to generate the best image.";
+        
+        $hasSystem = false;
+        foreach ($messages as &$msg) {
+            if (($msg['role'] ?? '') === 'system') {
+                $msg['content'] = $systemInstruction . "\n\n" . $msg['content'];
+                $hasSystem = true;
+                break;
+            }
+        }
+        
+        if (!$hasSystem) {
+            array_unshift($messages, [
+                'role' => 'system',
+                'content' => $systemInstruction
+            ]);
+        }
+
         $lastMsg = !empty($messages) ? end($messages) : null;
         $hasImages = isset($lastMsg['content']) && is_array($lastMsg['content']);
  
