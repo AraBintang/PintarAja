@@ -120,7 +120,7 @@ Mode notes: basic=natural and human-like; advanced=highly undetectable, maximum 
                 'data' => $humanizedText,
                 'id' => $humanizer->M_HumanizerID
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'message' => 'Server Error: ' . $e->getMessage(),
                 'file' => $e->getFile(),

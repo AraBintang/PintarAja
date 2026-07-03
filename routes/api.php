@@ -10,6 +10,7 @@ use App\Http\Controllers\ImageGeneratorController;
 use App\Http\Controllers\MiscellaneousController;
 use App\Http\Controllers\PaperController;
 use App\Http\Controllers\ParaphraseController;
+use App\Http\Controllers\HumanizerController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlagiarismController;
 use App\Http\Controllers\PlanController;
