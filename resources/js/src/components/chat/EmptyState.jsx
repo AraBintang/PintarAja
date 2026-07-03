@@ -1,4 +1,4 @@
-import { FileSearch, FileText, Hash, Speech, Mic } from 'lucide-react'
+import { FileSearch, FileText, Hash, Speech, Mic, Image as ImageIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 // Icon wrapper dengan warna background per fitur
@@ -60,7 +60,13 @@ const CHAT_FEATURES = [
     to: '/plagiarism',
     color: 'coral',
     icon: <FileSearch className="w-[18px] h-[18px]" />,
-    fullWidth: true,
+  },
+  {
+    label: 'Image Generator',
+    tag: 'Create AI images',
+    to: '/generate-image',
+    color: 'blue',
+    icon: <ImageIcon className="w-[18px] h-[18px]" />,
   },
 ]
 

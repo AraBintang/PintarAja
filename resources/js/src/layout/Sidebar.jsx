@@ -18,6 +18,7 @@ import {
   Ticket,
   Users,
   Zap,
+  Image as ImageIcon,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
@@ -33,6 +34,7 @@ const menuItems = [
   { label: 'Humanizer AI', icon: Speech, to: '/humanize' },
   { label: 'Transcribe AI', icon: Mic, to: '/transcribe' },
   { label: 'Plagiarism Checker', icon: FileSearch, to: '/plagiarism' },
+  { label: 'Image Generator', icon: ImageIcon, to: '/generate-image' },
 ]
 
 const adminMenuItems = [
