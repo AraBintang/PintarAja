@@ -15,7 +15,10 @@ class ImageGeneratorController extends Controller
     {
         $request->validate([
             'prompt' => 'required|string|max:1000',
+            'model' => 'nullable|string|max:50',
         ]);
+
+        $imageModel = $request->input('model', 'flux');
 
         $user = $request->user();
 
@@ -38,8 +41,8 @@ class ImageGeneratorController extends Controller
         }
 
         try {
-            // Generate dari OpenAI
-            $imageUrl = $aiService->generateImageOpenAI($provider->M_SettingKey, $request->prompt);
+            // Generate dari OpenAI (Atau Pollinations API Fallback)
+            $imageUrl = $aiService->generateImageOpenAI($provider->M_SettingKey, $request->prompt, '1024x1024', $imageModel);
 
             if (!$imageUrl) {
                 throw new \Exception('Gagal mendapatkan gambar dari AI.');

@@ -492,11 +492,11 @@ class AiProviderService
         ]);
     }
 
-    public function generateImageOpenAI($apiKey, $prompt, $size = '1024x1024')
+    public function generateImageOpenAI($apiKey, $prompt, $size = '1024x1024', $imageModel = 'flux')
     {
         // Menggunakan Pollinations AI sebagai alternatif gratis karena API Key OpenAI saat ini menolak model DALL-E
         $encodedPrompt = urlencode($prompt);
-        $url = "https://image.pollinations.ai/prompt/{$encodedPrompt}?width=1024&height=1024&nologo=true";
+        $url = "https://image.pollinations.ai/prompt/{$encodedPrompt}?width=1024&height=1024&nologo=true&model={$imageModel}";
         
         return $url;
     }
