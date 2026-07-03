@@ -16,6 +16,7 @@ import ParafrasePage from '@/pages/App/ParafrasePage'
 import PlagiarismPage from '@/pages/App/PlagiarismPage'
 import TranscribePage from '@/pages/App/TranscribePage'
 import WriterPage from '@/pages/App/WriterPage'
+import ImageGenerator from '@/pages/ImageGenerator'
 import ForgotPassword from '@/pages/Auth/ForgotPassword'
 import GoogleAuth from '@/pages/Auth/GoogleAuth'
 import Login from '@/pages/Auth/Login'
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
           { path: 'paraphrase', element: <ParafrasePage /> },
           { path: 'transcribe', element: <TranscribePage /> },
           { path: 'plagiarism', element: <PlagiarismPage /> },
+          { path: 'generate-image', element: <ImageGenerator /> },
 
           {
             element: <AdminRoute />,

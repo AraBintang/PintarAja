@@ -491,4 +491,25 @@ class AiProviderService
             'T_ConversationLastUpdated' => now(),
         ]);
     }
+
+    public function generateImageOpenAI($apiKey, $prompt, $size = '1024x1024')
+    {
+        $client = new Client();
+        
+        $response = $client->post('https://api.openai.com/v1/images/generations', [
+            'headers' => [
+                'Authorization' => "Bearer $apiKey",
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'model' => 'dall-e-3',
+                'prompt' => $prompt,
+                'n' => 1,
+                'size' => $size,
+            ],
+        ]);
+
+        $body = json_decode($response->getBody(), true);
+        return $body['data'][0]['url'] ?? null;
+    }
 }
