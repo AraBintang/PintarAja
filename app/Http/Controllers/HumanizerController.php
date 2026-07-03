@@ -79,7 +79,14 @@ class HumanizerController extends Controller
 
         $client = OpenAI::client(config('services.openai.key'));
 
-        $systemPrompt = "Rewrite the user's text in {$language} to sound completely natural and human-written. Mode: {$mode}. Your goal is to bypass AI detection tools. Use varied sentence structures, natural phrasing, slight colloquialisms if appropriate for the mode, and avoid robotic patterns like repetitive transitions or overly perfect grammar. Return ONLY the rewritten text without any quotes or explanations. Mode notes: basic=natural and human-like; advanced=highly undetectable, more varied and nuanced.";
+        $systemPrompt = "You are an expert human copywriter. Your task is to rewrite the user's text in {$language} so that it completely bypasses AI detectors like Turnitin and GPTZero. Mode: {$mode}.
+CRITICAL RULES:
+1. Maximize 'perplexity' and 'burstiness'.
+2. Use highly varied sentence lengths and structures (mix very short sentences with complex ones).
+3. Avoid predictable AI transition words (e.g., 'Furthermore', 'Moreover', 'In conclusion', 'Delve', 'Crucial').
+4. Write with a natural human rhythm, incorporating slight imperfections or colloquialisms appropriate for the context.
+5. Return ONLY the rewritten text without any quotes, prefaces, or explanations.
+Mode notes: basic=natural and human-like; advanced=highly undetectable, maximum burstiness, more varied and nuanced.";
 
         $response = $client->responses()->create([
             'model' => config('services.openai.paraphrase_model', 'gpt-4o-mini'),
