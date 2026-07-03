@@ -88,10 +88,10 @@ CRITICAL RULES:
 5. Return ONLY the rewritten text without any quotes, prefaces, or explanations.
 Mode notes: basic=natural and human-like; advanced=highly undetectable, maximum burstiness, more varied and nuanced.";
 
-        $response = $client->responses()->create([
+        $response = $client->chat()->create([
             'model' => config('services.openai.paraphrase_model', 'gpt-4o-mini'),
-            'max_output_tokens' => $this->maxOutputTokens($wordCount, $mode),
-            'input' => [
+            'max_tokens' => $this->maxOutputTokens($wordCount, $mode),
+            'messages' => [
                 [
                     'role' => 'system',
                     'content' => $systemPrompt,
@@ -103,7 +103,7 @@ Mode notes: basic=natural and human-like; advanced=highly undetectable, maximum 
             ]
         ]);
 
-        $humanizedText = $response->outputText ?? data_get($response, 'output.1.content.0.text') ?? data_get($response, 'output.0.content.0.text', '');
+        $humanizedText = trim($response->choices[0]->message->content);
 
         $humanizer = Humanizer::create([
             'M_HumanizerM_UserID' => $user->M_UserID,
