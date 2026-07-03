@@ -295,33 +295,43 @@ function InlineTextContent({ content }) {
 
 function renderInline(text) {
   const parts = []
-  const regex = /`([^`]+)`|\*\*(.+?)\*\*|\*(.+?)\*|\[([^\]]+)\]\(([^)]+)\)/g
+  const regex = /!\[([^\]]*)\]\(([^)]+)\)|`([^`]+)`|\*\*(.+?)\*\*|\*(.+?)\*|\[([^\]]+)\]\(([^)]+)\)/g
   let last = 0
   let m
 
   while ((m = regex.exec(text)) !== null) {
     if (m.index > last) parts.push(text.slice(last, m.index))
 
-    if (m[1] !== undefined) {
-      parts.push(<InlineCode key={m.index}>{m[1]}</InlineCode>)
-    } else if (m[2] !== undefined) {
+    if (m[1] !== undefined && m[2] !== undefined) {
       parts.push(
-        <strong key={m.index} className="font-semibold text-gray-800 dark:text-gray-100">
-          {m[2]}
-        </strong>,
+        <img
+          key={m.index}
+          src={m[2]}
+          alt={m[1]}
+          className="max-w-full h-auto rounded-xl my-2 shadow-sm border border-gray-200 dark:border-gray-700"
+          loading="lazy"
+        />
       )
     } else if (m[3] !== undefined) {
-      parts.push(<em key={m.index}>{m[3]}</em>)
-    } else if (m[4] !== undefined && m[5] !== undefined) {
+      parts.push(<InlineCode key={m.index}>{m[3]}</InlineCode>)
+    } else if (m[4] !== undefined) {
+      parts.push(
+        <strong key={m.index} className="font-semibold text-gray-800 dark:text-gray-100">
+          {m[4]}
+        </strong>,
+      )
+    } else if (m[5] !== undefined) {
+      parts.push(<em key={m.index}>{m[5]}</em>)
+    } else if (m[6] !== undefined && m[7] !== undefined) {
       parts.push(
         <a
           key={m.index}
-          href={m[5]}
+          href={m[7]}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 underline underline-offset-2 decoration-blue-300/60 hover:decoration-blue-500 transition-colors"
         >
-          {m[4]}
+          {m[6]}
         </a>,
       )
     }
