@@ -4,6 +4,7 @@ import { useQuota } from '@/hooks/useQuota'
 import { request } from '@/utils/Http'
 import { ArrowUp, Image as ImageIcon, Plus, X as XIcon, Download, Sparkles, Zap, Check } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
+import { AI_CODE_MAP, AI_MODELS, AutoIcon } from '@/assets/ai'
 
 const IMAGE_MODELS = [
     { 
@@ -290,7 +291,14 @@ export default function ImageGenerator() {
                                         className="flex items-center gap-2 px-3 py-2 ml-1 bg-[#eeedeb] dark:bg-black/20 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-[13px] transition-all border border-transparent dark:border-gray-700 whitespace-nowrap disabled:opacity-50"
                                     >
                                         <span className="font-semibold text-gray-700 dark:text-gray-200">
-                                            {aiProviders.find(m => String(m.id) === String(selectedModel))?.name || 'Select Model'}
+                                            {(() => {
+                                                const sel = aiProviders.find(m => String(m.id) === String(selectedModel));
+                                                if (!sel) return 'Select Model';
+                                                const modelInfo = (AI_MODELS[sel.code] ?? []).find(
+                                                    (item) => item.value === sel.model || item.label === sel.model,
+                                                );
+                                                return modelInfo?.label || sel.model || 'Select Model';
+                                            })()}
                                         </span>
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-400 ml-0.5">
                                             <polyline points="6 9 12 15 18 9" />
@@ -305,13 +313,20 @@ export default function ImageGenerator() {
                                                 animate={{ scale: 1, opacity: 1, y: 0 }}
                                                 exit={{ scale: 0.95, opacity: 0, y: 10 }}
                                                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                                                className="absolute bottom-full mb-2 left-0 bg-white dark:bg-[#1A1D24] border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-[70] w-[300px] p-2 flex flex-col gap-1"
+                                                className="absolute bottom-full mb-2 left-0 bg-white dark:bg-[#1A1D24] border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-[70] w-[300px] p-2 flex flex-col gap-1 max-h-[400px] overflow-y-auto"
                                             >
                                                 <div className="px-3 py-2 text-[11px] font-bold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
                                                     Select AI Model
                                                 </div>
                                                 {aiProviders.map((m) => {
                                                     const isSelected = String(m.id) === String(selectedModel);
+                                                    const mapped = AI_CODE_MAP[m.code] ?? { label: m.code, icon: <AutoIcon /> };
+                                                    const modelInfo = (AI_MODELS[m.code] ?? []).find(
+                                                        (item) => item.value === m.model || item.label === m.model,
+                                                    );
+                                                    const displayName = modelInfo?.label || m.model;
+                                                    const displayDesc = modelInfo?.desc || 'Advanced AI Model';
+
                                                     return (
                                                         <button
                                                             key={m.id}
@@ -323,15 +338,15 @@ export default function ImageGenerator() {
                                                             className={`w-full text-left flex items-center justify-between px-3 py-3 rounded-xl outline-none transition-colors ${isSelected ? 'bg-blue-50 dark:bg-[#25324A] text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#25324A]'}`}
                                                         >
                                                             <div className="flex items-center gap-3">
-                                                                <div className="flex-shrink-0 opacity-80">
-                                                                    <Sparkles className="w-4 h-4 text-gray-400" />
+                                                                <div className="flex-shrink-0 opacity-80 w-6 h-6 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-white/5">
+                                                                    {mapped.icon}
                                                                 </div>
                                                                 <div className="flex flex-col gap-0.5">
                                                                     <span className={`text-[14px] font-semibold ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-gray-100'}`}>
-                                                                        {m.name}
+                                                                        {displayName}
                                                                     </span>
                                                                     <span className="text-[12px] text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
-                                                                        {m.description || 'Advanced AI Model'}
+                                                                        {displayDesc}
                                                                     </span>
                                                                 </div>
                                                             </div>
