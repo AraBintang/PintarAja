@@ -46,7 +46,8 @@ export default function ImageGenerator() {
     const [images, setImages] = useState([])
     const [imageUrl, setImageUrl] = useState('')
     const [loading, setLoading] = useState(false)
-    const [selectedModel, setSelectedModel] = useState('flux')
+    const [aiProviders, setAiProviders] = useState([])
+    const [selectedModel, setSelectedModel] = useState('')
     
     const { showSnackbar } = useSnackbar()
     const { decrement, rollback } = useQuota()
@@ -57,6 +58,19 @@ export default function ImageGenerator() {
 
     const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
     const [showModelMenu, setShowModelMenu] = useState(false)
+
+    useEffect(() => {
+        request('/chats')
+            .then((res) => {
+                if (res?.ai && res.ai.length > 0) {
+                    setAiProviders(res.ai)
+                    if (!selectedModel) {
+                        setSelectedModel(String(res.ai[0].id))
+                    }
+                }
+            })
+            .catch(() => {})
+    }, [])
 
     useEffect(() => {
         const mq = window.matchMedia('(max-width: 767px)')
@@ -275,7 +289,9 @@ export default function ImageGenerator() {
                                         disabled={loading}
                                         className="flex items-center gap-2 px-3 py-2 ml-1 bg-[#eeedeb] dark:bg-black/20 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-[13px] transition-all border border-transparent dark:border-gray-700 whitespace-nowrap disabled:opacity-50"
                                     >
-                                        <span className="font-semibold text-gray-700 dark:text-gray-200">{selectedModelName}</span>
+                                        <span className="font-semibold text-gray-700 dark:text-gray-200">
+                                            {aiProviders.find(m => String(m.id) === String(selectedModel))?.name || 'Select Model'}
+                                        </span>
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-400 ml-0.5">
                                             <polyline points="6 9 12 15 18 9" />
                                         </svg>
@@ -294,28 +310,28 @@ export default function ImageGenerator() {
                                                 <div className="px-3 py-2 text-[11px] font-bold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
                                                     Select AI Model
                                                 </div>
-                                                {IMAGE_MODELS.map((m) => {
-                                                    const isSelected = m.id === selectedModel;
+                                                {aiProviders.map((m) => {
+                                                    const isSelected = String(m.id) === String(selectedModel);
                                                     return (
                                                         <button
                                                             key={m.id}
                                                             type="button"
                                                             onClick={() => {
-                                                                setSelectedModel(m.id)
+                                                                setSelectedModel(String(m.id))
                                                                 setShowModelMenu(false)
                                                             }}
                                                             className={`w-full text-left flex items-center justify-between px-3 py-3 rounded-xl outline-none transition-colors ${isSelected ? 'bg-blue-50 dark:bg-[#25324A] text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#25324A]'}`}
                                                         >
                                                             <div className="flex items-center gap-3">
                                                                 <div className="flex-shrink-0 opacity-80">
-                                                                    {m.icon}
+                                                                    <Sparkles className="w-4 h-4 text-gray-400" />
                                                                 </div>
                                                                 <div className="flex flex-col gap-0.5">
                                                                     <span className={`text-[14px] font-semibold ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-gray-100'}`}>
                                                                         {m.name}
                                                                     </span>
                                                                     <span className="text-[12px] text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
-                                                                        {m.description}
+                                                                        {m.description || 'Advanced AI Model'}
                                                                     </span>
                                                                 </div>
                                                             </div>
