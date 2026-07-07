@@ -199,10 +199,7 @@ export default function ImageGenerator() {
                             <img src={imageUrl} alt={prompt} className="w-full h-auto object-contain" />
                         </div>
                         <div className="w-full mt-6 flex justify-between items-center">
-                            <div className="flex-1 mr-4">
-                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Prompt Anda:</p>
-                                <p className="text-[13px] text-gray-500 mt-1 line-clamp-2">{prompt}</p>
-                            </div>
+                            <div className="flex-1" />
                             <a
                                 href={imageUrl}
                                 download={`ai-image-${Date.now()}.png`}
