@@ -2,14 +2,34 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { useQuota } from '@/hooks/useQuota'
 import { request } from '@/utils/Http'
-import { ArrowUp, Image as ImageIcon, Plus, X as XIcon, Download } from 'lucide-react'
+import { ArrowUp, Image as ImageIcon, Plus, X as XIcon, Download, Sparkles, Zap, Check } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 
 const IMAGE_MODELS = [
-    { id: 'flux', name: 'Flux (Realistis)' },
-    { id: 'turbo', name: 'Turbo (Cepat)' },
-    { id: 'midjourney', name: 'Midjourney' },
-    { id: 'anime', name: 'Anime' },
+    { 
+        id: 'flux', 
+        name: 'Flux (Realistis)',
+        description: 'High fidelity, realistic image generation',
+        icon: <Sparkles className="w-4 h-4 text-gray-300" />
+    },
+    { 
+        id: 'turbo', 
+        name: 'Turbo (Cepat)',
+        description: 'Fast generation for quick concepts',
+        icon: <Zap className="w-4 h-4 text-gray-300" />
+    },
+    { 
+        id: 'midjourney', 
+        name: 'Midjourney',
+        description: 'Artistic and highly detailed images',
+        icon: <ImageIcon className="w-4 h-4 text-gray-300" />
+    },
+    { 
+        id: 'anime', 
+        name: 'Anime',
+        description: 'Specialized for anime and manga styles',
+        icon: <ImageIcon className="w-4 h-4 text-gray-300" />
+    },
 ]
 
 function Spinner() {
@@ -269,21 +289,44 @@ export default function ImageGenerator() {
                                                 animate={{ scale: 1, opacity: 1, y: 0 }}
                                                 exit={{ scale: 0.95, opacity: 0, y: 10 }}
                                                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                                                className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-[70] min-w-[200px] p-1.5"
+                                                className="absolute bottom-full mb-2 left-0 bg-white dark:bg-[#1A1D24] border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-[70] w-[300px] p-2 flex flex-col gap-1"
                                             >
-                                                {IMAGE_MODELS.map((m) => (
-                                                    <button
-                                                        key={m.id}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setSelectedModel(m.id)
-                                                            setShowModelMenu(false)
-                                                        }}
-                                                        className={`w-full text-left px-3 py-2.5 rounded-xl text-[13px] transition-colors ${m.id === selectedModel ? 'bg-[#4A90D9]/10 text-[#4A90D9] font-bold' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 font-medium'}`}
-                                                    >
-                                                        {m.name}
-                                                    </button>
-                                                ))}
+                                                <div className="px-3 py-2 text-[11px] font-bold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+                                                    Select AI Model
+                                                </div>
+                                                {IMAGE_MODELS.map((m) => {
+                                                    const isSelected = m.id === selectedModel;
+                                                    return (
+                                                        <button
+                                                            key={m.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSelectedModel(m.id)
+                                                                setShowModelMenu(false)
+                                                            }}
+                                                            className={`w-full text-left flex items-center justify-between px-3 py-3 rounded-xl outline-none transition-colors ${isSelected ? 'bg-blue-50 dark:bg-[#25324A] text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#25324A]'}`}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="flex-shrink-0 opacity-80">
+                                                                    {m.icon}
+                                                                </div>
+                                                                <div className="flex flex-col gap-0.5">
+                                                                    <span className={`text-[14px] font-semibold ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-gray-100'}`}>
+                                                                        {m.name}
+                                                                    </span>
+                                                                    <span className="text-[12px] text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+                                                                        {m.description}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            {isSelected && (
+                                                                <div className="flex-shrink-0 flex items-center justify-center w-[18px] h-[18px] rounded-full bg-blue-500 text-white">
+                                                                    <Check className="w-3 h-3" />
+                                                                </div>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
                                             </motion.div>
                                         </AnimatePresence>
                                     )}
