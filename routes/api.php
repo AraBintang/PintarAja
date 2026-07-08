@@ -7,6 +7,7 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ImageGeneratorController;
+use App\Http\Controllers\VideoGeneratorController;
 use App\Http\Controllers\MiscellaneousController;
 use App\Http\Controllers\PaperController;
 use App\Http\Controllers\ParaphraseController;
@@ -77,6 +78,7 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
     });
 
     Route::post('/generate-image', [ImageGeneratorController::class, 'generate']);
+    Route::post('/generate-video', [VideoGeneratorController::class, 'generate']);
 
     Route::prefix('writers')->group(function () {
         Route::get('/', [WriterController::class, 'index']);

@@ -19,6 +19,7 @@ import {
   Users,
   Zap,
   Image as ImageIcon,
+  Video as VideoIcon,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
@@ -35,6 +36,7 @@ const menuItems = [
   { label: 'Transcribe AI', icon: Mic, to: '/transcribe' },
   { label: 'Plagiarism Checker', icon: FileSearch, to: '/plagiarism' },
   { label: 'Image Generator', icon: ImageIcon, to: '/generate-image' },
+  { label: 'Video Generator', icon: VideoIcon, to: '/generate-video' },
 ]
 
 const adminMenuItems = [

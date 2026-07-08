@@ -9,6 +9,110 @@ use Illuminate\Support\Str;
 
 class AiProviderService
 {
+    public function generateText(string $providerCode, string $apiKey, string $model, array $messages, int $maxTokens = 1000): string
+    {
+        $client = new Client();
+
+        switch ($providerCode) {
+            case 'SETTING-GMN':
+                $response = $client->post('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', [
+                    'headers' => [
+                        'Authorization' => "Bearer $apiKey",
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'model' => $model,
+                        'messages' => $messages,
+                        'max_tokens' => $maxTokens,
+                    ],
+                ]);
+                $data = json_decode($response->getBody()->getContents(), true);
+                return $data['choices'][0]['message']['content'] ?? '';
+
+            case 'SETTING-XAI':
+                $response = $client->post('https://api.x.ai/v1/chat/completions', [
+                    'headers' => [
+                        'Authorization' => "Bearer $apiKey",
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'model' => $model,
+                        'messages' => $messages,
+                        'max_tokens' => $maxTokens,
+                    ],
+                ]);
+                $data = json_decode($response->getBody()->getContents(), true);
+                return $data['choices'][0]['message']['content'] ?? '';
+
+            case 'SETTING-DSK':
+                $messages = $this->normalizeMessagesTextOnly($messages);
+                $response = $client->post('https://api.deepseek.com/chat/completions', [
+                    'headers' => [
+                        'Authorization' => "Bearer $apiKey",
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'model' => $model,
+                        'messages' => $messages,
+                        'max_tokens' => $maxTokens,
+                    ],
+                ]);
+                $data = json_decode($response->getBody()->getContents(), true);
+                return $data['choices'][0]['message']['content'] ?? '';
+
+            case 'SETTING-QWN':
+                $messages = $this->normalizeMessagesTextOnly($messages);
+                $response = $client->post('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', [
+                    'headers' => [
+                        'Authorization' => "Bearer $apiKey",
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'model' => $model,
+                        'messages' => $messages,
+                        'max_tokens' => $maxTokens,
+                    ],
+                ]);
+                $data = json_decode($response->getBody()->getContents(), true);
+                return $data['choices'][0]['message']['content'] ?? '';
+
+            case 'SETTING-CLD':
+                $systemPrompt = '';
+                $claudeMessages = [];
+                foreach ($messages as $msg) {
+                    if (($msg['role'] ?? '') === 'system') {
+                        $systemPrompt .= $msg['content'] . "\n";
+                    } else {
+                        $claudeMessages[] = $msg;
+                    }
+                }
+                $response = $client->post('https://api.anthropic.com/v1/messages', [
+                    'headers' => [
+                        'x-api-key' => $apiKey,
+                        'anthropic-version' => '2023-06-01',
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'model' => $model,
+                        'messages' => $claudeMessages,
+                        'system' => trim($systemPrompt),
+                        'max_tokens' => $maxTokens,
+                    ],
+                ]);
+                $data = json_decode($response->getBody()->getContents(), true);
+                return $data['content'][0]['text'] ?? '';
+
+            case 'SETTING-GPT':
+            default:
+                $openAiClient = \OpenAI::client($apiKey);
+                $response = $openAiClient->chat()->create([
+                    'model' => $model,
+                    'messages' => $messages,
+                    'max_tokens' => $maxTokens,
+                ]);
+                return trim($response->choices[0]->message->content ?? '');
+        }
+    }
     public function streamOpenAI($apiKey, $model = null, $userMessage, $format = true, $converId = null, $provider = null)
     {
         $client = \OpenAI::client($apiKey);
@@ -497,6 +601,18 @@ class AiProviderService
         // Menggunakan Pollinations AI sebagai alternatif gratis karena API Key OpenAI saat ini menolak model DALL-E
         $encodedPrompt = urlencode($prompt);
         $url = "https://image.pollinations.ai/prompt/{$encodedPrompt}?width=1024&height=1024&nologo=true&model={$imageModel}";
+        
+        return $url;
+    }
+
+    public function generateVideoOpenAI($apiKey, $prompt, $size = '1024x1024', $videoModel = 'default')
+    {
+        // TODO: Implement Real Video Generation API (e.g. Luma, Runway, Kling, Sora)
+        // For now, returning a sample video URL or simulated response
+        // Or using an experimental video endpoint if available
+        $encodedPrompt = urlencode($prompt);
+        // We'll return a placeholder video for demonstration purposes
+        $url = "https://www.w3schools.com/html/mov_bbb.mp4"; // Dummy video
         
         return $url;
     }
