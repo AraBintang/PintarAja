@@ -44,7 +44,7 @@ function Spinner() {
 
 export default function VideoGenerator() {
     const [prompt, setPrompt] = useState('')
-    const [videos, setVideos] = useState([])
+    const [images, setImages] = useState([])
     const [videoUrl, setvideoUrl] = useState('')
     const [loading, setLoading] = useState(false)
     const [aiProviders, setAiProviders] = useState([])
