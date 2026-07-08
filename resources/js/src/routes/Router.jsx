@@ -14,7 +14,6 @@ import ChatPage from '@/pages/App/ChatPage'
 import HumanizerPage from '@/pages/App/HumanizerPage'
 import ParafrasePage from '@/pages/App/ParafrasePage'
 import PlagiarismPage from '@/pages/App/PlagiarismPage'
-import PromptLibraryPage from '@/pages/App/PromptLibraryPage'
 import TranscribePage from '@/pages/App/TranscribePage'
 import WriterPage from '@/pages/App/WriterPage'
 import ImageGenerator from '@/pages/ImageGenerator'
@@ -64,7 +63,6 @@ export const router = createBrowserRouter([
           { path: 'plagiarism', element: <PlagiarismPage /> },
           { path: 'generate-image', element: <ImageGenerator /> },
           { path: 'generate-video', element: <VideoGenerator /> },
-          { path: 'prompts', element: <PromptLibraryPage /> },
 
           {
             element: <AdminRoute />,
