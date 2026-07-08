@@ -605,15 +605,27 @@ class AiProviderService
         return $url;
     }
 
-    public function generateVideoOpenAI($apiKey, $prompt, $size = '1024x1024', $videoModel = 'default')
+    public function generateVideoOpenAI($apiKey, $prompt, $size = '1024x1024', $videoModel = 'sora')
     {
-        // TODO: Implement Real Video Generation API (e.g. Luma, Runway, Kling, Sora)
-        // For now, returning a sample video URL or simulated response
-        // Or using an experimental video endpoint if available
-        $encodedPrompt = urlencode($prompt);
-        // We'll return a placeholder video for demonstration purposes
-        $url = "https://www.w3schools.com/html/mov_bbb.mp4"; // Dummy video
-        
-        return $url;
+        $client = new \GuzzleHttp\Client(['timeout' => 300]); // Timeout 5 menit karena generate video bisa lama
+
+        try {
+            $response = $client->post('https://api.openai.com/v1/videos/generations', [
+                'headers' => [
+                    'Authorization' => "Bearer $apiKey",
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => [
+                    'model' => $videoModel === 'default' ? 'sora' : $videoModel,
+                    'prompt' => $prompt,
+                ],
+            ]);
+
+            $data = json_decode($response->getBody()->getContents(), true);
+            return $data['data'][0]['url'] ?? null;
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('OpenAI Video Error: ' . $e->getMessage());
+            return null; // Return null agar controller bisa menangkap error
+        }
     }
 }
