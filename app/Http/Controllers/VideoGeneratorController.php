@@ -52,7 +52,7 @@ class VideoGeneratorController extends Controller
         }
 
         try {
-            // 1. Menerjemahkan dan Memperbagus Prompt menggunakan xAI Vision (grok-2-vision-1212)
+            // 1. Menerjemahkan dan Memperbagus Prompt menggunakan xAI Vision (grok-4.5)
             $client = \OpenAI::factory()
                 ->withApiKey($provider->M_SettingKey)
                 ->withBaseUri('https://api.x.ai/v1')
@@ -76,7 +76,7 @@ class VideoGeneratorController extends Controller
             }
 
             $completion = $client->chat()->create([
-                'model' => 'grok-2-vision-1212',
+                'model' => 'grok-4.5',
                 'messages' => [
                     [
                         'role' => 'system', 
