@@ -31,6 +31,8 @@ import AdminRoute from '@/routes/AdminRoute'
 import GuestRoute from '@/routes/GuestRoute'
 import ProtectedRoute from '@/routes/ProtectedRoute'
 
+import ApiTokenPage from '@/pages/Admin/ApiTokenPage'
+
 export const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
 
@@ -74,6 +76,7 @@ export const router = createBrowserRouter([
               { path: 'admin/plan', element: <AdminPlanPage /> },
               { path: 'admin/coupons', element: <CouponPage /> },
               { path: 'admin/user', element: <AdminUserPage /> },
+              { path: 'admin/api-tokens', element: <ApiTokenPage /> },
               { path: 'admin/web-settings', element: <WebSettingPage /> },
               { path: 'admin/misc', element: <MiscellaneousPage /> },
             ],

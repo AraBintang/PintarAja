@@ -201,6 +201,13 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
             Route::delete('/{id}', [WebSettingController::class, 'destroy']);
         });
 
+        Route::prefix('api-tokens')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ApiTokenController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\ApiTokenController::class, 'store']);
+            Route::delete('/{id}', [\App\Http\Controllers\ApiTokenController::class, 'destroy']);
+            Route::get('/users', [\App\Http\Controllers\ApiTokenController::class, 'getUsers']);
+        });
+
         Route::get('/miscellaneous', [MiscellaneousController::class, 'index']);
     });
 });

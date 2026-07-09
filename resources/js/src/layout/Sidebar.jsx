@@ -5,6 +5,7 @@ import {
   FileSearch,
   FileText,
   Hash,
+  Key,
   Library,
   MessageSquare,
   Mic,
@@ -45,6 +46,7 @@ const adminMenuItems = [
   { label: 'Plan Setting', icon: Sparkles, to: '/admin/plan' },
   { label: 'Coupons', icon: Ticket, to: '/admin/coupons' },
   { label: 'User', icon: Users, to: '/admin/user' },
+  { label: 'API Tokens', icon: Key, to: '/admin/api-tokens' },
   { label: 'Web Settings', icon: Settings2, to: '/admin/web-settings' },
   { label: 'Misc', icon: ChartLine, to: '/admin/misc' },
 ]
