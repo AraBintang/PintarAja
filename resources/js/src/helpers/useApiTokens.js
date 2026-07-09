@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { request } from '@/utils/Http'
+import { buildQuery, request } from '@/utils/Http'
 
 export function useApiTokens({ page = 1, perPage = 10 } = {}) {
   const [tokens, setTokens] = useState([])
@@ -10,10 +10,8 @@ export function useApiTokens({ page = 1, perPage = 10 } = {}) {
   const fetchTokens = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await request('api-tokens', 'GET', {
-        page,
-        limit: perPage,
-      })
+      const q = buildQuery({ page, limit: perPage })
+      const res = await request(`/api-tokens${q}`)
       setTokens(res.data || [])
       setPagination(res)
     } catch (error) {
@@ -28,19 +26,20 @@ export function useApiTokens({ page = 1, perPage = 10 } = {}) {
   }, [fetchTokens])
 
   const createToken = async (payload) => {
-    const res = await request('api-tokens', 'POST', payload)
+    const res = await request('/api-tokens', { method: 'POST', body: payload })
     await fetchTokens()
     return res
   }
 
   const deleteToken = async (id) => {
-    const res = await request(`api-tokens/${id}`, 'DELETE')
+    const res = await request(`/api-tokens/${id}`, { method: 'DELETE' })
     await fetchTokens()
     return res
   }
 
   const searchUsers = async (search) => {
-    const res = await request('api-tokens/users', 'GET', { search })
+    const q = buildQuery({ search })
+    const res = await request(`/api-tokens/users${q}`)
     return res
   }
 
