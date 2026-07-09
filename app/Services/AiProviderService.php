@@ -650,7 +650,7 @@ class AiProviderService
                 if (in_array($status, ['completed', 'succeeded', 'done'])) {
                     $completed = true;
                     // API might return the actual video URL directly
-                    $downloadUrl = $pollData['video_url'] ?? $pollData['url'] ?? null;
+                    $downloadUrl = $pollData['video']['url'] ?? $pollData['video_url'] ?? $pollData['url'] ?? null;
                     break;
                 }
 
