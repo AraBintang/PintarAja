@@ -698,6 +698,18 @@ class AiProviderService
             ob_flush(); flush();
 
             try {
+                // Detect Aspect Ratio from prompt
+                $aspectRatio = '16:9'; // default
+                $lowerPrompt = strtolower($prompt);
+                
+                if (preg_match('/(9:16|portrait|potret|vertikal|vertical|tiktok|reels)/', $lowerPrompt)) {
+                    $aspectRatio = '9:16';
+                } elseif (preg_match('/(1:1|square|kotak|persegi)/', $lowerPrompt)) {
+                    $aspectRatio = '1:1';
+                } elseif (preg_match('/(4:3)/', $lowerPrompt)) {
+                    $aspectRatio = '4:3';
+                }
+
                 $response = $client->post('https://api.x.ai/v1/videos/generations', [
                     'headers' => [
                         'Authorization' => "Bearer $apiKey",
@@ -706,6 +718,7 @@ class AiProviderService
                     'json' => [
                         'model' => $videoModel,
                         'prompt' => $prompt,
+                        'aspect_ratio' => $aspectRatio
                     ],
                 ]);
 
