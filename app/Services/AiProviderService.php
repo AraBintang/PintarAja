@@ -605,27 +605,76 @@ class AiProviderService
         return $url;
     }
 
-    public function generateVideoOpenAI($apiKey, $prompt, $size = '1024x1024', $videoModel = 'sora')
+    public function generateVideoOpenAI($apiKey, $prompt, $size = '1024x1024', $videoModel = 'sora-2-pro')
     {
-        $client = new \GuzzleHttp\Client(['timeout' => 300]); // Timeout 5 menit karena generate video bisa lama
+        $client = new \GuzzleHttp\Client(['timeout' => 60]);
 
         try {
-            $response = $client->post('https://api.openai.com/v1/videos/generations', [
+            // 1. Submit Job
+            $response = $client->post('https://api.openai.com/v1/videos', [
                 'headers' => [
                     'Authorization' => "Bearer $apiKey",
                     'Content-Type' => 'application/json',
                 ],
                 'json' => [
-                    'model' => $videoModel === 'default' ? 'sora' : $videoModel,
+                    'model' => $videoModel === 'default' ? 'sora-2-pro' : $videoModel,
                     'prompt' => $prompt,
                 ],
             ]);
 
             $data = json_decode($response->getBody()->getContents(), true);
-            return $data['data'][0]['url'] ?? null;
+            $jobId = $data['id'] ?? null;
+
+            if (!$jobId) return null;
+
+            // 2. Poll for Completion (Max 5 minutes)
+            $maxAttempts = 30; // 30 * 10s = 300s
+            $attempt = 0;
+            $completed = false;
+
+            while ($attempt < $maxAttempts) {
+                sleep(10); // Wait 10 seconds before polling
+                $attempt++;
+
+                $pollResponse = $client->get("https://api.openai.com/v1/videos/{$jobId}", [
+                    'headers' => [
+                        'Authorization' => "Bearer $apiKey",
+                        'Content-Type' => 'application/json',
+                    ],
+                ]);
+
+                $pollData = json_decode($pollResponse->getBody()->getContents(), true);
+                $status = $pollData['status'] ?? '';
+
+                if ($status === 'completed' || $status === 'succeeded') {
+                    $completed = true;
+                    break;
+                }
+
+                if ($status === 'failed' || $status === 'cancelled') {
+                    \Illuminate\Support\Facades\Log::error("OpenAI Video Job failed/cancelled: " . json_encode($pollData));
+                    return null;
+                }
+            }
+
+            if (!$completed) return null;
+
+            // 3. Download the Video Content
+            $contentResponse = $client->get("https://api.openai.com/v1/videos/{$jobId}/content", [
+                'headers' => [
+                    'Authorization' => "Bearer $apiKey",
+                ],
+            ]);
+
+            $videoContent = $contentResponse->getBody()->getContents();
+            $filename = 'generated_videos/' . \Illuminate\Support\Str::uuid() . '.mp4';
+            \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $videoContent);
+
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($filename);
+
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('OpenAI Video Error: ' . $e->getMessage());
-            return null; // Return null agar controller bisa menangkap error
+            return null;
         }
     }
 }

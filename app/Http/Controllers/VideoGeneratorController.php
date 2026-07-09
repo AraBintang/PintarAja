@@ -13,6 +13,8 @@ class VideoGeneratorController extends Controller
 {
     public function generate(Request $request, AiProviderService $aiService, UsageService $usageService)
     {
+        set_time_limit(350); // Mencegah PHP timeout (Sora bisa memakan waktu hingga 5 menit)
+        
         $request->validate([
             'prompt' => 'required|string|max:1000',
             'model' => 'nullable|string|max:50',
@@ -94,12 +96,8 @@ class VideoGeneratorController extends Controller
                 throw new \Exception('Gagal mendapatkan video dari AI.');
             }
 
-            // Download video agar tidak expired (URL OpenAI expired dalam 2 jam)
-            $videoContent = file_get_contents($videoUrl);
-            $filename = 'generated_videos/' . Str::uuid() . '.mp4';
-            Storage::disk('public')->put($filename, $videoContent);
-
-            $localUrl = Storage::disk('public')->url($filename);
+            // URL dari generateVideoOpenAI sudah merupakan URL lokal (disimpan di disk public)
+            $localUrl = $videoUrl;
 
             // Potong kuota
             $usageService->increment($user->M_UserID, 'SETTING-GPT');
