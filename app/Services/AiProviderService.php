@@ -679,11 +679,12 @@ class AiProviderService
             $filename = 'generated_videos/' . \Illuminate\Support\Str::uuid() . '.mp4';
             \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $videoContent);
 
-            return \Illuminate\Support\Facades\Storage::disk('public')->url($filename);
+            $url = \Illuminate\Support\Facades\Storage::disk('public')->url($filename);
 
+            return $url;
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('OpenAI Video Error: ' . $e->getMessage());
-            return null;
+            \Illuminate\Support\Facades\Log::error("Error xAI Video Gen: " . $e->getMessage());
+            throw new \Exception("xAI Error: " . $e->getMessage());
         }
     }
 }

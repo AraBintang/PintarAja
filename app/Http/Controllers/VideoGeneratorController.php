@@ -93,8 +93,8 @@ class VideoGeneratorController extends Controller
                 $enhancedPrompt = $request->prompt; // Fallback jika OpenAI gagal membalas
             }
 
-            // 2. Generate dari Pollinations API menggunakan Enhanced Prompt
-            $videoUrl = $aiService->generateVideoOpenAI($provider->M_SettingKey, $enhancedPrompt, '1024x1024', $imageModel);
+            // 2. Generate dari xAI API menggunakan Enhanced Prompt
+            $videoUrl = $aiService->generateVideoOpenAI($provider->M_SettingKey, $enhancedPrompt, '1024x1024', 'grok-imagine-video');
 
             if (!$videoUrl) {
                 throw new \Exception('Gagal mendapatkan video dari AI.');
