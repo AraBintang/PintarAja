@@ -305,7 +305,6 @@ export default function ChatInput({
 }) {
   const navigate = useNavigate()
   const textareaRef = useRef(null)
-  const imageRef = useRef(null)
   const docRef = useRef(null)
 
   const [toast, setToast] = useState(null)
@@ -442,22 +441,23 @@ export default function ChatInput({
 
             <div className="flex items-center justify-between px-3 pb-3">
               <div className="flex items-center gap-1 relative">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  ref={imageRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.doc,.docx,.txt"
-                  ref={docRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
+                {(() => {
+                  const accepts = []
+                  if (canAttachImage) accepts.push('image/*')
+                  if (canAttachFile) accepts.push('.pdf,.doc,.docx,.txt')
+                  const acceptStr = accepts.join(',')
+
+                  return (
+                    <input
+                      type="file"
+                      multiple
+                      accept={acceptStr}
+                      ref={docRef}
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  )
+                })()}
 
                 <button
                   type="button"
@@ -482,60 +482,32 @@ export default function ChatInput({
                       <button
                         type="button"
                         onClick={() => {
-                          if (!canAttachImage) return
-                          imageRef.current?.click()
-                          onToggleAttachMenu()
-                        }}
-                        disabled={!canAttachImage}
-                        title={
-                          !canAttachImage
-                            ? 'Upload gambar tidak tersedia untuk model Deepseek'
-                            : undefined
-                        }
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors ${!canAttachImage ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'}`}
-                      >
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!canAttachImage ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600'}`}
-                        >
-                          <Image className="w-4 h-4" />
-                        </div>
-                        <div className="text-left">
-                          <p
-                            className={`font-semibold leading-tight ${!canAttachImage ? 'text-gray-400 dark:text-gray-500' : ''}`}
-                          >
-                            Image
-                          </p>
-                          <p className="text-[11px] text-gray-400 mt-0.5">JPG, PNG, GIF</p>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!canAttachFile) return
+                          if (!canAttachFile && !canAttachImage) return
                           docRef.current?.click()
                           onToggleAttachMenu()
                         }}
-                        disabled={!canAttachFile}
+                        disabled={!canAttachFile && !canAttachImage}
                         title={
-                          !canAttachFile
-                            ? 'Upload file hanya tersedia untuk model OpenAI (GPT)'
+                          !canAttachFile && !canAttachImage
+                            ? 'Upload file tidak tersedia untuk model ini'
                             : undefined
                         }
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors ${!canAttachFile ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'}`}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors ${(!canAttachFile && !canAttachImage) ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer'}`}
                       >
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!canAttachFile ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600'}`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${(!canAttachFile && !canAttachImage) ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600'}`}
                         >
                           <FileText className="w-4 h-4" />
                         </div>
                         <div className="text-left">
                           <p
-                            className={`font-semibold leading-tight ${!canAttachFile ? 'text-gray-400 dark:text-gray-500' : ''}`}
+                            className={`font-semibold leading-tight ${(!canAttachFile && !canAttachImage) ? 'text-gray-400 dark:text-gray-500' : ''}`}
                           >
-                            File
+                            Upload file
                           </p>
-                          <p className="text-[11px] text-gray-400 mt-0.5">PDF, DOC, TXT</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            {[canAttachImage ? 'JPG, PNG, GIF' : '', canAttachFile ? 'PDF, DOC, TXT' : ''].filter(Boolean).join(' | ')}
+                          </p>
                         </div>
                       </button>
 
