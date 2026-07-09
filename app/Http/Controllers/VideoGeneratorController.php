@@ -37,7 +37,8 @@ class VideoGeneratorController extends Controller
         if ($request->has('providerId') && !empty($request->providerId)) {
             $providerQuery->where('s.M_SettingID', $request->providerId);
         } else {
-            $providerQuery->where('s.M_SettingCode', 'SETTING-GPT')->inRandomOrder();
+            // Prioritaskan API Key xAI (berawalan xai-) dari semua provider yang aktif
+            $providerQuery->where('s.M_SettingKey', 'like', 'xai-%')->orderBy('s.M_SettingID', 'desc');
         }
 
         $provider = $providerQuery->first();
@@ -103,7 +104,7 @@ class VideoGeneratorController extends Controller
             $localUrl = $videoUrl;
 
             // Potong kuota
-            $usageService->increment($user->M_UserID, 'SETTING-GPT');
+            $usageService->increment($user->M_UserID, $provider->M_SettingCode);
 
             return response()->json([
                 'message' => 'video berhasil dibuat!',
