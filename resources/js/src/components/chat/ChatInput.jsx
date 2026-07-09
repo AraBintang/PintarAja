@@ -1,6 +1,7 @@
-import { ArrowUp, BookOpen, FileText, Image, Lock, Plus, X as XIcon } from 'lucide-react'
+import { ArrowUp, BookOpen, FileText, Image, ImagePlus, Lock, Music, Plus, Video, X as XIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { AI_CODE_MAP, AI_MODELS, AutoIcon } from '@/assets/ai'
 
@@ -302,6 +303,7 @@ export default function ChatInput({
   isStreaming,
   getQuota,
 }) {
+  const navigate = useNavigate()
   const textareaRef = useRef(null)
   const imageRef = useRef(null)
   const docRef = useRef(null)
@@ -534,6 +536,57 @@ export default function ChatInput({
                             File
                           </p>
                           <p className="text-[11px] text-gray-400 mt-0.5">PDF, DOC, TXT</p>
+                        </div>
+                      </button>
+
+                      <div className="my-1 border-t border-gray-100 dark:border-gray-700/50"></div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigate('/app/generate-image')
+                          onToggleAttachMenu()
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-purple-50 dark:bg-purple-900/30 text-purple-600">
+                          <ImagePlus className="w-4 h-4" />
+                        </div>
+                        <div className="text-left flex-1">
+                          <p className="font-semibold leading-tight">Create image</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigate('/app/generate-video')
+                          onToggleAttachMenu()
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-pink-50 dark:bg-pink-900/30 text-pink-600">
+                          <Video className="w-4 h-4" />
+                        </div>
+                        <div className="text-left flex-1">
+                          <p className="font-semibold leading-tight">Create video</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // navigate('/app/generate-music') // Future feature
+                          onToggleAttachMenu()
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer"
+                      >
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-amber-50 dark:bg-amber-900/30 text-amber-600">
+                          <Music className="w-4 h-4" />
+                        </div>
+                        <div className="text-left flex-1 flex justify-between items-center">
+                          <p className="font-semibold leading-tight">Create music</p>
+                          <span className="text-[10px] font-bold bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 px-2 py-0.5 rounded-full">New</span>
                         </div>
                       </button>
                     </motion.div>
