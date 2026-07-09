@@ -61,13 +61,6 @@ const CHAT_FEATURES = [
     color: 'coral',
     icon: <FileSearch className="w-[18px] h-[18px]" />,
   },
-  {
-    label: 'Image Generator',
-    tag: 'Create AI images',
-    to: '/generate-image',
-    color: 'blue',
-    icon: <ImageIcon className="w-[18px] h-[18px]" />,
-  },
 ]
 
 function FeatureCard({ item }) {
