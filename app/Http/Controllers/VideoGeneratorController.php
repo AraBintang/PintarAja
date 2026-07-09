@@ -52,8 +52,11 @@ class VideoGeneratorController extends Controller
         }
 
         try {
-            // 1. Menerjemahkan dan Memperbagus Prompt menggunakan OpenAI Vision (gpt-4o-mini)
-            $client = \OpenAI::client($provider->M_SettingKey);
+            // 1. Menerjemahkan dan Memperbagus Prompt menggunakan xAI Vision (grok-2-vision-1212)
+            $client = \OpenAI::factory()
+                ->withApiKey($provider->M_SettingKey)
+                ->withBaseUri('https://api.x.ai/v1')
+                ->make();
             
             $userContent = [
                 ['type' => 'text', 'text' => $request->prompt]
@@ -73,7 +76,7 @@ class VideoGeneratorController extends Controller
             }
 
             $completion = $client->chat()->create([
-                'model' => 'gpt-4o-mini',
+                'model' => 'grok-2-vision-1212',
                 'messages' => [
                     [
                         'role' => 'system', 
