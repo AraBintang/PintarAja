@@ -105,7 +105,7 @@ class ChatController extends Controller
         ]);
     }
 
-    public function generate(Request $request, AiProviderService $aiService, UsageService $usageService)
+    public function generate(Request $request, AiProviderService $aiService, UsageService $usageService, \App\Services\TokenDeductionService $tokenDeductionService)
     {
         $request->validate([
             'providerId' => 'required|integer',
@@ -141,6 +141,11 @@ class ChatController extends Controller
                 'message' => 'Batas penggunaan harian tercapai. Coba lagi besok.',
                 'quota_remaining' => $remaining,
             ], 429);
+        }
+
+        // Cek saldo M_UserQuota dan potong
+        if (!$tokenDeductionService->deductQuota($user, 'cost_chat')) {
+            return response()->json(['message' => 'Saldo koin/kuota Anda tidak mencukupi untuk menggunakan AI Chat.'], 402);
         }
 
         $conversationId = $request->conversationId;
@@ -258,7 +263,7 @@ class ChatController extends Controller
         }
     }
 
-    public function generateFromFile(Request $request, AiUploadFileService $aiUploadFileService)
+    public function generateFromFile(Request $request, AiUploadFileService $aiUploadFileService, \App\Services\TokenDeductionService $tokenDeductionService)
     {
         $request->validate([
             'providerId' => 'required|integer',
@@ -276,6 +281,11 @@ class ChatController extends Controller
         $provider = $this->resolveProvider($user, $request->providerId);
         if (!$provider) {
             return response()->json(['message' => 'You are not allowed to use this AI provider.'], 403);
+        }
+
+        // Cek saldo M_UserQuota dan potong
+        if (!$tokenDeductionService->deductQuota($user, 'cost_chat')) {
+            return response()->json(['message' => 'Saldo koin/kuota Anda tidak mencukupi untuk menggunakan AI Chat.'], 402);
         }
 
         $message = $request->message;

@@ -208,6 +208,11 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
             Route::get('/users', [\App\Http\Controllers\ApiTokenController::class, 'getUsers']);
         });
 
+        Route::prefix('token-costs')->group(function () {
+            Route::get('/', [\App\Http\Controllers\TokenCostController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\TokenCostController::class, 'update']);
+        });
+
         Route::get('/miscellaneous', [MiscellaneousController::class, 'index']);
     });
 });

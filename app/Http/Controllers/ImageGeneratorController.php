@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\AiProviderService;
 use App\Services\UsageService;
+use App\Services\TokenDeductionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -11,35 +12,47 @@ use Illuminate\Support\Str;
 
 class ImageGeneratorController extends Controller
 {
-    public function generate(Request $request, AiProviderService $aiService, UsageService $usageService)
+    public function generate(Request $request, AiProviderService $aiService, UsageService $usageService, TokenDeductionService $tokenDeductionService)
     {
         $request->validate([
             'prompt' => 'required|string|max:1000',
             'model' => 'nullable|string|max:50',
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|max:10240', // Max 10MB per image
+            'providerId' => 'nullable|integer',
         ]);
 
         $imageModel = $request->input('model', 'flux');
 
         $user = $request->user();
 
-        // Cari API Key OpenAI dari langganan user (SETTING-GPT)
-        $provider = DB::table('m_plansetting as ps')
+        // Cari API Key berdasarkan providerId dari user, atau fallback ke OpenAI random
+        $providerQuery = DB::table('m_plansetting as ps')
             ->join('m_setting as s', 's.M_SettingID', '=', 'ps.M_PlanSettingM_SettingID')
             ->where('ps.M_PlanSettingM_PlanID', $user->M_UserPlan)
-            ->where('s.M_SettingCode', 'SETTING-GPT')
             ->where('s.M_SettingIsActive', 'Y')
-            ->select('s.M_SettingKey')
-            ->first();
+            ->select('s.M_SettingKey', 's.M_SettingCode');
+
+        if ($request->has('providerId') && !empty($request->providerId)) {
+            $providerQuery->where('s.M_SettingID', $request->providerId);
+        } else {
+            $providerQuery->where('s.M_SettingCode', 'SETTING-GPT')->inRandomOrder();
+        }
+
+        $provider = $providerQuery->first();
 
         if (!$provider || empty($provider->M_SettingKey)) {
             return response()->json(['message' => 'API Key OpenAI tidak ditemukan pada langganan Anda.'], 403);
         }
 
-        // Cek kuota
-        if (!$usageService->checkQuota($user->M_UserID, 'SETTING-GPT')) {
-            return response()->json(['message' => 'Kuota Anda telah habis.'], 429);
+        // Cek kuota harian Claude/dsbg
+        if (!$usageService->checkQuota($user->M_UserID, $provider->M_SettingCode)) {
+            return response()->json(['message' => 'Kuota harian fitur ini telah habis.'], 429);
+        }
+
+        // Cek saldo M_UserQuota dan potong
+        if (!$tokenDeductionService->deductQuota($user, 'cost_image_generator')) {
+            return response()->json(['message' => 'Saldo koin/kuota Anda tidak mencukupi untuk membuat gambar.'], 402);
         }
 
         try {

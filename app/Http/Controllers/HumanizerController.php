@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Humanizer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use OpenAI;
 
 class HumanizerController extends Controller
@@ -56,7 +57,7 @@ class HumanizerController extends Controller
         ]);
     }
 
-    public function humanize(Request $request)
+    public function humanize(Request $request, \App\Services\AiProviderService $aiService, \App\Services\TokenDeductionService $tokenDeductionService)
     {
         try {
             $request->validate([
@@ -78,7 +79,27 @@ class HumanizerController extends Controller
                 ], 422);
             }
 
-            $client = OpenAI::client(config('services.openai.key'));
+            // Cek saldo M_UserQuota dan potong
+            if (!$tokenDeductionService->deductQuota($user, 'cost_humanizer')) {
+                return response()->json(['message' => 'Saldo koin/kuota Anda tidak mencukupi untuk menggunakan fitur Humanizer.'], 402);
+            }
+
+            $providerQuery = DB::table('m_plansetting as ps')
+                ->join('m_setting as s', 's.M_SettingID', '=', 'ps.M_PlanSettingM_SettingID')
+                ->where('ps.M_PlanSettingM_PlanID', $user->M_UserPlan)
+                ->where('s.M_SettingIsActive', 'Y')
+                ->select('s.M_SettingKey', 's.M_SettingModel', 's.M_SettingCode');
+
+            if ($request->has('providerId') && !empty($request->providerId)) {
+                $providerQuery->where('s.M_SettingID', $request->providerId);
+            } else {
+                $providerQuery->where('s.M_SettingCode', 'SETTING-GPT')->inRandomOrder();
+            }
+
+            $provider = $providerQuery->first();
+
+            $apiKey = $provider && !empty($provider->M_SettingKey) ? $provider->M_SettingKey : config('services.openai.key');
+            $client = OpenAI::client($apiKey);
 
             $systemPrompt = "You are an expert human copywriter. Your task is to rewrite the user's text in {$language} so that it completely bypasses AI detectors like Turnitin and GPTZero. Mode: {$mode}.
 CRITICAL RULES:
@@ -89,22 +110,28 @@ CRITICAL RULES:
 5. Return ONLY the rewritten text without any quotes, prefaces, or explanations.
 Mode notes: basic=natural and human-like; advanced=highly undetectable, maximum burstiness, more varied and nuanced.";
 
-            $response = $client->chat()->create([
-                'model' => config('services.openai.paraphrase_model', 'gpt-4o-mini'),
-                'max_tokens' => $this->maxOutputTokens($wordCount, $mode),
-                'messages' => [
-                    [
-                        'role' => 'system',
-                        'content' => $systemPrompt,
-                    ],
-                    [
-                        'role' => 'user',
-                        'content' => $text,
-                    ]
-                ]
-            ]);
+            $model = $provider && !empty($provider->M_SettingModel) ? $provider->M_SettingModel : config('services.openai.paraphrase_model', 'gpt-4o-mini');
 
-            $humanizedText = trim($response->choices[0]->message->content);
+            $messages = [
+                [
+                    'role' => 'system',
+                    'content' => $systemPrompt,
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $text,
+                ]
+            ];
+
+            $response = $aiService->generateText(
+                $provider->M_SettingCode ?? 'SETTING-GPT',
+                $apiKey,
+                $model,
+                $messages,
+                $this->maxOutputTokens($wordCount, $mode)
+            );
+
+            $humanizedText = $response;
 
             $humanizer = Humanizer::create([
                 'M_HumanizerM_UserID' => $user->M_UserID,

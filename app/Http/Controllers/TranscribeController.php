@@ -43,7 +43,7 @@ class TranscribeController extends Controller
         ]);
     }
 
-    public function transcribe(Request $request)
+    public function transcribe(Request $request, \App\Services\TokenDeductionService $tokenDeductionService)
     {
         $request->validate([
             'source' => 'required',
@@ -55,6 +55,11 @@ class TranscribeController extends Controller
 
         if ($user->M_UserPlan === 1) {
             return response()->json(['error' => 'Your current plan does not include access to this feature. Please upgrade to continue.'], 403);
+        }
+
+        // Cek saldo M_UserQuota dan potong
+        if (!$tokenDeductionService->deductQuota($user, 'cost_transcribe')) {
+            return response()->json(['error' => 'Saldo koin/kuota Anda tidak mencukupi untuk melakukan Transcribe.'], 402);
         }
 
         // Check if user already has an active transcription (pending or processing)

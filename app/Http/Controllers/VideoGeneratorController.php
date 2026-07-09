@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\AiProviderService;
 use App\Services\UsageService;
+use App\Services\TokenDeductionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -11,7 +12,7 @@ use Illuminate\Support\Str;
 
 class VideoGeneratorController extends Controller
 {
-    public function generate(Request $request, AiProviderService $aiService, UsageService $usageService)
+    public function generate(Request $request, AiProviderService $aiService, UsageService $usageService, TokenDeductionService $tokenDeductionService)
     {
         set_time_limit(350); // Mencegah PHP timeout (Sora bisa memakan waktu hingga 5 menit)
         
@@ -47,9 +48,14 @@ class VideoGeneratorController extends Controller
             return response()->json(['message' => 'API Key OpenAI tidak ditemukan pada langganan Anda.'], 403);
         }
 
-        // Cek kuota
+        // Cek kuota harian Claude/dsbg
         if (!$usageService->checkQuota($user->M_UserID, $provider->M_SettingCode)) {
-            return response()->json(['message' => 'Kuota Anda telah habis.'], 429);
+            return response()->json(['message' => 'Kuota harian fitur ini telah habis.'], 429);
+        }
+
+        // Cek saldo M_UserQuota dan potong
+        if (!$tokenDeductionService->deductQuota($user, 'cost_video_generator')) {
+            return response()->json(['message' => 'Saldo koin/kuota Anda tidak mencukupi untuk membuat video.'], 402);
         }
 
         try {

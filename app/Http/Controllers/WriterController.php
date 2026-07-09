@@ -314,7 +314,7 @@ class WriterController extends Controller
         ]);
     }
 
-    public function generate(Request $request, AiProviderService $aiService, UsageService $usageService)
+    public function generate(Request $request, AiProviderService $aiService, UsageService $usageService, \App\Services\TokenDeductionService $tokenDeductionService)
     {
         $request->validate([
             'providerId' => 'required|integer',
@@ -339,10 +339,16 @@ class WriterController extends Controller
         }
 
         if (!$usageService->checkQuota($user->M_UserID, $provider->M_SettingCode)) {
+            $remaining = $usageService->getRemainingQuota($user->M_UserID, $provider->M_SettingCode);
             return response()->json([
                 'message' => 'Batas penggunaan harian tercapai. Coba lagi besok.',
-                'quota_remaining' => 0,
+                'quota_remaining' => $remaining,
             ], 429);
+        }
+
+        // Cek saldo M_UserQuota dan potong
+        if (!$tokenDeductionService->deductQuota($user, 'cost_writer')) {
+            return response()->json(['message' => 'Saldo koin/kuota Anda tidak mencukupi untuk menggunakan AI Writer.'], 402);
         }
  
         $providerMap = [

@@ -10,6 +10,7 @@ import AdminPlanPage from '@/pages/Admin/PlanPage'
 import PromptAIPage from '@/pages/Admin/PromptAIPage'
 import AdminUserPage from '@/pages/Admin/UserPage'
 import WebSettingPage from '@/pages/Admin/WebSettingPage'
+import TokenCostPage from '@/pages/Admin/TokenCostPage'
 import ChatPage from '@/pages/App/ChatPage'
 import HumanizerPage from '@/pages/App/HumanizerPage'
 import ParafrasePage from '@/pages/App/ParafrasePage'
@@ -77,6 +78,7 @@ export const router = createBrowserRouter([
               { path: 'admin/coupons', element: <CouponPage /> },
               { path: 'admin/user', element: <AdminUserPage /> },
               { path: 'admin/api-tokens', element: <ApiTokenPage /> },
+              { path: 'admin/token-costs', element: <TokenCostPage /> },
               { path: 'admin/web-settings', element: <WebSettingPage /> },
               { path: 'admin/misc', element: <MiscellaneousPage /> },
             ],

@@ -1,6 +1,7 @@
 import {
   ChartLine,
   ChevronRight,
+  Coins,
   Cpu,
   FileSearch,
   FileText,
@@ -47,6 +48,7 @@ const adminMenuItems = [
   { label: 'Coupons', icon: Ticket, to: '/admin/coupons' },
   { label: 'User', icon: Users, to: '/admin/user' },
   { label: 'API Tokens', icon: Key, to: '/admin/api-tokens' },
+  { label: 'Token Costs', icon: Coins, to: '/admin/token-costs' },
   { label: 'Web Settings', icon: Settings2, to: '/admin/web-settings' },
   { label: 'Misc', icon: ChartLine, to: '/admin/misc' },
 ]
