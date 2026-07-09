@@ -434,7 +434,7 @@ export default function ChatInput({
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
               disabled={isStreaming}
-              placeholder={isStreaming ? 'AI is answering...' : 'Ask anything'}
+              placeholder={isStreaming ? 'AI is answering...' : 'Silakan tanyakan apa saja, Buat Foto/ Video'}
               className="w-full px-5 my-4 text-[15px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none bg-transparent resize-none min-h-[35px] max-h-[312px] disabled:cursor-not-allowed transition-colors"
             />
 

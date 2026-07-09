@@ -303,15 +303,26 @@ function renderInline(text) {
     if (m.index > last) parts.push(text.slice(last, m.index))
 
     if (m[1] !== undefined && m[2] !== undefined) {
-      parts.push(
-        <img
-          key={m.index}
-          src={m[2]}
-          alt={m[1]}
-          className="max-w-full h-auto rounded-xl my-2 shadow-sm border border-gray-200 dark:border-gray-700"
-          loading="lazy"
-        />
-      )
+      if (m[2].toLowerCase().endsWith('.mp4') || m[2].includes('.mp4')) {
+        parts.push(
+          <video
+            key={m.index}
+            src={m[2]}
+            controls
+            className="max-w-full h-auto rounded-xl my-2 shadow-sm border border-gray-200 dark:border-gray-700"
+          />
+        )
+      } else {
+        parts.push(
+          <img
+            key={m.index}
+            src={m[2]}
+            alt={m[1]}
+            className="max-w-full h-auto rounded-xl my-2 shadow-sm border border-gray-200 dark:border-gray-700"
+            loading="lazy"
+          />
+        )
+      }
     } else if (m[3] !== undefined) {
       parts.push(<InlineCode key={m.index}>{m[3]}</InlineCode>)
     } else if (m[4] !== undefined) {

@@ -687,4 +687,105 @@ class AiProviderService
             throw new \Exception("xAI Error: " . $e->getMessage());
         }
     }
+
+    public function streamVideoOpenAI($apiKey, $prompt, $converId, $provider, $videoModel = 'grok-imagine-video')
+    {
+        return response()->stream(function () use ($apiKey, $prompt, $converId, $provider, $videoModel) {
+            $client = new \GuzzleHttp\Client(['timeout' => 60]);
+
+            $msg = "Mempersiapkan pembuatan video... (Proses ini bisa memakan waktu hingga 5 menit)\n\n";
+            echo "data: " . json_encode(['choices' => [['delta' => ['content' => $msg]]]]) . "\n\n";
+            ob_flush(); flush();
+
+            try {
+                $response = $client->post('https://api.x.ai/v1/videos/generations', [
+                    'headers' => [
+                        'Authorization' => "Bearer $apiKey",
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'model' => $videoModel,
+                        'prompt' => $prompt,
+                    ],
+                ]);
+
+                $data = json_decode($response->getBody()->getContents(), true);
+                $jobId = $data['id'] ?? $data['request_id'] ?? null;
+
+                if (!$jobId) throw new \Exception("Gagal mengirim permintaan ke xAI.");
+
+                $maxAttempts = 30; // 5 minutes
+                $attempt = 0;
+                $completed = false;
+                $downloadUrl = null;
+
+                while ($attempt < $maxAttempts) {
+                    sleep(10);
+                    $attempt++;
+
+                    echo "data: " . json_encode(['choices' => [['delta' => ['content' => "."]]]]) . "\n\n";
+                    ob_flush(); flush();
+
+                    $pollResponse = $client->get("https://api.x.ai/v1/videos/{$jobId}", [
+                        'headers' => [
+                            'Authorization' => "Bearer $apiKey",
+                            'Content-Type' => 'application/json',
+                        ],
+                    ]);
+
+                    $pollData = json_decode($pollResponse->getBody()->getContents(), true);
+                    $status = $pollData['status'] ?? '';
+
+                    if (in_array($status, ['completed', 'succeeded', 'done'])) {
+                        $completed = true;
+                        $downloadUrl = $pollData['video']['url'] ?? $pollData['video_url'] ?? $pollData['url'] ?? null;
+                        break;
+                    }
+
+                    if (in_array($status, ['failed', 'cancelled', 'error'])) {
+                        throw new \Exception("Proses pembuatan video dibatalkan oleh server xAI.");
+                    }
+                }
+
+                if (!$completed) throw new \Exception("Waktu tunggu habis (Timeout). Server terlalu sibuk.");
+
+                if ($downloadUrl) {
+                    $contentResponse = $client->get($downloadUrl);
+                } else {
+                    $contentResponse = $client->get("https://api.x.ai/v1/videos/{$jobId}/content", [
+                        'headers' => [
+                            'Authorization' => "Bearer $apiKey",
+                        ],
+                    ]);
+                }
+
+                $videoContent = $contentResponse->getBody()->getContents();
+                $filename = 'generated_videos/' . \Illuminate\Support\Str::uuid() . '.mp4';
+                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $videoContent);
+                $url = \Illuminate\Support\Facades\Storage::disk('public')->url($filename);
+
+                $finalOutput = "\n\n![Video]($url)";
+                echo "data: " . json_encode(['choices' => [['delta' => ['content' => $finalOutput]]]]) . "\n\n";
+                
+                if ($converId) {
+                    $this->inputAssistantChatByConversationId($converId, $provider, $msg . str_repeat(".", $attempt) . $finalOutput);
+                }
+
+            } catch (\Exception $e) {
+                $errorMsg = "\n\n**Gagal membuat video:** " . $e->getMessage();
+                echo "data: " . json_encode(['choices' => [['delta' => ['content' => $errorMsg]]]]) . "\n\n";
+                if ($converId) {
+                    $this->inputAssistantChatByConversationId($converId, $provider, $msg . $errorMsg);
+                }
+            }
+
+            echo "data: [DONE]\n\n";
+            ob_flush(); flush();
+
+        }, 200, [
+            'Content-Type'  => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection'    => 'keep-alive',
+        ]);
+    }
 }

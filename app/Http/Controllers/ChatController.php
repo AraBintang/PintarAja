@@ -195,6 +195,39 @@ class ChatController extends Controller
             ]);
         }
 
+        $isVideoRequest = preg_match('/(?:buat|bikin|generate|create).*video/i', $message);
+        if ($isVideoRequest) {
+            $videoKey = '';
+            // Get xAI key specifically, if current provider is not xAI
+            if ($provider->M_SettingCode !== 'SETTING-XAI') {
+                $xaiProvider = DB::table('m_plansetting as ps')
+                    ->join('m_setting as s', 's.M_SettingID', '=', 'ps.M_PlanSettingM_SettingID')
+                    ->where('ps.M_PlanSettingM_PlanID', $user->M_UserPlan)
+                    ->where('s.M_SettingCode', 'SETTING-XAI')
+                    ->where('s.M_SettingIsActive', 'Y')
+                    ->select('s.M_SettingKey')
+                    ->first();
+                if ($xaiProvider && !empty($xaiProvider->M_SettingKey)) {
+                    $videoKey = $xaiProvider->M_SettingKey;
+                }
+            } else {
+                $videoKey = $provider->M_SettingKey;
+            }
+
+            if (!empty($videoKey)) {
+                try {
+                    $response = $aiService->streamVideoOpenAI($videoKey, $message, $conversationId, $provider->M_SettingCode, 'grok-imagine-video');
+                    $usageService->increment($user->M_UserID, $provider->M_SettingCode);
+                    return $response;
+                } catch (\Throwable $e) {
+                    return response()->json([
+                        'message' => 'AI Video generation failed',
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
+            }
+        }
+
         $driver = $this->getDriver($provider->M_SettingCode);
         if (!$driver) {
             return response()->json([

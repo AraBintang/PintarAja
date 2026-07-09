@@ -35,8 +35,6 @@ const menuItems = [
   { label: 'Humanizer AI', icon: Speech, to: '/humanize' },
   { label: 'Transcribe AI', icon: Mic, to: '/transcribe' },
   { label: 'Plagiarism Checker', icon: FileSearch, to: '/plagiarism' },
-  { label: 'Image Generator', icon: ImageIcon, to: '/generate-image' },
-  { label: 'Video Generator', icon: VideoIcon, to: '/generate-video' },
 ]
 
 const adminMenuItems = [
