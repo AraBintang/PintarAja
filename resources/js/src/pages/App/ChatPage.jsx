@@ -352,8 +352,8 @@ export default function ChatPage() {
     return { content: reply, annotations: [] }
   }
 
-  const handleSendMessage = async () => {
-    const text = inputValue.trim()
+  const handleSendMessage = async (mode = 'chat') => {
+    let text = inputValue.trim()
 
     if (!text && !attachedFiles.length) return
 
@@ -363,6 +363,14 @@ export default function ChatPage() {
     }
 
     if (isStreaming) return
+
+    if (mode === 'image' && !text.match(/buat|bikin|gambar|create|lukis/i)) {
+      text = "Buatkan gambar: " + text
+    } else if (mode === 'video' && !text.match(/buat|bikin|video|create/i)) {
+      text = "Buatkan video: " + text
+    } else if (mode === 'music' && !text.match(/buat|bikin|lagu|musik|create/i)) {
+      text = "Buatkan lagu: " + text
+    }
 
     const files = [...attachedFiles]
 

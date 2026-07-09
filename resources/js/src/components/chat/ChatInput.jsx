@@ -309,6 +309,7 @@ export default function ChatInput({
 
   const [toast, setToast] = useState(null)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  const [generationMode, setGenerationMode] = useState('chat')
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -334,7 +335,7 @@ export default function ChatInput({
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      if (!isStreaming) onSubmit()
+      if (!isStreaming) onSubmit(generationMode)
     }
   }
 
@@ -405,7 +406,7 @@ export default function ChatInput({
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            if (!isStreaming) onSubmit()
+            if (!isStreaming) onSubmit(generationMode)
           }}
           className="w-full bg-white -mt-8 dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50 shadow-sm relative"
         >
@@ -427,6 +428,18 @@ export default function ChatInput({
               </div>
             )}
 
+            {generationMode !== 'chat' && (
+              <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full text-[13px] font-medium text-gray-700 dark:text-gray-300 mx-5 mt-4 w-fit">
+                {generationMode === 'image' && <ImagePlus className="w-4 h-4 text-purple-600" />}
+                {generationMode === 'video' && <Video className="w-4 h-4 text-pink-600" />}
+                {generationMode === 'music' && <Music className="w-4 h-4 text-amber-600" />}
+                <span className="capitalize">{generationMode}</span>
+                <button type="button" onClick={() => setGenerationMode('chat')} className="ml-1 hover:text-red-500">
+                  <XIcon className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             <textarea
               ref={textareaRef}
               rows={1}
@@ -435,7 +448,7 @@ export default function ChatInput({
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
               disabled={isStreaming}
-              placeholder={isStreaming ? 'AI is answering...' : 'Silakan tanyakan apa saja, Buat Foto/ Video'}
+              placeholder={isStreaming ? 'AI is answering...' : generationMode === 'image' ? 'Deskripsikan gambar yang ingin Anda buat...' : generationMode === 'video' ? 'Jelaskan video Anda...' : generationMode === 'music' ? 'Jelaskan musik Anda...' : 'Silakan tanyakan apa saja, Buat Foto/ Video'}
               className="w-full px-5 my-4 text-[15px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none bg-transparent resize-none min-h-[35px] max-h-[312px] disabled:cursor-not-allowed transition-colors"
             />
 
@@ -516,7 +529,7 @@ export default function ChatInput({
                       <button
                         type="button"
                         onClick={() => {
-                          navigate('/app/generate-image')
+                          setGenerationMode('image')
                           onToggleAttachMenu()
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer"
@@ -532,7 +545,7 @@ export default function ChatInput({
                       <button
                         type="button"
                         onClick={() => {
-                          navigate('/app/generate-video')
+                          setGenerationMode('video')
                           onToggleAttachMenu()
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer"
@@ -548,7 +561,7 @@ export default function ChatInput({
                       <button
                         type="button"
                         onClick={() => {
-                          // navigate('/app/generate-music') // Future feature
+                          setGenerationMode('music')
                           onToggleAttachMenu()
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-[14px] rounded-xl transition-colors text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer"
