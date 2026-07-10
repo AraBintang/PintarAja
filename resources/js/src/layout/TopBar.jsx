@@ -1,4 +1,4 @@
-import { Crown, History, Menu, MessagesSquare, Monitor, Moon, Sun, User } from 'lucide-react'
+import { Coins, Crown, History, Menu, MessagesSquare, Monitor, Moon, Sun, User } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useRightSidebar } from '@/context/RightSidebarContext'
@@ -34,6 +34,12 @@ export default function TopBar({ user }) {
       </div>
 
       <div className="fixed top-3 right-6 md:right-3 z-40 flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 py-1.5 pl-2 !pr-2.5 rounded-full shadow">
+        
+        <div className="cursor-default flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold border bg-gray-50 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 dark:bg-gray-700/50">
+          <Coins className="w-3 h-3 text-amber-500" />
+          {user?.quota?.toLocaleString('id-ID') ?? 0} Kuota
+        </div>
+
         <button
           className="cursor-pointer flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold border bg-blue-50 text-[#2686D4] dark:text-[#F2901E] border-blue-200 dark:border-orange-500/30 dark:bg-orange-500/10 transition-all duration-200 hover:scale-95 hover:shadow-md hover:bg-blue-100 dark:hover:bg-orange-500/20 hover:border-blue-300 dark:hover:border-orange-500/50"
           onClick={() => toPlanTab()}
