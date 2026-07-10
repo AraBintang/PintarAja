@@ -146,11 +146,16 @@ class ChatController extends Controller
         // Tentukan tipe potongan (image, video, musik, atau chat biasa)
         $deductionType = 'cost_chat';
         $messageLower = strtolower($request->message);
-        if (str_starts_with($messageLower, 'buatkan gambar:')) {
-            $deductionType = 'cost_image_generator';
-        } elseif (str_starts_with($messageLower, 'buatkan video:')) {
+        
+        if (preg_match('/(?:buat|bikin|generate|create).*video/i', $messageLower)) {
             $deductionType = 'cost_video_generator';
-        } elseif (str_starts_with($messageLower, 'buatkan lagu:')) {
+        } elseif (preg_match('/(?:buat|bikin|gambarkan|create|lukis|image|gambar)/i', $messageLower)) {
+            // Kita taruh image di bawah video karena 'buat video' juga memiliki kata 'buat'
+            // Kita bisa lebih spesifik:
+            if (preg_match('/(?:buat|bikin|generate|create).*(?:gambar|lukis|image|foto)/i', $messageLower) || str_contains($messageLower, 'buatkan gambar:')) {
+                $deductionType = 'cost_image_generator';
+            }
+        } elseif (preg_match('/(?:buat|bikin|generate|create).*(?:lagu|musik|music|audio)/i', $messageLower) || str_contains($messageLower, 'buatkan lagu:')) {
             $deductionType = 'cost_music_generator';
         }
 
