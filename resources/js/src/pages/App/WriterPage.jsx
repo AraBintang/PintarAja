@@ -49,7 +49,7 @@ function buildPromptData({ topik, instruksi, paperName, sectionName, bahasa, jum
 }
 
 export default function WriterPage() {
-  const { user } = useAuth()
+  const { user, me } = useAuth()
   const { showSnackbar } = useSnackbar()
   const { initQuota, decrement, rollback, getQuota } = useQuota()
 
@@ -327,6 +327,7 @@ export default function WriterPage() {
         }
       } finally {
         setIsGenerating(false)
+        me()
       }
     },
     [

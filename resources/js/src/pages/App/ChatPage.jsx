@@ -97,7 +97,7 @@ export default function ChatPage() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const { user } = useAuth()
+  const { user, me } = useAuth()
   const { showSnackbar } = useSnackbar()
   const { initQuota, decrement, rollback, getQuota } = useQuota()
 

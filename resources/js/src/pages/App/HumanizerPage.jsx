@@ -19,7 +19,7 @@ const limitWords = (text, maxWords) => {
 }
 
 export default function HumanizerPage() {
-  const { user } = useAuth()
+  const { user, me } = useAuth()
   const { showSnackbar } = useSnackbar()
 
   const [inputText, setInputText] = useState('')
@@ -182,6 +182,7 @@ export default function HumanizerPage() {
       showSnackbar('error', err.message || 'Gagal memproses teks')
     } finally {
       setIsProcessing(false)
+      me()
     }
   }
 

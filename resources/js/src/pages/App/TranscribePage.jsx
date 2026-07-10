@@ -2,6 +2,7 @@ import { ArrowLeft, Download, FileAudio, Loader2, Mic, Upload, X } from 'lucide-
 import { useEffect, useRef, useState } from 'react'
 
 import RecordingPanel from '@/components/transcribe/RecordingPanel'
+import { useAuth } from '@/context/AuthContext'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { request } from '@/utils/Http'
 
@@ -151,6 +152,7 @@ const parseTranscript = (rawText) => {
 
 export default function TranscribePage() {
   const { showSnackbar } = useSnackbar()
+  const { me } = useAuth()
 
   const [activeTab, setActiveTab] = useState('landing')
   const [youtubeUrl, setYoutubeUrl] = useState('')
@@ -335,6 +337,7 @@ export default function TranscribePage() {
 
       // Start polling for status updates
       startPolling(res.id)
+      if (me) me()
     } catch (err) {
       setIsProcessing(false)
       setActiveTranscriptionId(null)

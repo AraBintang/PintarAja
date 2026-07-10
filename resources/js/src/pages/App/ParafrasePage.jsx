@@ -20,7 +20,7 @@ const limitWords = (text, maxWords) => {
 }
 
 export default function ParafrasePage() {
-  const { user } = useAuth()
+  const { user, me } = useAuth()
   const { showSnackbar } = useSnackbar()
 
   const [inputText, setInputText] = useState('')
@@ -201,6 +201,7 @@ export default function ParafrasePage() {
       showSnackbar('error', err.message || 'Gagal memparafrase teks')
     } finally {
       setIsProcessing(false)
+      me()
     }
   }
 
