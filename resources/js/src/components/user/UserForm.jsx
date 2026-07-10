@@ -23,6 +23,7 @@ const EMPTY_FORM = {
   subsMode: 'days', // 'days' | 'date'
   subsDays: '',
   subsDate: '',
+  quota: 0,
 }
 
 const PRESET_DAYS = [
@@ -54,6 +55,7 @@ export default function UserForm({ open, onClose, onSubmit, initialData = null, 
           subsMode: 'days',
           subsDays: '',
           subsDate: '',
+          quota: initialData.M_UserQuota ?? 0,
         })
       } else {
         setFormData(EMPTY_FORM)
@@ -116,6 +118,7 @@ export default function UserForm({ open, onClose, onSubmit, initialData = null, 
       isActive: formData.status,
       ...(formData.password && { password: formData.password }),
       ...(computeSubsDay() !== undefined && { subsDay: computeSubsDay() }),
+      quota: Number(formData.quota),
     })
   }
 
@@ -263,6 +266,17 @@ export default function UserForm({ open, onClose, onSubmit, initialData = null, 
                       </SelectGroup>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className={labelClass}>AI Quota / Coins</label>
+                  <input
+                    type="number"
+                    value={formData.quota}
+                    onChange={set('quota')}
+                    placeholder="e.g. 100"
+                    className={inputClass}
+                  />
                 </div>
 
                 {/* ── Subscription Expiry — only shown when plan != 1 ── */}

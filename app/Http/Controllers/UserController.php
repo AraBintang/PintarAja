@@ -64,6 +64,7 @@ class UserController extends Controller
             'plan' => 'nullable|integer',
             'isActive' => 'nullable|string|size:1',
             'subsDay' => 'nullable|integer',
+            'quota' => 'nullable|integer',
         ]);
 
         $user = new User();
@@ -74,6 +75,7 @@ class UserController extends Controller
         $user->M_UserRole = $validated['role'] ?? 'U';
         $user->M_UserPlan = $validated['plan'] ?? 1;
         $user->M_UserIsActive = $validated['isActive'] ?? 'Y';
+        $user->M_UserQuota = $validated['quota'] ?? 0;
 
         $user->M_UserSubsExp = isset($validated['subsDay'])
             ? Carbon::now()->addDays($validated['subsDay'])
@@ -101,6 +103,7 @@ class UserController extends Controller
             'plan' => 'nullable|integer',
             'isActive' => 'nullable|string|size:1',
             'subsDay' => 'nullable|integer',
+            'quota' => 'nullable|integer',
         ]);
 
         $user->M_UserEmail = $validated['email'];
@@ -109,6 +112,7 @@ class UserController extends Controller
         $user->M_UserRole = $validated['role'] ?? $user->M_UserRole;
         $user->M_UserPlan = $validated['plan'] ?? $user->M_UserPlan;
         $user->M_UserIsActive = $validated['isActive'] ?? $user->M_UserIsActive;
+        $user->M_UserQuota = $validated['quota'] ?? $user->M_UserQuota;
 
         if (!empty($validated['password'])) {
             $user->M_UserPassword = Hash::make($validated['password']);
