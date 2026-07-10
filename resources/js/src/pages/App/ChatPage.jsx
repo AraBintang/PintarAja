@@ -500,6 +500,9 @@ export default function ChatPage() {
         },
       ])
 
+      // Refresh the user profile to update quota/token balance
+      me()
+
       setStreamingContent('')
     } catch (err) {
       if (err.name === 'AbortError') return

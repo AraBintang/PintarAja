@@ -79,6 +79,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         loading,
+        updateUser: (newData) => setUser(prev => ({ ...prev, ...newData })),
         isAuthenticated: !!token,
         isAdmin: user?.role === 'A',
       }}

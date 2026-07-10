@@ -143,9 +143,20 @@ class ChatController extends Controller
             ], 429);
         }
 
+        // Tentukan tipe potongan (image, video, musik, atau chat biasa)
+        $deductionType = 'cost_chat';
+        $messageLower = strtolower($request->message);
+        if (str_starts_with($messageLower, 'buatkan gambar:')) {
+            $deductionType = 'cost_image_generator';
+        } elseif (str_starts_with($messageLower, 'buatkan video:')) {
+            $deductionType = 'cost_video_generator';
+        } elseif (str_starts_with($messageLower, 'buatkan lagu:')) {
+            $deductionType = 'cost_music_generator';
+        }
+
         // Cek saldo M_UserQuota dan potong
-        if (!$tokenDeductionService->deductQuota($user, 'cost_chat')) {
-            return response()->json(['message' => 'Saldo koin/kuota Anda tidak mencukupi untuk menggunakan AI Chat.'], 402);
+        if (!$tokenDeductionService->deductQuota($user, $deductionType)) {
+            return response()->json(['message' => 'Saldo koin/kuota Anda tidak mencukupi untuk menggunakan layanan ini.'], 402);
         }
 
         $conversationId = $request->conversationId;
