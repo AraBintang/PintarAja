@@ -22,6 +22,7 @@ class Plan extends Model
         'M_PlanPrice',
         'M_PlanFeature',
         'M_PlanIsPopular',
+        'M_PlanQuota',
         'M_PlanCreated',
         'M_PlanLastUpdated',
     ];

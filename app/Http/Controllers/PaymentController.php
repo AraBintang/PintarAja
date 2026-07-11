@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\PlagiarismController;
 use App\Models\Plagiarism;
+use App\Models\Plan;
 use App\Models\ReferralUsage;
 use App\Models\Transaction;
 use App\Models\User;
@@ -293,6 +294,12 @@ class PaymentController extends Controller
                     'M_UserPlan' => $tx->T_TransactionM_PlanID,
                     'M_UserSubsExp' => $base->addDays($days),
                 ]);
+
+                // Give plan quota to user
+                $plan = Plan::find($tx->T_TransactionM_PlanID);
+                if ($plan) {
+                    $user->increment('M_UserQuota', $plan->M_PlanQuota);
+                }
             }
         }
 

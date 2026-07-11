@@ -15,6 +15,7 @@ const EMPTY_FORM = {
   },
   features: [],
   isPopular: 'N',
+  quota: 0,
   aiSettings: [],
 }
 
@@ -64,6 +65,7 @@ export default function PlanForm({
           },
           features: initialData.features ?? [],
           isPopular: initialData.isPopular ?? 'N',
+          quota: initialData.quota ?? 0,
           aiSettings: initialData.aiSettings?.map((a) => a.id) ?? [],
         })
       } else {
@@ -118,6 +120,7 @@ export default function PlanForm({
       price: form.price,
       features: form.features,
       isPopular: form.isPopular,
+      quota: Number(form.quota) || 0,
       aiSettings: form.aiSettings,
     })
 
@@ -177,6 +180,17 @@ export default function PlanForm({
                     onChange={(e) => setField('tagLine', e.target.value)}
                     placeholder="e.g. Best for growing teams"
                     className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Kuota AI (Koin)</label>
+                  <input
+                    type="number"
+                    value={form.quota}
+                    onChange={(e) => setField('quota', e.target.value)}
+                    placeholder="e.g. 10000"
+                    className={inputClass}
+                    min="0"
                   />
                 </div>
               </div>

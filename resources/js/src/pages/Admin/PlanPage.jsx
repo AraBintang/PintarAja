@@ -184,6 +184,12 @@ export default function PlanPage() {
                     <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed min-h-[40px]">
                       {plan.tagLine}
                     </p>
+                    {plan.quota > 0 && (
+                      <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span className="text-[11px] font-bold">Kuota AI: {new Intl.NumberFormat('id-ID').format(plan.quota)} Koin</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Price */}
