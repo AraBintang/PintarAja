@@ -239,7 +239,7 @@ class AiProviderService
                         'accept' => 'text/event-stream',
                     ],
                     'json' => array_filter([
-                        'model' => $model ?? 'claude-sonnet-4-5',
+                        'model' => $model ?? 'claude-4.8',
                         'messages' => $messages,
                         'stream' => true,
                         'max_tokens' => 8192,
@@ -307,7 +307,7 @@ class AiProviderService
                     'Accept' => 'text/event-stream',
                 ],
                 'json'   => [
-                    'model' => $model ?? 'grok-2',
+                    'model' => $model ?? 'grok-4.5',
                     'messages' => $messages,
                     'stream' => true,
                 ],

@@ -149,6 +149,11 @@ export const AI_MODELS = {
 
   'SETTING-CLD': [
     {
+      value: 'claude-4.8',
+      label: 'Claude 4.8',
+      desc: 'Latest Claude 4.8 generation model',
+    },
+    {
       value: 'claude-sonnet-4-6',
       label: 'Claude Sonnet 4.6',
       desc: 'Latest Sonnet, best balance of speed & intelligence',
@@ -176,6 +181,11 @@ export const AI_MODELS = {
   ],
 
   'SETTING-XAI': [
+    {
+      value: 'grok-4.5',
+      label: 'Grok 4.5',
+      desc: 'Latest Grok 4.5 model',
+    },
     {
       value: 'grok-4.20-0309-reasoning',
       label: 'Grok 4.20 Reasoning',
