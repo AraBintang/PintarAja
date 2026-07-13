@@ -30,6 +30,8 @@ class TokenCostController extends Controller
             'cost_humanizer' => 'integer|min:0',
             'cost_paraphrase' => 'integer|min:0',
             'cost_transcribe' => 'integer|min:0',
+            'cost_topup_amount' => 'integer|min:1',
+            'cost_topup_price' => 'integer|min:0',
         ]);
 
         $this->tokenDeductionService->updateCosts($request->all());

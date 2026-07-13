@@ -177,14 +177,17 @@ class PaymentController extends Controller
         ], 200);
     }
 
-    public function topup(Request $request)
+    public function topup(Request $request, \App\Services\TokenDeductionService $tokenService)
     {
         $apiKey = config('services.tripay.api_key');
         $privateKey = config('services.tripay.private_key');
         $merchantCode = config('services.tripay.merchant_code');
 
+        $defaultAmount = $tokenService->getCost('cost_topup_amount');
+        $defaultPrice = $tokenService->getCost('cost_topup_price');
+
         $validated = $request->validate([
-            'coins' => 'required|integer|min:100',
+            'coins' => 'required|integer|min:' . $defaultAmount,
             'channel' => 'required|string',
             'method' => 'required|string',
             'phone' => 'required|string|max:15',
@@ -192,7 +195,7 @@ class PaymentController extends Controller
 
         $user = Auth::user();
         $coins = (int) $validated['coins'];
-        $amount = $coins * 100; // 1 koin = 100 Rupiah
+        $amount = (int) floor(($coins / $defaultAmount) * $defaultPrice);
 
         $merchantRef = 'TOPUP-' . time() . '-' . rand(1000, 9999);
 

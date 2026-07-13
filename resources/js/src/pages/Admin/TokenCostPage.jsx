@@ -50,6 +50,11 @@ export default function TokenCostPage() {
     { key: 'cost_transcribe', label: 'Transcribe', desc: 'Biaya token untuk konversi audio/video ke teks' },
   ]
 
+  const topupFields = [
+    { key: 'cost_topup_amount', label: 'Jumlah Koin Topup (Default)', desc: 'Berapa koin yang didapatkan (misal: 100)' },
+    { key: 'cost_topup_price', label: 'Harga Koin Topup', desc: 'Harga untuk jumlah koin di atas (misal: Rp 10.000)' },
+  ]
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex flex-col gap-2">
@@ -58,34 +63,58 @@ export default function TokenCostPage() {
           Pengaturan Harga Token (Token Costs)
         </h1>
         <p className="text-slate-600 dark:text-slate-400">
-          Atur berapa banyak kuota/koin pengguna yang akan dipotong setiap kali mereka menggunakan fitur AI.
+          Atur berapa banyak kuota/koin pengguna yang akan dipotong setiap kali mereka menggunakan fitur AI, serta harga paket topup.
         </p>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Biaya Penggunaan Fitur (Koin)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {fields.map((field) => (
               <div key={field.key} className="space-y-2">
                 <label htmlFor={field.key} className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
                   {field.label}
                 </label>
                 <div className="relative">
-                  <input
-                    id={field.key}
-                    type="number"
-                    min="0"
-                    value={formData[field.key] ?? 0}
-                    onChange={(e) => handleChange(field.key, e.target.value)}
-                    className="pl-10 h-11 w-full border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg bg-slate-50 dark:bg-slate-900/50"
-                  />
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Coins className="h-4 w-4 text-slate-400" />
+                    <Coins className="h-5 w-5 text-slate-400" />
                   </div>
+                  <input
+                    type="number"
+                    id={field.key}
+                    min="0"
+                    value={formData[field.key] ?? ''}
+                    onChange={(e) => handleChange(field.key, e.target.value)}
+                    className="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
                 </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {field.desc}
-                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{field.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 pt-4 border-t border-slate-100 dark:border-slate-700">Paket Topup Kuota</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {topupFields.map((field) => (
+              <div key={field.key} className="space-y-2">
+                <label htmlFor={field.key} className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  {field.label}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Coins className="h-5 w-5 text-slate-400" />
+                  </div>
+                  <input
+                    type="number"
+                    id={field.key}
+                    min="0"
+                    value={formData[field.key] ?? ''}
+                    onChange={(e) => handleChange(field.key, e.target.value)}
+                    className="pl-10 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{field.desc}</p>
               </div>
             ))}
           </div>

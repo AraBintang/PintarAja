@@ -10,6 +10,8 @@ export function useTokenCosts() {
     cost_humanizer: 3,
     cost_paraphrase: 2,
     cost_transcribe: 5,
+    cost_topup_amount: 100,
+    cost_topup_price: 10000,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)

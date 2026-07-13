@@ -4,6 +4,8 @@ import { request } from '@/utils/Http'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { useAuth } from '@/context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { useTokenCosts } from '@/helpers/useTokenCosts'
+import { useEffect } from 'react'
 
 const QRIS_METHOD = { id: 'qris', name: 'QRIS', channel: 'QRIS2' }
 
@@ -13,12 +15,26 @@ export default function TopupQuotaModal({ open, onClose }) {
   const { showSnackbar } = useSnackbar()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { costs } = useTokenCosts()
+
+  const defaultAmount = costs?.cost_topup_amount || 100
+  const defaultPrice = costs?.cost_topup_price || 10000
+
+  // Calculate the total payment (must be a multiple of the base price per base amount)
+  // Or we just calculate the exact price based on how many coins inputted
+  const currentPrice = Math.floor((coins / defaultAmount) * defaultPrice)
+
+  useEffect(() => {
+    if (costs?.cost_topup_amount) {
+      setCoins(costs.cost_topup_amount)
+    }
+  }, [costs?.cost_topup_amount])
 
   if (!open) return null
 
   const handleTopup = async () => {
-    if (coins < 100) {
-      showSnackbar('error', 'Minimal topup adalah 100 Koin')
+    if (coins < defaultAmount) {
+      showSnackbar('error', `Minimal topup adalah ${defaultAmount} Koin`)
       return
     }
 
@@ -81,22 +97,22 @@ export default function TopupQuotaModal({ open, onClose }) {
               </div>
               <input
                 type="number"
-                min="100"
-                step="100"
+                min={defaultAmount}
+                step={defaultAmount}
                 value={coins}
                 onChange={(e) => setCoins(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 font-bold focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all outline-none"
-                placeholder="Minimal 100"
+                placeholder={`Minimal ${defaultAmount}`}
               />
             </div>
-            <p className="text-xs text-gray-500 mt-2">Minimal pembelian 100 Koin.</p>
+            <p className="text-xs text-gray-500 mt-2">Minimal pembelian {defaultAmount} Koin.</p>
           </div>
 
           <div className="bg-orange-50 dark:bg-orange-500/10 rounded-xl p-4 border border-orange-100 dark:border-orange-500/20 flex justify-between items-center">
             <div>
               <p className="text-[11px] font-bold text-orange-600/80 dark:text-orange-400/80 uppercase tracking-wider">Total Pembayaran</p>
               <p className="text-xl font-bold text-orange-700 dark:text-orange-400 mt-0.5">
-                Rp {new Intl.NumberFormat('id-ID').format(coins * 100)}
+                Rp {new Intl.NumberFormat('id-ID').format(currentPrice)}
               </p>
             </div>
             <div className="h-10 w-10 bg-orange-100 dark:bg-orange-500/20 rounded-full flex items-center justify-center text-orange-500">
@@ -108,7 +124,7 @@ export default function TopupQuotaModal({ open, onClose }) {
         <div className="p-5 bg-gray-50/50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700">
           <button
             onClick={handleTopup}
-            disabled={loading || coins < 100}
+            disabled={loading || coins < defaultAmount}
             className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 text-white rounded-xl font-bold shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
           >
             {loading ? (
