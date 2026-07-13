@@ -177,6 +177,101 @@ class PaymentController extends Controller
         ], 200);
     }
 
+    public function topup(Request $request)
+    {
+        $apiKey = config('services.tripay.api_key');
+        $privateKey = config('services.tripay.private_key');
+        $merchantCode = config('services.tripay.merchant_code');
+
+        $validated = $request->validate([
+            'coins' => 'required|integer|min:100',
+            'channel' => 'required|string',
+            'method' => 'required|string',
+            'phone' => 'required|string|max:15',
+        ]);
+
+        $user = Auth::user();
+        $coins = (int) $validated['coins'];
+        $amount = $coins * 100; // 1 koin = 100 Rupiah
+
+        $merchantRef = 'TOPUP-' . time() . '-' . rand(1000, 9999);
+
+        $payload = [
+            'method' => $validated['channel'],
+            'merchant_ref' => $merchantRef,
+            'amount' => $amount,
+            'customer_name' => $user->M_UserFullName,
+            'customer_email' => $user->M_UserEmail,
+            'customer_phone' => $validated['phone'],
+            'order_items' => [[
+                'name' => 'Topup Koin - ' . $coins,
+                'price' => $amount,
+                'quantity' => 1,
+            ]],
+            'signature' => hash_hmac('sha256', $merchantCode . $merchantRef . $amount, $privateKey),
+        ];
+
+        $isSandbox = app()->environment('local', 'development');
+        $url = $isSandbox
+            ? 'https://tripay.co.id/api-sandbox/transaction/create'
+            : 'https://tripay.co.id/api/transaction/create';
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $apiKey,
+        ])->post($url, $payload);
+
+        if ($response->failed()) {
+            \Log::error('Tripay API Error (Topup)', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            return response()->json(['error' => 'Failed while creating payment'], 500);
+        }
+
+        $data = $response['data'];
+        $isQris = strtolower($validated['channel']) === 'qris2' || strtolower($validated['method']) === 'qris';
+
+        $paymentCode = null;
+        if ($isQris) {
+            $paymentCode = $data['qr_url'] ?? null;
+        } elseif (!empty($data['pay_code'])) {
+            $paymentCode = $data['pay_code'];
+        } elseif (!empty($data['pay_url'])) {
+            $paymentCode = $data['pay_url'];
+        }
+
+        $instructions = $data['instructions'] ?? [];
+        $checkoutUrl = $data['checkout_url'] ?? null;
+
+        $tx = Transaction::create([
+            'T_TransactionM_UserID' => $user->M_UserID,
+            'T_TransactionM_PlanID' => 0,
+            'T_TransactionType' => 'topup',
+            'T_TransactionIdResult' => $data['reference'],
+            'T_TransactionIdRefrence' => $data['merchant_ref'],
+            'T_TransactionQR' => $paymentCode,
+            'T_TransactionItem' => 'Topup Koin - ' . $coins,
+            'T_TransactionAmount' => $amount,
+            'T_TransactionStatus' => 0,
+            'T_TransactionMethod' => $validated['method'],
+            'T_TransactionExpired' => $data['expired_time'] ?? (time() + 86400),
+            'T_TransactionChannel' => $validated['channel'],
+            'T_TransactionStep' => json_encode($instructions),
+            'T_TransactionCheckoutURL' => $checkoutUrl,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'referenceId' => $data['merchant_ref'],
+            'paymentCode' => $paymentCode,
+            'payUrl' => $data['pay_url'] ?? null,
+            'checkoutUrl' => $checkoutUrl,
+            'expiredAt' => $tx->T_TransactionExpired,
+            'instructions' => $instructions,
+            'amount' => $amount,
+        ]);
+    }
+
     private function markReferralDiscountsUsed(int $userID): void
     {
         ReferralUsage::where('T_ReferralUsageOwnerID', $userID)
@@ -279,7 +374,7 @@ class PaymentController extends Controller
             $this->createReferralUsageForFirstPaidTransaction($tx);
         }
 
-        if ($statusCode === 1 && $tx->T_TransactionType !== 'plagiarism') {
+        if ($statusCode === 1 && $tx->T_TransactionType === 'subscription') {
             $daysMap = ['Weekly' => 7, 'Monthly' => 30, 'Yearly' => 365];
             $suffix = trim(Str::afterLast($tx->T_TransactionItem, '-'));
             $days = $daysMap[$suffix] ?? 0;
@@ -299,6 +394,16 @@ class PaymentController extends Controller
                 $plan = Plan::find($tx->T_TransactionM_PlanID);
                 if ($plan) {
                     $user->increment('M_UserQuota', $plan->M_PlanQuota);
+                }
+            }
+        }
+
+        if ($statusCode === 1 && $tx->T_TransactionType === 'topup') {
+            $user = User::find($tx->T_TransactionM_UserID);
+            if ($user && str_starts_with($tx->T_TransactionItem, 'Topup Koin - ')) {
+                $coins = (int) trim(str_replace('Topup Koin - ', '', $tx->T_TransactionItem));
+                if ($coins > 0) {
+                    $user->increment('M_UserQuota', $coins);
                 }
             }
         }

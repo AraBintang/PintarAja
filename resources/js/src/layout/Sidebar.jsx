@@ -28,6 +28,8 @@ import { NavLink } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useSettingsModal } from '@/context/SettingsModalContext'
 import { useSidebar } from '@/context/SidebarContext'
+import { useState } from 'react'
+import TopupQuotaModal from '../components/TopupQuotaModal'
 
 const menuItems = [
   { label: 'New', icon: Plus, to: '/new', isNew: true },
@@ -81,6 +83,7 @@ function SidebarItem({ icon: Icon, label, to, expanded }) {
 function UserProfileSection({ expanded, onUpgradeClick }) {
   const { openSettings } = useSettingsModal()
   const { user } = useAuth()
+  const [isTopupOpen, setIsTopupOpen] = useState(false)
 
   const userName = user?.name
   const userEmail = user?.email
@@ -122,15 +125,20 @@ function UserProfileSection({ expanded, onUpgradeClick }) {
                   {userName}
                 </p>
                 <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{userEmail}</p>
-                <div className="flex items-center gap-1 mt-0.5 text-[11px] text-[#2686D4] dark:text-[#F2901E] font-semibold">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsTopupOpen(true); }}
+                  className="flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-md hover:bg-[#2686D4]/10 dark:hover:bg-[#F2901E]/10 transition-colors text-[11px] text-[#2686D4] dark:text-[#F2901E] font-semibold -ml-1.5"
+                >
                   <Coins className="w-3 h-3" />
                   <span>{user?.quota?.toLocaleString('id-ID') ?? 0} Kuota AI</span>
-                </div>
+                </button>
               </div>
               <Settings className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </>
           )}
         </button>
+
+        <TopupQuotaModal open={isTopupOpen} onClose={() => setIsTopupOpen(false)} />
 
         {user?.plan_id == 1 && (
           <div

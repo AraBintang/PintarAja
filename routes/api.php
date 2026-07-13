@@ -146,6 +146,7 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
         Route::get('/', [PaymentController::class, 'index']);
         Route::get('/referral-discount', [PaymentController::class, 'getReferralDiscount']);
         Route::get('/{referenceId}', [PaymentController::class, 'indexByReferenceId']);
+        Route::post('/topup', [PaymentController::class, 'topup']);
         Route::post('/', [PaymentController::class, 'store']);
     });
 
