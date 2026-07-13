@@ -429,7 +429,7 @@ class PaymentController extends Controller
                 ->update(['M_PlagiarismStatus' => 'cancelled']);
         }
  
-        return response()->json(['message' => 'Callback processed successfully']);
+        return response()->json(['success' => true]);
     }
  
     private function formatTransaction(Transaction $tx, bool $withDetail = false): array
