@@ -1,4 +1,4 @@
-import { Check, Copy, FileText, Paperclip } from 'lucide-react'
+import { Check, Copy, FileText, Paperclip, Download } from 'lucide-react'
 import { useState } from 'react'
 
 import { AI_CODE_MAP } from '@/assets/ai'
@@ -305,22 +305,48 @@ function renderInline(text) {
     if (m[1] !== undefined && m[2] !== undefined) {
       if (m[2].toLowerCase().endsWith('.mp4') || m[2].includes('.mp4')) {
         parts.push(
-          <video
-            key={m.index}
-            src={m[2]}
-            controls
-            className="max-w-full h-auto rounded-xl my-2 shadow-sm border border-gray-200 dark:border-gray-700"
-          />
+          <div key={m.index} className="flex flex-col gap-2 my-2 relative group w-max max-w-full">
+            <video
+              src={m[2]}
+              controls
+              className="max-w-full h-auto rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+            />
+            <div className="w-full flex justify-end">
+              <a
+                href={m[2]}
+                download={`ai-video-${Date.now()}.mp4`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-4 rounded-xl text-sm transition-all shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download Video
+              </a>
+            </div>
+          </div>
         )
       } else {
         parts.push(
-          <img
-            key={m.index}
-            src={m[2]}
-            alt={m[1]}
-            className="max-w-full h-auto rounded-xl my-2 shadow-sm border border-gray-200 dark:border-gray-700"
-            loading="lazy"
-          />
+          <div key={m.index} className="flex flex-col gap-2 my-2 relative group w-max max-w-full">
+            <img
+              src={m[2]}
+              alt={m[1]}
+              className="max-w-full h-auto rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+              loading="lazy"
+            />
+            <div className="w-full flex justify-end">
+              <a
+                href={m[2]}
+                download={`ai-image-${Date.now()}.png`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-4 rounded-xl text-sm transition-all shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download Gambar
+              </a>
+            </div>
+          </div>
         )
       }
     } else if (m[3] !== undefined) {
