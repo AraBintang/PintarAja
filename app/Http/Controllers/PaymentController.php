@@ -377,7 +377,7 @@ class PaymentController extends Controller
             $this->createReferralUsageForFirstPaidTransaction($tx);
         }
 
-        if ($statusCode === 1 && $tx->T_TransactionType === 'subscription') {
+        if ($statusCode === 1 && !$wasPaidAlready && $tx->T_TransactionType === 'subscription') {
             $daysMap = ['Weekly' => 7, 'Monthly' => 30, 'Yearly' => 365];
             $suffix = trim(Str::afterLast($tx->T_TransactionItem, '-'));
             $days = $daysMap[$suffix] ?? 0;
@@ -401,7 +401,7 @@ class PaymentController extends Controller
             }
         }
 
-        if ($statusCode === 1 && $tx->T_TransactionType === 'topup') {
+        if ($statusCode === 1 && !$wasPaidAlready && $tx->T_TransactionType === 'topup') {
             $user = User::find($tx->T_TransactionM_UserID);
             if ($user && str_starts_with($tx->T_TransactionItem, 'Topup Koin - ')) {
                 $coins = (int) trim(str_replace('Topup Koin - ', '', $tx->T_TransactionItem));
