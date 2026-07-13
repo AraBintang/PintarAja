@@ -50,7 +50,7 @@ export default function CTA() {
             className="relative inline-flex items-center gap-2 px-10 py-4 text-[16px] font-bold text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] rounded-full hover:scale-105 transition-all shadow-[0_0_20px_rgba(74,144,217,0.2)] overflow-hidden"
           >
             <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-            Mulai Sekarang trial 7 hari
+            Mulai Sekarang trial 1 hari
             <svg
               className="w-5 h-5 group-hover:translate-x-1 transition-transform"
               fill="none"

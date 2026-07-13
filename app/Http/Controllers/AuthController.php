@@ -146,7 +146,7 @@ class AuthController extends Controller
         $user->update([
             'M_UserEmailVerifiedAt' => now(),
             'M_UserPlan' => $premiumPlan?->M_PlanID,
-            'M_UserSubsExp' => now()->addDays(7),
+            'M_UserSubsExp' => now()->addDays(1),
             'M_UserReferralCode' => $referralCode,
         ]);
     

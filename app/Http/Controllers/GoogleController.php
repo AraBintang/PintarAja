@@ -99,7 +99,7 @@ class GoogleController extends Controller
  
         $user->update([
             'M_UserPlan' => $trialPlan?->M_PlanID,
-            'M_UserSubsExp' => now()->addDays(7),
+            'M_UserSubsExp' => now()->addDays(1),
             'M_UserReferralCode' => $newReferralCode,
             'M_UserReferredBy' => $referredByUser?->M_UserID,
         ]);
