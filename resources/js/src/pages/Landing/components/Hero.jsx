@@ -214,7 +214,7 @@ export default function Hero() {
           >
             <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
             <span className="relative z-10 flex items-center justify-center gap-2">
-              Mulai Sekarang trial 1 hari
+              Mulai Sekarang trial
               <svg
                 className="w-4 h-4 group-hover:translate-x-1 transition-transform"
                 fill="none"
