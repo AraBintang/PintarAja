@@ -22,13 +22,16 @@ import {
   Zap,
   Image as ImageIcon,
   Video as VideoIcon,
+  MessageSquareDashed,
+  Loader2,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 import { useAuth } from '@/context/AuthContext'
 import { useSettingsModal } from '@/context/SettingsModalContext'
 import { useSidebar } from '@/context/SidebarContext'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { request } from '@/utils/Http'
 import TopupQuotaModal from '../components/TopupQuotaModal'
 
 const menuItems = [
@@ -77,6 +80,79 @@ function SidebarItem({ icon: Icon, label, to, expanded }) {
         </span>
       )}
     </NavLink>
+  )
+}
+
+function ChatHistoryList({ expanded }) {
+  const [conversations, setConversations] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await request('/convers?per_page=15')
+        if (res && res.data) {
+          setConversations(res.data)
+        }
+      } catch (err) {
+        console.error('Failed to fetch chat history', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchHistory()
+  }, [])
+
+  if (!expanded && conversations.length === 0) return null
+
+  return (
+    <div className={`mt-4 mb-2 ${expanded ? 'px-4' : 'px-0 text-center'}`}>
+      {expanded ? (
+        <p className="text-[12px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+          Recent Chats
+        </p>
+      ) : (
+        <div className="px-3 pt-2 pb-[3px]">
+          <div className="w-full border-t border-gray-100 dark:border-gray-800 my-2"></div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center p-4">
+          <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+        </div>
+      ) : (
+        <div className="flex flex-col gap-0.5">
+          {conversations.slice(0, 10).map((conv) => (
+            <NavLink
+              key={conv.id}
+              to={`/chat/${conv.id}`}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-[10px] transition-all duration-200 group
+                  ${isActive ? 'bg-[#eeedeb] dark:bg-gray-900' : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'}
+                  ${expanded ? 'mx-2' : 'mx-1.5 justify-center'}
+                `
+              }
+              title={conv.title}
+            >
+              <span className={`flex-shrink-0 text-gray-500 dark:text-gray-400 ${expanded ? '' : 'mx-auto'}`}>
+                <MessageSquareDashed className="w-4 h-4" />
+              </span>
+              {expanded && (
+                <span className="text-[13px] font-medium text-gray-700 dark:text-gray-300 truncate">
+                  {conv.title || 'New Chat'}
+                </span>
+              )}
+            </NavLink>
+          ))}
+          {conversations.length === 0 && expanded && (
+            <div className="text-[12px] text-gray-400 dark:text-gray-500 px-3 py-2">
+              No recent chats
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -200,6 +276,8 @@ export default function Sidebar({ onUpgradeClick }) {
           {menuItems.map((item) => (
             <SidebarItem key={item.label} {...item} expanded={expanded} />
           ))}
+
+          <ChatHistoryList expanded={expanded} />
 
           {isAdmin && (
             <>
