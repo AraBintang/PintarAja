@@ -599,8 +599,23 @@ class AiProviderService
     public function generateImageOpenAI($apiKey, $prompt, $size = '1024x1024', $imageModel = 'flux')
     {
         // Menggunakan Pollinations AI sebagai alternatif gratis karena API Key OpenAI saat ini menolak model DALL-E
+        $lowerPrompt = strtolower($prompt);
+        $width = 1024;
+        $height = 1024;
+
+        if (preg_match('/(9:16|portrait|potret|vertikal|vertical|tiktok|reels|1080x1920|720x1280)/', $lowerPrompt)) {
+            $width = 576;
+            $height = 1024;
+        } elseif (preg_match('/(16:9|landscape|horizontal|mendatar|1920x1080|1280x720)/', $lowerPrompt)) {
+            $width = 1024;
+            $height = 576;
+        } elseif (preg_match('/(4:3|1024x768|800x600)/', $lowerPrompt)) {
+            $width = 1024;
+            $height = 768;
+        }
+
         $encodedPrompt = urlencode($prompt);
-        $url = "https://image.pollinations.ai/prompt/{$encodedPrompt}?width=1024&height=1024&nologo=true&model={$imageModel}";
+        $url = "https://image.pollinations.ai/prompt/{$encodedPrompt}?width={$width}&height={$height}&nologo=true&model={$imageModel}";
         
         return $url;
     }
@@ -703,12 +718,14 @@ class AiProviderService
                 $aspectRatio = '16:9'; // default
                 $lowerPrompt = strtolower($prompt);
                 
-                if (preg_match('/(9:16|portrait|potret|vertikal|vertical|tiktok|reels)/', $lowerPrompt)) {
+                if (preg_match('/(9:16|portrait|potret|vertikal|vertical|tiktok|reels|1080x1920|720x1280)/', $lowerPrompt)) {
                     $aspectRatio = '9:16';
-                } elseif (preg_match('/(1:1|square|kotak|persegi)/', $lowerPrompt)) {
+                } elseif (preg_match('/(1:1|square|kotak|persegi|1080x1080|512x512)/', $lowerPrompt)) {
                     $aspectRatio = '1:1';
-                } elseif (preg_match('/(4:3)/', $lowerPrompt)) {
+                } elseif (preg_match('/(4:3|1024x768|800x600)/', $lowerPrompt)) {
                     $aspectRatio = '4:3';
+                } elseif (preg_match('/(16:9|landscape|horizontal|mendatar|1920x1080|1280x720)/', $lowerPrompt)) {
+                    $aspectRatio = '16:9';
                 }
 
                 $response = $client->post('https://api.x.ai/v1/videos/generations', [
