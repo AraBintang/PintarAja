@@ -47,6 +47,7 @@ export default function ImageGenerator() {
     const [images, setImages] = useState([])
     const [imageUrl, setImageUrl] = useState('')
     const [loading, setLoading] = useState(false)
+    const [aspectRatio, setAspectRatio] = useState('1:1')
     const [aiProviders, setAiProviders] = useState([])
     const [selectedModel, setSelectedModel] = useState('')
     
@@ -141,7 +142,15 @@ export default function ImageGenerator() {
 
         try {
             const formData = new FormData()
-            formData.append('prompt', prompt)
+            
+            let finalPrompt = prompt
+            if (aspectRatio === '9:16') {
+                finalPrompt += " (rasio vertikal 9:16)"
+            } else if (aspectRatio === '16:9') {
+                finalPrompt += " (rasio horizontal 16:9)"
+            }
+            
+            formData.append('prompt', finalPrompt)
             formData.append('model', selectedModel)
             
             images.forEach((img, index) => {
@@ -358,6 +367,33 @@ export default function ImageGenerator() {
                                             </motion.div>
                                         </AnimatePresence>
                                     )}
+                                </div>
+
+                                <div className="flex items-center gap-1.5 ml-2 overflow-x-auto scrollbar-hide">
+                                    <button
+                                        type="button"
+                                        onClick={() => setAspectRatio(aspectRatio === '9:16' ? '1:1' : '9:16')}
+                                        disabled={loading}
+                                        className={`px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors whitespace-nowrap ${
+                                            aspectRatio === '9:16' 
+                                                ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' 
+                                                : 'bg-[#eeedeb] text-gray-600 border-transparent hover:bg-gray-200 dark:bg-black/20 dark:text-gray-400 dark:hover:bg-gray-800'
+                                        } disabled:opacity-50`}
+                                    >
+                                        Vertikal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAspectRatio(aspectRatio === '16:9' ? '1:1' : '16:9')}
+                                        disabled={loading}
+                                        className={`px-3 py-1.5 rounded-full text-[12px] font-medium border transition-colors whitespace-nowrap ${
+                                            aspectRatio === '16:9' 
+                                                ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' 
+                                                : 'bg-[#eeedeb] text-gray-600 border-transparent hover:bg-gray-200 dark:bg-black/20 dark:text-gray-400 dark:hover:bg-gray-800'
+                                        } disabled:opacity-50`}
+                                    >
+                                        Horizontal
+                                    </button>
                                 </div>
                             </div>
 
