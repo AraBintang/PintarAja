@@ -46,6 +46,7 @@ const CHAT_FEATURES = [
     to: '/humanize',
     color: 'orange',
     icon: <Speech className="w-[18px] h-[18px]" />,
+    isComingSoon: true,
   },
   {
     label: 'Transcribe AI',
@@ -65,6 +66,47 @@ const CHAT_FEATURES = [
 
 function FeatureCard({ item }) {
   const { bg, text } = iconStyles[item.color]
+
+  if (item.isComingSoon) {
+    return (
+      <div
+        className={`
+          group flex items-center gap-3
+          px-3.5 py-3 md:p-[14px_16px]
+          bg-white/50 dark:bg-gray-900/50
+          border border-gray-200/60 dark:border-gray-700/60
+          rounded-xl opacity-60 cursor-not-allowed
+          ${item.fullWidth ? 'md:col-span-2' : ''}
+        `}
+      >
+        <div
+          className={`
+            w-8 h-8 md:w-[38px] md:h-[38px]
+            rounded-[8px] md:rounded-[10px] flex-shrink-0
+            flex items-center justify-center
+            ${bg} ${text}
+          `}
+        >
+          <span className="w-[15px] h-[15px] md:w-[18px] md:h-[18px] flex items-center justify-center">
+            {item.icon}
+          </span>
+        </div>
+
+        <div className="text-start min-w-0 flex-1">
+          <p className="text-[13px] md:text-[13.5px] font-medium text-gray-800 dark:text-gray-100 leading-snug truncate">
+            {item.label}
+          </p>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-[1px] truncate">{item.tag}</p>
+        </div>
+
+        <div className="ml-auto flex-shrink-0">
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 uppercase tracking-wider">
+            Soon
+          </span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <Link
@@ -147,6 +189,33 @@ export default function EmptyState({ userName }) {
         <div className="flex flex-wrap justify-center gap-2 overflow-x-auto scrollbar-hide pb-1">
           {CHAT_FEATURES.map((item) => {
             const { bg, text } = iconStyles[item.color]
+            
+            if (item.isComingSoon) {
+              return (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full
+                    bg-gray-100/50 dark:bg-gray-800/50
+                    border border-gray-200/60 dark:border-gray-700/60
+                    opacity-60 cursor-not-allowed flex-shrink-0"
+                >
+                  <div
+                    className={`w-[22px] h-[22px] rounded-[6px] flex items-center justify-center flex-shrink-0 ${bg} ${text}`}
+                  >
+                    <span className="w-[11px] h-[11px] flex items-center justify-center">
+                      {item.icon}
+                    </span>
+                  </div>
+                  <span className="text-[12px] font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                    {item.label}
+                  </span>
+                  <span className="text-[9px] font-bold px-1.5 py-[1px] ml-0.5 rounded bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 uppercase tracking-wider">
+                    Soon
+                  </span>
+                </div>
+              )
+            }
+
             return (
               <Link
                 key={item.label}
