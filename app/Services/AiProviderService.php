@@ -619,6 +619,7 @@ class AiProviderService
                 'json' => [
                     'model' => $videoModel === 'default' ? 'grok-imagine-video' : $videoModel,
                     'prompt' => $prompt,
+                    'duration' => 10,
                 ],
             ]);
 
@@ -718,7 +719,8 @@ class AiProviderService
                     'json' => [
                         'model' => $videoModel,
                         'prompt' => $prompt,
-                        'aspect_ratio' => $aspectRatio
+                        'aspect_ratio' => $aspectRatio,
+                        'duration' => 10,
                     ],
                 ]);
 
