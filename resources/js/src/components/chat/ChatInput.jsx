@@ -134,11 +134,11 @@ function ModelSelect({ value, onChange, aiProviders, disabled }) {
                       </div>
                       <div className="flex flex-col min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          {modelInfo?.label && (
+                          {(modelInfo?.label || ai.model) && (
                             <span
                               className={`text-[13px] font-semibold truncate ${isSelected ? 'text-[#4A90D9]' : 'text-gray-700 dark:text-gray-200'}`}
                             >
-                              {modelInfo?.label}
+                              {modelInfo?.label || ai.model}
                             </span>
                           )}
                         </div>
