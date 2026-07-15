@@ -39,7 +39,7 @@ const menuItems = [
   { label: 'AI Chat', icon: MessageSquare, to: '/chat' },
   { label: 'AI Writer', icon: FileText, to: '/writer' },
   { label: 'Paraphrase AI', icon: Hash, to: '/paraphrase' },
-  { label: 'Humanizer AI', icon: Speech, to: '/humanize' },
+  { label: 'Humanizer AI', icon: Speech, to: '/humanize', isComingSoon: true },
   { label: 'Transcribe AI', icon: Mic, to: '/transcribe' },
   { label: 'Plagiarism Checker', icon: FileSearch, to: '/plagiarism' },
 ]
@@ -58,14 +58,18 @@ const adminMenuItems = [
   { label: 'Misc', icon: ChartLine, to: '/admin/misc' },
 ]
 
-function SidebarItem({ icon: Icon, label, to, expanded }) {
+function SidebarItem({ icon: Icon, label, to, expanded, isComingSoon }) {
   return (
     <NavLink
-      to={to}
+      to={isComingSoon ? '#' : to}
+      onClick={(e) => {
+        if (isComingSoon) e.preventDefault();
+      }}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-[10px] transition-all duration-200 group
-          ${isActive ? 'bg-[#eeedeb] dark:bg-gray-900' : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'}
+        `flex items-center gap-3 px-3 py-2.5 rounded-[10px] transition-all duration-200 group relative
+          ${!isComingSoon && isActive ? 'bg-[#eeedeb] dark:bg-gray-900' : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'}
           ${expanded ? 'mx-2' : 'mx-1.5 justify-center'}
+          ${isComingSoon ? 'opacity-70 cursor-not-allowed' : ''}
         `
       }
     >
@@ -75,8 +79,13 @@ function SidebarItem({ icon: Icon, label, to, expanded }) {
         <Icon className="w-5 h-5" />
       </span>
       {expanded && (
-        <span className="text-[14px] font-medium text-gray-800 dark:text-gray-200 truncate">
+        <span className="text-[14px] font-medium text-gray-800 dark:text-gray-200 truncate flex-1 text-left">
           {label}
+        </span>
+      )}
+      {expanded && isComingSoon && (
+        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 uppercase">
+          Soon
         </span>
       )}
     </NavLink>
