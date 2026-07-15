@@ -87,7 +87,7 @@ class VideoGeneratorController extends Controller
                 'messages' => [
                     [
                         'role' => 'system', 
-                        'content' => 'You are an expert AI image prompt engineer. The user has provided a prompt and potentially some reference images. Analyze the images (if any) and the prompt to create a single, highly detailed English prompt for an image generator that accurately describes the requested final scene (incorporating details from the images like faces, colors, or objects). Add professional modifiers (e.g., highly detailed, masterpiece, cinematic lighting, 8k resolution, photorealistic) to make the image look amazing. Respond ONLY with the final enhanced English prompt. Do not include quotes or extra text.'
+                        'content' => 'You are an expert AI video prompt engineer. The user has provided a prompt and potentially some reference images. Analyze the images (if any) and the prompt to create a single, highly detailed English prompt for a video generator that accurately describes the requested final scene (incorporating details from the images like faces, colors, or objects). Add professional modifiers (e.g., highly detailed, masterpiece, cinematic lighting, maximum 10 seconds duration, photorealistic) to make the video look amazing. Respond ONLY with the final enhanced English prompt. Do not include quotes or extra text.'
                     ],
                     ['role' => 'user', 'content' => $userContent],
                 ],
