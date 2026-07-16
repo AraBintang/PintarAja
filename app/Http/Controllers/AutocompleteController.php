@@ -65,7 +65,8 @@ class AutocompleteController extends Controller
                 20
             );
 
-            $suggestion = trim($response);
+            // Ensure response is a string
+            $suggestion = is_string($response) ? trim($response) : '';
             
             // Cleanup quotes
             $suggestion = preg_replace('/^["\']|["\']$/', '', $suggestion);
@@ -77,8 +78,8 @@ class AutocompleteController extends Controller
 
             return response()->json(['suggestion' => ltrim($suggestion)]);
 
-        } catch (\Exception $e) {
-            Log::error('Autocomplete Error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Autocomplete Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
             return response()->json(['suggestion' => '']);
         }
     }

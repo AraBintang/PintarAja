@@ -151,6 +151,8 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
         Route::post('/', [PaymentController::class, 'store']);
     });
 
+    Route::post('/autocomplete', [AutocompleteController::class, 'suggest']);
+
     // Route Admin Only
     Route::middleware('role:A')->group(function () {
         Route::prefix('blogs')->group(function () {
@@ -175,8 +177,7 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
             Route::put('/deactivate/{id}', [SettingAiController::class, 'deactivate']);
             Route::delete('/{id}', [SettingAiController::class, 'destroy']);
         });
-
-        Route::post('/autocomplete', [AutocompleteController::class, 'suggest']);
+        });
 
         Route::prefix('plans')->group(function () {
             Route::post('/', [PlanController::class, 'store']);
