@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\AiProviderService;
-use App\Models\SettingAi;
+use App\Models\SettingAI;
 use Illuminate\Support\Facades\Log;
 
 class AutocompleteController extends Controller
@@ -26,7 +26,7 @@ class AutocompleteController extends Controller
 
         try {
             // Get any active AI provider
-            $activeSetting = SettingAi::where('M_SettingAiIsActive', 'Y')
+            $activeSetting = SettingAI::where('M_SettingAiIsActive', 'Y')
                 ->whereNotNull('M_SettingAiAPIKey')
                 ->where('M_SettingAiAPIKey', '!=', '')
                 ->first();
