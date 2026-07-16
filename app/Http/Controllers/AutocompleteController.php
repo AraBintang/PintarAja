@@ -25,12 +25,13 @@ class AutocompleteController extends Controller
         $text = $request->text;
 
         try {
-            // Get Gemini provider as default for fast autocomplete
-            $geminiSetting = SettingAi::where('M_SettingAiProvider', 'SETTING-GMN')
-                ->where('M_SettingAiIsActive', 'Y')
+            // Get any active AI provider
+            $activeSetting = SettingAi::where('M_SettingAiIsActive', 'Y')
+                ->whereNotNull('M_SettingAiAPIKey')
+                ->where('M_SettingAiAPIKey', '!=', '')
                 ->first();
 
-            if (!$geminiSetting || empty($geminiSetting->M_SettingAiAPIKey)) {
+            if (!$activeSetting) {
                 return response()->json(['suggestion' => '']);
             }
 
@@ -45,12 +46,20 @@ class AutocompleteController extends Controller
                 ]
             ];
 
-            // Use gemini flash or similar fast model
-            $model = 'gemini-1.5-flash';
+            // Use the model configured for this active provider
+            $model = $activeSetting->M_SettingAiModel;
+            $provider = $activeSetting->M_SettingAiProvider;
+            
+            // Fallbacks if model is not properly set
+            if (empty($model)) {
+                if ($provider === 'SETTING-GMN') $model = 'gemini-1.5-flash';
+                else if ($provider === 'SETTING-OAI') $model = 'gpt-4o-mini';
+                else if ($provider === 'SETTING-CLD') $model = 'claude-3-haiku-20240307';
+            }
 
             $response = $this->aiProvider->generateText(
-                'SETTING-GMN',
-                $geminiSetting->M_SettingAiAPIKey,
+                $provider,
+                $activeSetting->M_SettingAiAPIKey,
                 $model,
                 $messages,
                 20
