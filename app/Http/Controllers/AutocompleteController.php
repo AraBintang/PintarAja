@@ -32,7 +32,7 @@ class AutocompleteController extends Controller
                 ->first();
 
             if (!$activeSetting) {
-                return response()->json(['suggestion' => '']);
+                return response()->json(['suggestion' => ' (Error: API Key AI Belum Diatur)']);
             }
 
             $messages = [
@@ -79,8 +79,12 @@ class AutocompleteController extends Controller
             return response()->json(['suggestion' => ltrim($suggestion)]);
 
         } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            if ($e instanceof \GuzzleHttp\Exception\ClientException) {
+                $msg = $e->getResponse()->getBody()->getContents();
+            }
             Log::error('Autocomplete Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-            return response()->json(['suggestion' => '']);
+            return response()->json(['suggestion' => ' (Error AI: ' . substr($msg, 0, 50) . '...)']);
         }
     }
 }
