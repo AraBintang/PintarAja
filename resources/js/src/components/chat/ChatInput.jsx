@@ -313,6 +313,13 @@ export default function ChatInput({
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
   const [generationMode, setGenerationMode] = useState('chat')
 
+  // New states for bubbles
+  const [imageOption, setImageOption] = useState('Kualitas') // 'Kualitas' | 'Kecepatan'
+  const [videoRes, setVideoRes] = useState('720p') // '480p' | '720p'
+  const [videoDuration, setVideoDuration] = useState('6s') // '6s' | '10s'
+  const [aspectRatio, setAspectRatio] = useState('9:16')
+  const [showRatioMenu, setShowRatioMenu] = useState(false)
+
   // Custom hook for autocomplete
   const { suggestion, handleKeyDown: handleAutocompleteKeyDown } = useAutocomplete(inputValue, (val) => {
     // Override onChange to trigger the parent's handleInput properly
@@ -457,17 +464,7 @@ export default function ChatInput({
               </div>
             )}
 
-            {generationMode !== 'chat' && (
-              <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full text-[13px] font-medium text-gray-700 dark:text-gray-300 mx-5 mt-4 w-fit">
-                {generationMode === 'image' && <ImagePlus className="w-4 h-4 text-purple-600" />}
-                {generationMode === 'video' && <Video className="w-4 h-4 text-pink-600" />}
-                {generationMode === 'music' && <Music className="w-4 h-4 text-amber-600" />}
-                <span className="capitalize">{generationMode}</span>
-                <button type="button" onClick={() => setGenerationMode('chat')} className="ml-1 hover:text-red-500">
-                  <XIcon className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
+
 
             <div className="relative">
               <textarea
@@ -620,34 +617,122 @@ export default function ChatInput({
                   </AnimatePresence>
                 )}
 
-                <div className="flex items-center ml-1 bg-[#eeedeb] dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full">
-                  <ModelSelect
-                    value={selectedAiId}
-                    onChange={onAiChange}
-                    aiProviders={aiProviders}
-                    disabled={isStreaming}
-                    getQuota={getQuota}
-                  />
+                {/* Bubbles Row */}
+                <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar no-scrollbar py-1 ml-1 flex-1">
+                  {/* Mode Toggles */}
+                  <button 
+                    type="button" 
+                    onClick={() => setGenerationMode(generationMode === 'image' ? 'chat' : 'image')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${generationMode === 'image' ? 'bg-[#2a2a2b] text-white dark:bg-white/10 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}
+                  >
+                    <ImagePlus className="w-3.5 h-3.5" />
+                    <span>Gambar</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    onClick={() => setGenerationMode(generationMode === 'video' ? 'chat' : 'video')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${generationMode === 'video' ? 'bg-[#2a2a2b] text-white dark:bg-white/10 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Video</span>
+                  </button>
+
+                  {/* Image Options */}
+                  {generationMode === 'image' && (
+                    <>
+                      <button type="button" onClick={() => setImageOption('Kecepatan')} className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${imageOption === 'Kecepatan' ? 'bg-[#2a2a2b] text-white dark:bg-white/10 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}>Kecepatan</button>
+                      <button type="button" onClick={() => setImageOption('Kualitas')} className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${imageOption === 'Kualitas' ? 'bg-[#2a2a2b] text-white dark:bg-white/10 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}>Kualitas</button>
+                      
+                      <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 whitespace-nowrap">
+                        <Image className="w-3.5 h-3.5" />
+                        <span>Auto</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </button>
+                    </>
+                  )}
+
+                  {/* Video Options */}
+                  {generationMode === 'video' && (
+                    <>
+                      <button type="button" onClick={() => setVideoRes('480p')} className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${videoRes === '480p' ? 'bg-[#2a2a2b] text-white dark:bg-white/10 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}>480p</button>
+                      <button type="button" onClick={() => setVideoRes('720p')} className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${videoRes === '720p' ? 'bg-[#2a2a2b] text-white dark:bg-white/10 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}>720p</button>
+                      
+                      <button type="button" onClick={() => setVideoDuration('6s')} className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${videoDuration === '6s' ? 'bg-[#2a2a2b] text-white dark:bg-white/10 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}>6s</button>
+                      <button type="button" onClick={() => setVideoDuration('10s')} className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${videoDuration === '10s' ? 'bg-[#2a2a2b] text-white dark:bg-white/10 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}>10s</button>
+                    </>
+                  )}
+
+                  {/* Aspect Ratio */}
+                  {(generationMode === 'image' || generationMode === 'video') && (
+                    <div className="relative">
+                      <button type="button" onClick={() => setShowRatioMenu(!showRatioMenu)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 whitespace-nowrap">
+                        <div className="w-2 h-3.5 bg-gray-400 dark:bg-gray-300 rounded-[2px]"></div>
+                        <span>{aspectRatio}</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </button>
+                      
+                      {showRatioMenu && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setShowRatioMenu(false)}></div>
+                          <div className="absolute bottom-full left-0 mb-2 w-40 bg-[#2a2a2b] dark:bg-[#1c1c1e] text-white rounded-xl shadow-lg border border-gray-700/50 p-2 z-50">
+                            {[
+                              { ratio: '2:3', label: 'Tinggi', icon: 'w-2 h-3.5' },
+                              { ratio: '3:2', label: 'Lebar', icon: 'w-3.5 h-2' },
+                              { ratio: '1:1', label: 'Persegi', icon: 'w-2.5 h-2.5' },
+                              { ratio: '9:16', label: 'Vertikal', icon: 'w-2 h-3.5' },
+                              { ratio: '16:9', label: 'Layar Lebar', icon: 'w-3.5 h-2' }
+                            ].map(item => (
+                              <button
+                                key={item.ratio}
+                                type="button"
+                                onClick={() => { setAspectRatio(item.ratio); setShowRatioMenu(false); }}
+                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-left text-[12px] ${aspectRatio === item.ratio ? 'bg-white/10 text-white font-medium' : 'text-gray-400'}`}
+                              >
+                                <div className={`bg-current rounded-[2px] ${item.icon}`}></div>
+                                <span className="w-10">{item.ratio}</span>
+                                <span>{item.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {(() => {
-                  const q = getQuota?.(selectedProvider?.code)
-                  if (!q) return null
-                  return (
-                    <div
-                      className={`flex items-center gap-1 px-3 py-2.5 rounded-full text-[11px] font-semibold border ${
-                        q.remaining === 0
-                          ? 'bg-red-50 border-red-200 text-red-500 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'
-                          : q.remaining <= 2
-                            ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400'
-                            : 'bg-gray-100 border-gray-200 text-gray-500 dark:bg-gray-800 dark:border-gray-700'
-                      }`}
-                    >
-                      <span>{q.remaining === 0 ? '⚠' : '⚡'}</span>
-                      <span>{q.remaining === 0 ? 'Limit' : `${q.remaining}/${q.limit}`}</span>
+                {generationMode === 'chat' && (
+                  <>
+                    <div className="flex items-center ml-1 bg-[#eeedeb] dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full">
+                      <ModelSelect
+                        value={selectedAiId}
+                        onChange={onAiChange}
+                        aiProviders={aiProviders}
+                        disabled={isStreaming}
+                        getQuota={getQuota}
+                      />
                     </div>
-                  )
-                })()}
+
+                    {(() => {
+                      const q = getQuota?.(selectedProvider?.code)
+                      if (!q) return null
+                      return (
+                        <div
+                          className={`flex items-center gap-1 px-3 py-2.5 rounded-full text-[11px] font-semibold border ${
+                            q.remaining === 0
+                              ? 'bg-red-50 border-red-200 text-red-500 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'
+                              : q.remaining <= 2
+                                ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400'
+                                : 'bg-gray-100 border-gray-200 text-gray-500 dark:bg-gray-800 dark:border-gray-700'
+                          }`}
+                        >
+                          <span>{q.remaining === 0 ? '⚠' : '⚡'}</span>
+                          <span>{q.remaining === 0 ? 'Limit' : `${q.remaining}/${q.limit}`}</span>
+                        </div>
+                      )
+                    })()}
+                  </>
+                )}
               </div>
 
               <div className="pr-1 flex gap-2">
