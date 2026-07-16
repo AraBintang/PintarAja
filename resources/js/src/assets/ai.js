@@ -149,7 +149,7 @@ export const AI_MODELS = {
 
   'SETTING-CLD': [
     {
-      value: 'claude-opus-4-8',
+      value: 'claude-4.8',
       label: 'Claude Opus 4.8',
       desc: 'Latest Claude Opus 4.8 generation model',
     },

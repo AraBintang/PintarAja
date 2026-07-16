@@ -95,7 +95,7 @@ class AiProviderService
                     'json' => [
                         'model' => $model,
                         'messages' => $claudeMessages,
-                        'system' => trim($systemPrompt),
+                        'system' => trim("Anda adalah asisten AI profesional dan ahli dalam penulisan artikel, esai, dan karya akademik. Selalu berikan jawaban yang komprehensif, terstruktur dengan baik, mendalam, dan menggunakan gaya bahasa yang natural serta mudah dipahami.\n\n" . $systemPrompt),
                         'max_tokens' => $maxTokens,
                     ],
                 ]);
@@ -243,6 +243,7 @@ class AiProviderService
                         'messages' => $messages,
                         'stream' => true,
                         'max_tokens' => 8192,
+                        'system' => trim("Anda adalah asisten AI profesional dan ahli dalam penulisan artikel, esai, dan karya akademik. Selalu berikan jawaban yang komprehensif, terstruktur dengan baik, mendalam, dan menggunakan gaya bahasa yang natural serta mudah dipahami.\n\n" . ($systemPrompt ?? '')),
                     ]),
                     'stream' => true,
                 ]);
