@@ -149,9 +149,14 @@ export const AI_MODELS = {
 
   'SETTING-CLD': [
     {
-      value: 'claude-4.8',
-      label: 'Claude 4.8',
-      desc: 'Latest Claude 4.8 generation model',
+      value: 'claude-opus-4-8',
+      label: 'Claude Opus 4.8',
+      desc: 'Latest Claude Opus 4.8 generation model',
+    },
+    {
+      value: 'claude-sonnet-5',
+      label: 'Claude Sonnet 5',
+      desc: 'Next generation Sonnet model',
     },
     {
       value: 'claude-sonnet-4-6',
