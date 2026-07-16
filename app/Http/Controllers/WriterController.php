@@ -51,8 +51,8 @@ class WriterController extends Controller
                 WHEN s.M_SettingCode = 'SETTING-XAI' THEN 4
                 WHEN s.M_SettingCode = 'SETTING-DSK' THEN 5
                 WHEN s.M_SettingCode = 'SETTING-QWN' THEN 6
-                ELSE 6
-            END")
+                WHEN s.M_SettingCode = 'SETTING-DRM' THEN 7
+                ELSE 99 END, s.M_SettingID ASC")
             ->get();
     
         $workbooks = Workbook::where('M_WorkbookM_UserID', $user->M_UserID)
@@ -358,6 +358,7 @@ class WriterController extends Controller
             'SETTING-XAI' => 'grok',
             'SETTING-DSK' => 'deepseek',
             'SETTING-QWN' => 'qwen',
+            'SETTING-DRM' => 'dreamina',
         ];
  
         $aiName = $providerMap[$provider->M_SettingCode] ?? null;

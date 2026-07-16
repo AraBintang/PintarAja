@@ -76,6 +76,22 @@ class AiProviderService
                 $data = json_decode($response->getBody()->getContents(), true);
                 return $data['choices'][0]['message']['content'] ?? '';
 
+            case 'SETTING-DRM':
+                $messages = $this->normalizeMessagesTextOnly($messages);
+                $response = $client->post('https://ark.cn-beijing.volces.com/api/v3/chat/completions', [
+                    'headers' => [
+                        'Authorization' => "Bearer $apiKey",
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'model' => $model,
+                        'messages' => $messages,
+                        'max_tokens' => $maxTokens,
+                    ],
+                ]);
+                $data = json_decode($response->getBody()->getContents(), true);
+                return $data['choices'][0]['message']['content'] ?? '';
+
             case 'SETTING-CLD':
                 $systemPrompt = '';
                 $claudeMessages = [];
@@ -437,6 +453,76 @@ class AiProviderService
                         'messages' => $messages,
                         'stream' => true,
                         'stream_options' => ['include_usage' => true],
+                    ],
+                    'stream' => true,
+                ]);
+            } catch (\Exception $e) {
+                echo 'Terjadi kesalahan koneksi ke model.';
+                return;
+            }
+
+            $body = $response->getBody();
+            $output = '';
+            $buffer = '';
+
+            while (!$body->eof()) {
+                $line = trim($this->readLine($body));
+
+                if (!Str::startsWith($line, 'data: ')) continue;
+                $jsonLine = trim(Str::replaceFirst('data: ', '', $line));
+                if ($jsonLine === '[DONE]') break;
+
+                try {
+                    $data  = json_decode($jsonLine, true);
+                    $chunk = $data['choices'][0]['delta']['content'] ?? null;
+                    if ($chunk !== null && $chunk !== '') {
+                        $buffer .= $chunk;
+                        if (strlen($buffer) >= 12 || preg_match('/[.!?]\s$/', $buffer)) {
+                            $out    = $format ? $this->formatMessage($buffer) : $buffer;
+                            $output .= $out;
+                            echo $out;
+                            ob_flush();
+                            flush();
+                            $buffer = '';
+                        }
+                    }
+                } catch (\Exception $e) {
+                    echo 'Terjadi kesalahan koneksi ke model.';
+                    return;
+                }
+            }
+
+            if ($format == false && $converId) {
+                $this->inputAssistantChatByConversationId($converId, $provider, $output);
+            }
+        }, 200, [
+            'Content-Type'  => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection'    => 'keep-alive',
+        ]);
+    }
+
+    public function streamDreamina($apiKey, $model = null, $userMessage, $format = true, $converId = null, $provider = null)
+    {
+        return response()->stream(function () use ($apiKey, $model, $userMessage, $format, $converId, $provider) {
+            $client    = new Client();
+            $finalModel = $model ?? 'dreamina-4-0';
+
+            $messages = $format === false
+                ? $this->normalizeMessagesTextOnly($userMessage)
+                : [['role' => 'user', 'content' => $userMessage]];
+
+            try {
+                $response = $client->request('POST', 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', [
+                    'headers' => [
+                        'Authorization' => "Bearer $apiKey",
+                        'Content-Type'  => 'application/json',
+                        'Accept'        => 'text/event-stream',
+                    ],
+                    'json'   => [
+                        'model' => $finalModel,
+                        'messages' => $messages,
+                        'stream' => true,
                     ],
                     'stream' => true,
                 ]);

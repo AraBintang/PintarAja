@@ -42,8 +42,8 @@ class ChatController extends Controller
                 WHEN s.M_SettingCode = 'SETTING-XAI' THEN 4
                 WHEN s.M_SettingCode = 'SETTING-DSK' THEN 5
                 WHEN s.M_SettingCode = 'SETTING-QWN' THEN 6
-                ELSE 6
-            END")
+                WHEN s.M_SettingCode = 'SETTING-DRM' THEN 7
+                ELSE 99 END, s.M_SettingID ASC")
             ->get();
 
         $papers = Paper::select('M_PaperID as id', 'M_PaperName as name')
@@ -263,6 +263,7 @@ class ChatController extends Controller
             'grok' => fn() => $aiService->streamGrok($provider->M_SettingKey, $provider->M_SettingModel, $messages, false, $conversationId, $provider->M_SettingCode),
             'deepseek' => fn() => $aiService->streamDeepSeek($provider->M_SettingKey, $provider->M_SettingModel, $messages, false, $conversationId, $provider->M_SettingCode),
             'qwen' => fn() => $aiService->streamQwen($provider->M_SettingKey, $provider->M_SettingModel, $messages, false, $conversationId, $provider->M_SettingCode),
+            'dreamina' => fn() => $aiService->streamDreamina($provider->M_SettingKey, $provider->M_SettingModel, $messages, false, $conversationId, $provider->M_SettingCode),
         ];
 
         try {
@@ -367,6 +368,7 @@ class ChatController extends Controller
             'SETTING-XAI' => 'grok',
             'SETTING-DSK' => 'deepseek',
             'SETTING-QWN' => 'qwen',
+            'SETTING-DRM' => 'dreamina',
         ][$code] ?? null;
     }
 }

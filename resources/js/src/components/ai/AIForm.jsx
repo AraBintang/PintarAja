@@ -1,4 +1,4 @@
-import { Check, ExternalLink, Shield, X } from 'lucide-react'
+import { Check, ExternalLink, Shield, X, Wand2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 
@@ -196,6 +196,12 @@ export default function AIForm({
                             <div className="flex flex-row items-center gap-2">
                               <QwenLogo />
                               <span>Qwen</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="SETTING-DRM">
+                            <div className="flex flex-row items-center gap-2">
+                              <Wand2 className="w-3.5 h-3.5 text-blue-500" />
+                              <span>Dreamina</span>
                             </div>
                           </SelectItem>
                         </SelectGroup>

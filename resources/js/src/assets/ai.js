@@ -1,4 +1,4 @@
-import { Zap } from 'lucide-react'
+import { Zap, Wand2 } from 'lucide-react'
 import { createElement } from 'react'
 
 import claudeAiIcon from '@/assets/icons/claude-ai-icon.svg'
@@ -46,6 +46,8 @@ const QwenLogo = createElement('img', {
   className: 'w-3.5 h-3.5 object-contain',
 })
 
+const DreaminaLogo = () => createElement(Wand2, { className: 'w-3.5 h-3.5 text-blue-500' })
+
 export const AI_CODE_MAP = {
   'SETTING-GPT': { label: 'ChatGPT', icon: OpenAILogo },
   'SETTING-GMN': { label: 'Gemini', icon: GeminiLogo },
@@ -53,6 +55,7 @@ export const AI_CODE_MAP = {
   'SETTING-XAI': { label: 'Grok', icon: GrokLogo },
   'SETTING-DSK': { label: 'DeepSeek', icon: DeepSeekLogo },
   'SETTING-QWN': { label: 'Qwen', icon: QwenLogo },
+  'SETTING-DRM': { label: 'Dreamina', icon: DreaminaLogo },
 }
 
 export const AI_MODELS = {
@@ -268,6 +271,13 @@ export const AI_MODELS = {
       desc: 'Specialized coding model, best for dev tasks',
     },
   ],
+  'SETTING-DRM': [
+    {
+      value: 'dreamina-4-0',
+      label: 'Dreamina 4.0',
+      desc: 'ByteDance Dreamina Advanced AI Model',
+    },
+  ],
 }
 
 // Documentation links per AI provider
@@ -314,5 +324,12 @@ export const AI_DOC_CONFIG = {
     color: 'text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300',
     bgColor: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700/50',
     iconColor: 'text-purple-500',
+  },
+  'SETTING-DRM': {
+    label: 'Dreamina Model Docs',
+    url: 'https://www.volcengine.com/docs',
+    color: 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300',
+    bgColor: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700/50',
+    iconColor: 'text-blue-500',
   },
 }
