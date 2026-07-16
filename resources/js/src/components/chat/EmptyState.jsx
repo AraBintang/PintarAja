@@ -1,4 +1,4 @@
-import { FileSearch, FileText, Hash, Speech, Mic, Image as ImageIcon } from 'lucide-react'
+import { FileSearch, FileText, RefreshCw, Speech, Mic, Image as ImageIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 // Icon wrapper dengan warna background per fitur
@@ -38,8 +38,7 @@ const CHAT_FEATURES = [
     tag: 'Reword text',
     to: '/paraphrase',
     color: 'green',
-    icon: <Hash className="w-[18px] h-[18px]" />,
-    isComingSoon: true,
+    icon: <RefreshCw className="w-[18px] h-[18px]" />,
   },
   {
     label: 'Humanizer AI',
