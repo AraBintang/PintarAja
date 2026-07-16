@@ -38,7 +38,7 @@ const menuItems = [
   { label: 'New', icon: Plus, to: '/new', isNew: true },
   { label: 'AI Chat', icon: MessageSquare, to: '/chat' },
   { label: 'AI Writer', icon: FileText, to: '/writer' },
-  { label: 'Paraphrase AI', icon: Hash, to: '/paraphrase' },
+  { label: 'Paraphrase AI', icon: Hash, to: '/paraphrase', isComingSoon: true },
   { label: 'Humanizer AI', icon: Speech, to: '/humanize', isComingSoon: true },
   { label: 'Transcribe AI', icon: Mic, to: '/transcribe' },
   { label: 'Plagiarism Checker', icon: FileSearch, to: '/plagiarism' },

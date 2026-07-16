@@ -39,6 +39,7 @@ const CHAT_FEATURES = [
     to: '/paraphrase',
     color: 'green',
     icon: <Hash className="w-[18px] h-[18px]" />,
+    isComingSoon: true,
   },
   {
     label: 'Humanizer AI',
