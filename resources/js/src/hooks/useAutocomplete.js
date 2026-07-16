@@ -12,9 +12,9 @@ export function useAutocomplete(value, onChange) {
   const fetchSuggestion = async (text) => {
     setIsLoading(true)
     try {
-      const res = await request.post('/api/autocomplete', { text })
-      if (res?.data?.suggestion) {
-        setSuggestion(res.data.suggestion)
+      const res = await request('/autocomplete', { method: 'POST', body: { text } })
+      if (res?.suggestion) {
+        setSuggestion(res.suggestion)
       } else {
         setSuggestion('')
       }
