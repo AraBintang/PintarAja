@@ -215,7 +215,7 @@ export default function ParafrasePage() {
             <RefreshCw className="w-6 h-6 text-gray-500 dark:text-gray-400" />
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-2">
-            Paraphrase AI
+            Paraphrase
           </h1>
         </div>
         <p className="text-gray-500 dark:text-gray-400 text-[16px] leading-relaxed max-w-xl mx-auto px-4">
