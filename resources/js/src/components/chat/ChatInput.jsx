@@ -2,6 +2,7 @@ import { ArrowUp, BookOpen, FileText, Image, ImagePlus, Lock, Music, Plus, Video
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAutocomplete } from '@/hooks/useAutocomplete'
 
 import { AI_CODE_MAP, AI_MODELS, AutoIcon } from '@/assets/ai'
 
@@ -305,11 +306,19 @@ export default function ChatInput({
 }) {
   const navigate = useNavigate()
   const textareaRef = useRef(null)
+  const ghostRef = useRef(null)
   const docRef = useRef(null)
 
   const [toast, setToast] = useState(null)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
   const [generationMode, setGenerationMode] = useState('chat')
+
+  // Custom hook for autocomplete
+  const { suggestion, handleKeyDown: handleAutocompleteKeyDown } = useAutocomplete(inputValue, (val) => {
+    // Override onChange to trigger the parent's handleInput properly
+    const e = { target: { value: val } }
+    handleInput(e)
+  })
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -320,10 +329,25 @@ export default function ChatInput({
 
   useEffect(() => {
     const el = textareaRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = inputValue ? Math.min(el.scrollHeight, 24 * 13) + 'px' : ''
+    if (el) {
+      el.style.height = 'auto'
+      el.style.height = `${Math.min(el.scrollHeight, 312)}px`
+    }
   }, [inputValue])
+
+  // Sync scroll for the ghost text container
+  useEffect(() => {
+    const handleScroll = () => {
+      if (ghostRef.current && textareaRef.current) {
+        ghostRef.current.scrollTop = textareaRef.current.scrollTop
+      }
+    }
+    const el = textareaRef.current
+    if (el) {
+      el.addEventListener('scroll', handleScroll)
+      return () => el.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
 
   const handleInput = (e) => {
     onInputChange(e.target.value)
@@ -333,6 +357,11 @@ export default function ChatInput({
   }
 
   const handleKeyDown = (e) => {
+    if (suggestion && e.key === 'Tab') {
+      handleAutocompleteKeyDown(e)
+      return
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       if (!isStreaming) onSubmit(generationMode)
@@ -440,17 +469,30 @@ export default function ChatInput({
               </div>
             )}
 
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              value={inputValue}
-              onChange={handleInput}
-              onKeyDown={handleKeyDown}
-              onPaste={handlePaste}
-              disabled={isStreaming}
-              placeholder={isStreaming ? 'AI is answering...' : generationMode === 'image' ? 'Deskripsikan gambar yang ingin Anda buat...' : generationMode === 'video' ? 'Jelaskan video Anda...' : generationMode === 'music' ? 'Jelaskan musik Anda...' : 'Silakan tanyakan apa saja, Buat Foto/ Video'}
-              className="w-full px-5 my-4 text-[15px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none bg-transparent resize-none min-h-[35px] max-h-[312px] disabled:cursor-not-allowed transition-colors"
-            />
+            <div className="relative">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={inputValue}
+                onChange={handleInput}
+                onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
+                disabled={isStreaming}
+                placeholder={isStreaming ? 'AI is answering...' : generationMode === 'image' ? 'Deskripsikan gambar yang ingin Anda buat...' : generationMode === 'video' ? 'Jelaskan video Anda...' : generationMode === 'music' ? 'Jelaskan musik Anda...' : 'Silakan tanyakan apa saja, Buat Foto/ Video'}
+                className="w-full px-5 my-4 text-[15px] text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none bg-transparent resize-none min-h-[35px] max-h-[312px] disabled:cursor-not-allowed transition-colors relative z-10"
+              />
+              {suggestion && (
+                <div 
+                  ref={ghostRef}
+                  className="absolute inset-0 pointer-events-none whitespace-pre-wrap break-words overflow-hidden text-[15px] leading-relaxed w-full min-h-[35px] max-h-[312px] px-5 my-4"
+                  style={{ padding: '0px 20px', margin: '16px 0px' }}
+                >
+                  <span className="text-transparent">{inputValue}</span>
+                  <span className="text-gray-400/80 dark:text-gray-500">{suggestion}</span>
+                  <span className="inline-flex items-center justify-center px-1.5 py-0.5 ml-1 text-[10px] font-medium text-gray-500 bg-gray-100 border border-gray-200 rounded-md dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 align-middle">Tab</span>
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center justify-between px-3 pb-3">
               <div className="flex items-center gap-1 relative">

@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useAutocomplete } from '@/hooks/useAutocomplete'
 
 import FilePickerModal from './FilePickerModal'
 import WriterToolbar from './WriterToolbar'
@@ -86,6 +87,8 @@ const WriterForm = memo(function WriterForm({
 }) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const instruksiRef = useRef(null)
+  const ghostRef = useRef(null)
+  const { suggestion, handleKeyDown } = useAutocomplete(instruksi, onInstruksiChange)
 
   // Auto-grow textarea for additional instructions
   useEffect(() => {
@@ -98,6 +101,20 @@ const WriterForm = memo(function WriterForm({
       textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px'
     }
   }, [instruksi])
+
+  // Sync scroll for the ghost text container
+  useEffect(() => {
+    const handleScroll = () => {
+      if (ghostRef.current && instruksiRef.current) {
+        ghostRef.current.scrollTop = instruksiRef.current.scrollTop
+      }
+    }
+    const el = instruksiRef.current
+    if (el) {
+      el.addEventListener('scroll', handleScroll)
+      return () => el.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
 
   const handleRemoveFile = (fileId) => {
     onFilesChange(selectedFiles.filter((f) => f.fileId !== fileId))
@@ -321,14 +338,28 @@ const WriterForm = memo(function WriterForm({
               Prompt Library
             </button>
           </div>
-          <textarea
-            ref={instruksiRef}
-            value={instruksi}
-            onChange={(e) => onInstruksiChange(e.target.value)}
-            placeholder="Add special instructions..."
-            rows={1}
-            className="w-full bg-transparent text-[13px] md:text-[14px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed min-h-[24px] overflow-y-auto"
-          />
+          <div className="relative">
+            <textarea
+              ref={instruksiRef}
+              value={instruksi}
+              onChange={(e) => onInstruksiChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Add special instructions..."
+              rows={1}
+              className="w-full bg-transparent text-[13px] md:text-[14px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none leading-relaxed min-h-[24px] overflow-y-auto relative z-10"
+            />
+            {suggestion && (
+              <div 
+                ref={ghostRef}
+                className="absolute inset-0 pointer-events-none whitespace-pre-wrap break-words overflow-hidden text-[13px] md:text-[14px] leading-relaxed w-full min-h-[24px]"
+                style={{ padding: '0px', margin: '0px' }}
+              >
+                <span className="text-transparent">{instruksi}</span>
+                <span className="text-gray-400/80 dark:text-gray-500">{suggestion}</span>
+                <span className="inline-flex items-center justify-center px-1.5 py-0.5 ml-1 text-[10px] font-medium text-gray-500 bg-gray-100 border border-gray-200 rounded-md dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 align-middle">Tab</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Toolbar */}

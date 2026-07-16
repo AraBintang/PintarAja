@@ -16,6 +16,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlagiarismController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AutocompleteController;
 use App\Http\Controllers\PromptController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ResetController;
@@ -174,6 +175,8 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
             Route::put('/deactivate/{id}', [SettingAiController::class, 'deactivate']);
             Route::delete('/{id}', [SettingAiController::class, 'destroy']);
         });
+
+        Route::post('/autocomplete', [AutocompleteController::class, 'suggest']);
 
         Route::prefix('plans')->group(function () {
             Route::post('/', [PlanController::class, 'store']);
