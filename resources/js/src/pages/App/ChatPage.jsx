@@ -352,7 +352,7 @@ export default function ChatPage() {
     return { content: reply, annotations: [] }
   }
 
-  const handleSendMessage = async (mode = 'chat') => {
+  const handleSendMessage = async (mode = 'chat', options = {}) => {
     let text = inputValue.trim()
 
     if (!text && !attachedFiles.length) return
@@ -364,10 +364,21 @@ export default function ChatPage() {
 
     if (isStreaming) return
 
-    if (mode === 'image' && !text.match(/buat|bikin|gambar|create|lukis/i)) {
-      text = "Buatkan gambar: " + text
-    } else if (mode === 'video' && !text.match(/buat|bikin|video|create/i)) {
-      text = "Buatkan video: " + text
+    if (mode === 'image') {
+      if (!text.match(/buat|bikin|gambar|create|lukis/i)) {
+        text = "Buatkan gambar: " + text
+      }
+      if (options.aspectRatio) text += `\n[Aspect Ratio: ${options.aspectRatio}]`
+      if (options.imageStyle && options.imageStyle !== 'Auto') text += `\n[Style: ${options.imageStyle}]`
+      if (options.imageOption === 'Kecepatan') text += `\n[Quality: Fast/Turbo]`
+      else if (options.imageOption === 'Kualitas') text += `\n[Quality: High Detail/Best]`
+    } else if (mode === 'video') {
+      if (!text.match(/buat|bikin|video|create/i)) {
+        text = "Buatkan video: " + text
+      }
+      if (options.videoRes) text += `\n[Resolution: ${options.videoRes}]`
+      if (options.videoDuration) text += `\n[Duration: ${options.videoDuration}]`
+      if (options.aspectRatio) text += `\n[Aspect Ratio: ${options.aspectRatio}]`
     } else if (mode === 'music' && !text.match(/buat|bikin|lagu|musik|create/i)) {
       text = "Buatkan lagu: " + text
     }

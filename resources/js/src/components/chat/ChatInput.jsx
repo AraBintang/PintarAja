@@ -373,7 +373,7 @@ export default function ChatInput({
 
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      if (!isStreaming) onSubmit(generationMode)
+      if (!isStreaming) onSubmit(generationMode, { imageOption, imageStyle, videoRes, videoDuration, aspectRatio })
     }
   }
 
@@ -444,7 +444,7 @@ export default function ChatInput({
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            if (!isStreaming) onSubmit(generationMode)
+            if (!isStreaming) onSubmit(generationMode, { imageOption, imageStyle, videoRes, videoDuration, aspectRatio })
           }}
           className="w-full bg-white -mt-8 dark:bg-gray-800 rounded-[32px] border border-gray-200/60 dark:border-gray-700/50 shadow-sm relative"
         >
