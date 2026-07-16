@@ -26,9 +26,9 @@ class AutocompleteController extends Controller
 
         try {
             // Get any active AI provider
-            $activeSetting = SettingAI::where('M_SettingAiIsActive', 'Y')
-                ->whereNotNull('M_SettingAiAPIKey')
-                ->where('M_SettingAiAPIKey', '!=', '')
+            $activeSetting = SettingAI::where('M_SettingIsActive', 'Y')
+                ->whereNotNull('M_SettingKey')
+                ->where('M_SettingKey', '!=', '')
                 ->first();
 
             if (!$activeSetting) {
@@ -47,8 +47,8 @@ class AutocompleteController extends Controller
             ];
 
             // Use the model configured for this active provider
-            $model = $activeSetting->M_SettingAiModel;
-            $provider = $activeSetting->M_SettingAiProvider;
+            $model = $activeSetting->M_SettingModel;
+            $provider = $activeSetting->M_SettingCode;
             
             // Fallbacks if model is not properly set
             if (empty($model)) {
@@ -59,7 +59,7 @@ class AutocompleteController extends Controller
 
             $response = $this->aiProvider->generateText(
                 $provider,
-                $activeSetting->M_SettingAiAPIKey,
+                $activeSetting->M_SettingKey,
                 $model,
                 $messages,
                 20
