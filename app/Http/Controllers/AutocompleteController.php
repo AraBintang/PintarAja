@@ -38,11 +38,16 @@ class AutocompleteController extends Controller
             $messages = [
                 [
                     'role' => 'system',
-                    'content' => 'Anda adalah AI autocomplete. Lanjutkan kalimat terakhir pengguna dengan 1-5 kata. JANGAN ulang kalimat pengguna. JANGAN beri salam. LANGSUNG berikan sambungan katanya.'
+                    'content' => "Kamu adalah fitur autocomplete cerdas. Tugasmu HANYA MELANJUTKAN kalimat dari pengguna dengan maksimal 3-5 kata berikutnya yang paling relevan.
+ATURAN KERAS:
+1. JANGAN PERNAH mengulang kata-kata yang sudah diketik pengguna.
+2. JANGAN tambahkan label apapun seperti 'Penjelasan:' atau 'Teks:'.
+3. JANGAN berikan salam atau penjelasan.
+4. HANYA berikan kata sambungannya saja."
                 ],
                 [
                     'role' => 'user',
-                    'content' => "Teks: " . $text
+                    'content' => $text
                 ]
             ];
 
