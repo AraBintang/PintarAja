@@ -177,7 +177,6 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
             Route::put('/deactivate/{id}', [SettingAiController::class, 'deactivate']);
             Route::delete('/{id}', [SettingAiController::class, 'destroy']);
         });
-        });
 
         Route::prefix('plans')->group(function () {
             Route::post('/', [PlanController::class, 'store']);
