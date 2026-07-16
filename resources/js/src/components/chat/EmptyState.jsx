@@ -34,7 +34,7 @@ const CHAT_FEATURES = [
     icon: <FileText className="w-[18px] h-[18px]" />,
   },
   {
-    label: 'Paraphrase AI',
+    label: 'Paraphrase',
     tag: 'Reword text',
     to: '/paraphrase',
     color: 'green',
