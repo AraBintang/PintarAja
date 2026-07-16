@@ -723,38 +723,34 @@ export default function ChatInput({
                   )}
                 </div>
 
-                {generationMode === 'chat' && (
-                  <>
-                    <div className="flex items-center ml-1 bg-[#eeedeb] dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full">
-                      <ModelSelect
-                        value={selectedAiId}
-                        onChange={onAiChange}
-                        aiProviders={aiProviders}
-                        disabled={isStreaming}
-                        getQuota={getQuota}
-                      />
-                    </div>
+                <div className="flex items-center ml-1 bg-[#eeedeb] dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full">
+                  <ModelSelect
+                    value={selectedAiId}
+                    onChange={onAiChange}
+                    aiProviders={aiProviders}
+                    disabled={isStreaming}
+                    getQuota={getQuota}
+                  />
+                </div>
 
-                    {(() => {
-                      const q = getQuota?.(selectedProvider?.code)
-                      if (!q) return null
-                      return (
-                        <div
-                          className={`flex items-center gap-1 px-3 py-2.5 rounded-full text-[11px] font-semibold border ${
-                            q.remaining === 0
-                              ? 'bg-red-50 border-red-200 text-red-500 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'
-                              : q.remaining <= 2
-                                ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400'
-                                : 'bg-gray-100 border-gray-200 text-gray-500 dark:bg-gray-800 dark:border-gray-700'
-                          }`}
-                        >
-                          <span>{q.remaining === 0 ? '⚠' : '⚡'}</span>
-                          <span>{q.remaining === 0 ? 'Limit' : `${q.remaining}/${q.limit}`}</span>
-                        </div>
-                      )
-                    })()}
-                  </>
-                )}
+                {(() => {
+                  const q = getQuota?.(selectedProvider?.code)
+                  if (!q) return null
+                  return (
+                    <div
+                      className={`flex items-center gap-1 px-3 py-2.5 rounded-full text-[11px] font-semibold border ${
+                        q.remaining === 0
+                          ? 'bg-red-50 border-red-200 text-red-500 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'
+                          : q.remaining <= 2
+                            ? 'bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400'
+                            : 'bg-gray-100 border-gray-200 text-gray-500 dark:bg-gray-800 dark:border-gray-700'
+                      }`}
+                    >
+                      <span>{q.remaining === 0 ? '⚠' : '⚡'}</span>
+                      <span>{q.remaining === 0 ? 'Limit' : `${q.remaining}/${q.limit}`}</span>
+                    </div>
+                  )
+                })()}
               </div>
 
               <div className="pr-1 flex gap-2">
