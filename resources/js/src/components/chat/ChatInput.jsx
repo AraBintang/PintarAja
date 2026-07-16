@@ -319,6 +319,8 @@ export default function ChatInput({
   const [videoDuration, setVideoDuration] = useState('6s') // '6s' | '10s'
   const [aspectRatio, setAspectRatio] = useState('9:16')
   const [showRatioMenu, setShowRatioMenu] = useState(false)
+  const [imageStyle, setImageStyle] = useState('Auto')
+  const [showStyleMenu, setShowStyleMenu] = useState(false)
 
   // Custom hook for autocomplete
   const { suggestion, handleKeyDown: handleAutocompleteKeyDown } = useAutocomplete(inputValue, (val) => {
@@ -618,7 +620,7 @@ export default function ChatInput({
                 )}
 
                 {/* Bubbles Row */}
-                <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar no-scrollbar py-1 ml-1 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap py-1 ml-1 flex-1">
                   {/* Mode Toggles */}
                   <button 
                     type="button" 
@@ -644,11 +646,31 @@ export default function ChatInput({
                       <button type="button" onClick={() => setImageOption('Kecepatan')} className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${imageOption === 'Kecepatan' ? 'bg-[#2a2a2b] text-white dark:bg-white/10 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}>Kecepatan</button>
                       <button type="button" onClick={() => setImageOption('Kualitas')} className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${imageOption === 'Kualitas' ? 'bg-[#2a2a2b] text-white dark:bg-white/10 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}>Kualitas</button>
                       
-                      <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 whitespace-nowrap">
-                        <Image className="w-3.5 h-3.5" />
-                        <span>Auto</span>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                      </button>
+                      <div className="relative">
+                        <button type="button" onClick={() => setShowStyleMenu(!showStyleMenu)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5 whitespace-nowrap">
+                          <Image className="w-3.5 h-3.5" />
+                          <span>{imageStyle}</span>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+
+                        {showStyleMenu && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowStyleMenu(false)}></div>
+                            <div className="absolute bottom-full left-0 mb-2 w-40 bg-[#2a2a2b] dark:bg-[#1c1c1e] text-white rounded-xl shadow-lg border border-gray-700/50 p-2 z-50">
+                              {['Auto', 'Anime', 'Photographic', 'Digital Art', 'Cinematic'].map(style => (
+                                <button
+                                  key={style}
+                                  type="button"
+                                  onClick={() => { setImageStyle(style); setShowStyleMenu(false); }}
+                                  className={`w-full flex items-center px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-left text-[12px] ${imageStyle === style ? 'bg-white/10 text-white font-medium' : 'text-gray-400'}`}
+                                >
+                                  <span>{style}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </>
                   )}
 
