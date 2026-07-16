@@ -440,7 +440,7 @@ export default function ChatInput({
       className="fixed bottom-0 right-0 transition-all duration-300 ease-in-out"
       style={{ left: isMobile ? '10px' : 'var(--sidebar-w, 64px)', right: isMobile ? '10px' : '' }}
     >
-      <div className="max-w-3xl md:mx-auto w-full bg-[#f7f7f5] dark:bg-[#0f141e] rounded-t-4xl">
+      <div className="max-w-4xl md:mx-auto w-full bg-[#f7f7f5] dark:bg-[#0f141e] rounded-t-4xl">
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -620,7 +620,7 @@ export default function ChatInput({
                 )}
 
                 {/* Bubbles Row */}
-                <div className="flex items-center gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 ml-1 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap py-1 ml-1 flex-1">
                   {/* Mode Toggles */}
                   <button 
                     type="button" 
