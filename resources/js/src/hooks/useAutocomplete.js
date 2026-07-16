@@ -34,7 +34,8 @@ export function useAutocomplete(value, onChange) {
     }
 
     const lastTwoChars = value.slice(-2)
-    const justTypedPeriodSpace = lastTwoChars === '. ' && value !== prevValueRef.current
+    const valueChanged = value !== prevValueRef.current
+    const justTypedPeriodSpace = lastTwoChars === '. ' && valueChanged
 
     prevValueRef.current = value
 
@@ -44,8 +45,8 @@ export function useAutocomplete(value, onChange) {
       debounceRef.current = setTimeout(() => {
         fetchSuggestion(value)
       }, 400)
-    } else {
-      // If typing continues and no longer ends in ". ", clear it
+    } else if (valueChanged) {
+      // Only clear if the user actually typed something else
       if (suggestion) {
         setSuggestion('')
       }
