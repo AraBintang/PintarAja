@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Copy, Hash, RotateCcw, Sparkles, Upload } from 'lucide-react'
+import { Check, ChevronDown, Copy, RefreshCw, RotateCcw, Sparkles, Upload } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import Lottie from 'lottie-react'
@@ -24,16 +24,6 @@ const limitWords = (text, maxWords) => {
 export default function ParafrasePage() {
   const { user, me } = useAuth()
   const { showSnackbar } = useSnackbar()
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh]">
-      <Lottie animationData={Lottie404} loop autoplay className="w-[300px] h-[300px]" />
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-4">Sistem Sedang Maintenance</h2>
-      <p className="text-gray-500 dark:text-gray-400 mt-2 text-center max-w-md">
-        Fitur Paraphrase AI sedang dalam tahap perbaikan dan peningkatan sistem. Mohon kembali lagi nanti.
-      </p>
-    </div>
-  )
 
   const [inputText, setInputText] = useState('')
   const [outputText, setOutputText] = useState('')
@@ -222,7 +212,7 @@ export default function ParafrasePage() {
       <div className="max-w-[1200px] mx-auto w-full z-10 text-center mt-18 mb-4 md:my-6">
         <div className="flex flex-col items-center justify-center gap-2">
           <div className="w-12 h-12 bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 rounded-xl flex items-center justify-center">
-            <Hash className="w-6 h-6 text-gray-500 dark:text-gray-400" />
+            <RefreshCw className="w-6 h-6 text-gray-500 dark:text-gray-400" />
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-2">
             Paraphrase AI
@@ -335,7 +325,7 @@ export default function ParafrasePage() {
               {!inputText && (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-4">
                   <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-gray-800 flex items-center justify-center">
-                    <Hash className="w-5 h-5 text-blue-400 dark:text-gray-500" />
+                    <RefreshCw className="w-5 h-5 text-blue-400 dark:text-gray-500" />
                   </div>
                   <p className="text-[13px] text-gray-400 dark:text-gray-500 font-medium">
                     Paste or type your text to get started
@@ -345,7 +335,7 @@ export default function ParafrasePage() {
                       onClick={handleTrySample}
                       className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold border border-blue-200 bg-blue-50 text-[#2686D4] dark:text-[#F2901E] hover:bg-blue-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:hover:bg-orange-500/20 whitespace-nowrap rounded-full"
                     >
-                      <Hash className="w-4 h-4" />
+                      <RefreshCw className="w-4 h-4" />
                       Try Sample Text
                     </button>
                     <button
