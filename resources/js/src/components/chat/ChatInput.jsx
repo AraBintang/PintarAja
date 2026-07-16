@@ -493,8 +493,8 @@ export default function ChatInput({
               )}
             </div>
 
-            <div className="flex items-center justify-between px-3 pb-3">
-              <div className="flex items-center gap-1 relative">
+            <div className="flex items-end justify-between px-3 pb-3">
+              <div className="flex items-end gap-1 relative w-full">
                 {(() => {
                   const accepts = []
                   if (canAttachImage) accepts.push('image/*')
@@ -620,7 +620,7 @@ export default function ChatInput({
                 )}
 
                 {/* Bubbles Row */}
-                <div className="flex items-center gap-1.5 flex-wrap py-1 ml-1 flex-1">
+                <div className="flex items-center gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 ml-1 flex-1">
                   {/* Mode Toggles */}
                   <button 
                     type="button" 
@@ -753,7 +753,7 @@ export default function ChatInput({
                 })()}
               </div>
 
-              <div className="pr-1 flex gap-2">
+              <div className="pr-1 pl-1 flex items-end gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={onPromptLibraryOpen}
