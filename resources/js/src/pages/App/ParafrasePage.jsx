@@ -1,6 +1,8 @@
 import { Check, ChevronDown, Copy, Hash, RotateCcw, Sparkles, Upload } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
+import Lottie from 'lottie-react'
+import Lottie404 from '@/assets/lottie/404.json'
 
 import LanguageSelector from '@/components/LanguageSelector'
 import { useAuth } from '@/context/AuthContext'
@@ -22,6 +24,16 @@ const limitWords = (text, maxWords) => {
 export default function ParafrasePage() {
   const { user, me } = useAuth()
   const { showSnackbar } = useSnackbar()
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[80vh]">
+      <Lottie animationData={Lottie404} loop autoplay className="w-[300px] h-[300px]" />
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-4">Sistem Sedang Maintenance</h2>
+      <p className="text-gray-500 dark:text-gray-400 mt-2 text-center max-w-md">
+        Fitur Paraphrase AI sedang dalam tahap perbaikan dan peningkatan sistem. Mohon kembali lagi nanti.
+      </p>
+    </div>
+  )
 
   const [inputText, setInputText] = useState('')
   const [outputText, setOutputText] = useState('')
