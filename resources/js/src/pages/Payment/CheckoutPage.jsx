@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Store,
   Sun,
+  Ticket,
   Wallet,
   Zap,
 } from 'lucide-react'
@@ -87,6 +88,10 @@ export default function CheckoutPage() {
   const plagiarismData = location.state?.plagiarismData ?? null
 
   const [referralDiscount, setReferralDiscount] = useState(null)
+  const [couponInput, setCouponInput] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
+  const [validatingCoupon, setValidatingCoupon] = useState(false)
+  const [couponError, setCouponError] = useState('')
   const [plan, setPlan] = useState(location.state?.plan ?? null)
   const [phone, setPhone] = useState(plagiarismData?.whatsappPhone ?? user?.phone ?? '')
   const [selectedMethod, setSelectedMethod] = useState(null)
@@ -124,8 +129,46 @@ export default function CheckoutPage() {
     !isPlagiarism && !isYearly && referralDiscount?.discount_percent
       ? referralDiscount.discount_percent
       : 0
-  const discountAmount = discountPercent > 0 ? Math.round(price * (discountPercent / 100)) : 0
-  const finalPrice = price - discountAmount
+  const referralDiscountAmount = discountPercent > 0 ? Math.round(price * (discountPercent / 100)) : 0
+
+  let couponDiscountAmount = 0
+  if (appliedCoupon && !isPlagiarism) {
+    if (appliedCoupon.type === 'percentage') {
+      couponDiscountAmount = Math.round(price * (appliedCoupon.discount / 100))
+    } else {
+      couponDiscountAmount = appliedCoupon.discount
+    }
+  }
+
+  const finalPrice = Math.max(1000, price - referralDiscountAmount - couponDiscountAmount)
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return
+    setValidatingCoupon(true)
+    setCouponError('')
+    try {
+      const res = await request('/payments/check-discount', {
+        method: 'POST',
+        body: { discount_code: couponInput.trim() },
+      })
+      setAppliedCoupon({
+        code: res.code,
+        type: res.type,
+        discount: res.discount,
+      })
+      setCouponInput('')
+      showSnackbar('success', 'Kode promo berhasil digunakan!')
+    } catch (err) {
+      setCouponError(err.message || 'Kode promo tidak valid')
+    } finally {
+      setValidatingCoupon(false)
+    }
+  }
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponError('')
+  }
 
   // ── Submit: beda handler untuk plagiarism vs subscription ──
   const handleProceed = async () => {
@@ -207,6 +250,7 @@ export default function CheckoutPage() {
           method: selectedMethod,
           item: plan.itemName ?? `${plan.name} - ${plan.selectedPeriodSuffix ?? 'Monthly'}`,
           phone,
+          discount_code: appliedCoupon?.code,
         },
       })
 
@@ -442,7 +486,67 @@ export default function CheckoutPage() {
                       <div className="flex justify-between text-xs">
                         <span className="text-emerald-600 dark:text-emerald-400">Diskon</span>
                         <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                          - Rp {formatPrice(discountAmount)}
+                          - Rp {formatPrice(referralDiscountAmount)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Input Kode Kupon - hanya untuk subscription */}
+                  {!isPlagiarism && (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Masukkan kode promo"
+                          value={couponInput}
+                          onChange={(e) => {
+                            setCouponInput(e.target.value)
+                            setCouponError('')
+                          }}
+                          disabled={!!appliedCoupon}
+                          className="flex-1 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/60 text-sm text-gray-800 dark:text-gray-200
+                            border border-gray-200 dark:border-gray-700
+                            focus:ring-2 focus:ring-blue-100 dark:focus:ring-orange-900/20
+                            focus:border-blue-400 dark:focus:border-orange-400
+                            outline-none transition-all placeholder-gray-400 uppercase"
+                        />
+                        {!appliedCoupon ? (
+                          <button
+                            onClick={handleApplyCoupon}
+                            disabled={validatingCoupon || !couponInput.trim()}
+                            className="px-4 py-2 rounded-lg bg-blue-600 dark:bg-orange-500 text-white text-sm font-semibold hover:bg-blue-700 dark:hover:bg-orange-600 transition-colors disabled:opacity-50"
+                          >
+                            {validatingCoupon ? 'Cek...' : 'Pakai'}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={removeCoupon}
+                            className="px-4 py-2 rounded-lg bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 text-sm font-semibold hover:bg-rose-200 dark:hover:bg-rose-900/50 transition-colors"
+                          >
+                            Batal
+                          </button>
+                        )}
+                      </div>
+                      {couponError && (
+                        <p className="text-xs text-rose-500 font-medium">{couponError}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Info Kupon yang Dipakai */}
+                  {appliedCoupon && (
+                    <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Ticket className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase">
+                          Kupon: {appliedCoupon.code}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-blue-600 dark:text-blue-400">Potongan Kupon</span>
+                        <span className="text-blue-600 dark:text-blue-400 font-bold">
+                          - Rp {formatPrice(couponDiscountAmount)}
                         </span>
                       </div>
                     </div>
