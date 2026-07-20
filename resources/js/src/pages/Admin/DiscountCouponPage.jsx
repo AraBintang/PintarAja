@@ -15,7 +15,14 @@ import Pagination from '@/components/Pagination'
 import { useSnackbar } from '@/context/SnackbarContext'
 import { useDiscountCoupons } from '@/helpers/useDiscountCoupons'
 import { Debounce } from '@/utils/Debounce'
-import { formatRupiah } from '@/utils/Formatter'
+
+const formatRupiah = (amount) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0
+  }).format(amount)
+}
 
 const PAGE_SIZE = 10
 
