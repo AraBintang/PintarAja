@@ -4,6 +4,7 @@ import SidebarLayout from '@/layout/SidebarLayout'
 import AdminAIPage from '@/pages/Admin/AIPage'
 import BlogPage from '@/pages/Admin/BlogPage'
 import CouponPage from '@/pages/Admin/CouponPage'
+import DiscountCouponPage from '@/pages/Admin/DiscountCouponPage'
 import MiscellaneousPage from '@/pages/Admin/MiscellaneousPage'
 import AdminPaperPage from '@/pages/Admin/PaperPage'
 import AdminPlanPage from '@/pages/Admin/PlanPage'
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
               { path: 'admin/ai', element: <AdminAIPage /> },
               { path: 'admin/plan', element: <AdminPlanPage /> },
               { path: 'admin/coupons', element: <CouponPage /> },
+              { path: 'admin/discount-coupons', element: <DiscountCouponPage /> },
               { path: 'admin/user', element: <AdminUserPage /> },
               { path: 'admin/api-tokens', element: <ApiTokenPage /> },
               { path: 'admin/token-costs', element: <TokenCostPage /> },

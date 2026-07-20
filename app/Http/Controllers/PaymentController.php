@@ -76,6 +76,7 @@ class PaymentController extends Controller
             'method' => 'required|string',
             'item' => 'required|string|max:255',
             'phone' => 'required|string|max:15',
+            'discount_code' => 'nullable|string',
         ]);
     
         if ($validated['planId'] == 1) {
@@ -90,9 +91,34 @@ class PaymentController extends Controller
         $finalAmount = $originalAmount;
     
         if ($pendingDiscountPercent > 0) {
-            $discountAmount = (int) round($originalAmount * ($pendingDiscountPercent / 100));
-            $finalAmount = max($originalAmount - $discountAmount, 1000);
+            $discountAmount += (int) round($originalAmount * ($pendingDiscountPercent / 100));
         }
+
+        $appliedCoupon = null;
+        if (!empty($validated['discount_code'])) {
+            $code = strtoupper(trim($validated['discount_code']));
+            $coupon = \App\Models\DiscountCoupon::where('M_DiscountCouponCode', $code)
+                ->where('M_DiscountCouponIsActive', true)
+                ->first();
+
+            if ($coupon && now() <= $coupon->M_DiscountCouponExpired) {
+                if ($coupon->M_DiscountCouponMaxUses === null || $coupon->M_DiscountCouponUsedCount < $coupon->M_DiscountCouponMaxUses) {
+                    $couponDiscount = 0;
+                    if ($coupon->M_DiscountCouponType === 'percentage') {
+                        $couponDiscount = (int) round($originalAmount * ($coupon->M_DiscountCouponAmount / 100));
+                    } else {
+                        $couponDiscount = $coupon->M_DiscountCouponAmount;
+                    }
+                    $discountAmount += $couponDiscount;
+                    $appliedCoupon = $code;
+
+                    // Increment used count
+                    $coupon->increment('M_DiscountCouponUsedCount');
+                }
+            }
+        }
+
+        $finalAmount = max($originalAmount - $discountAmount, 1000);
     
         $merchantRef = 'ORDER-' . time() . '-' . rand(1000, 9999);
     
@@ -173,6 +199,7 @@ class PaymentController extends Controller
                 'discountPercent' => $pendingDiscountPercent,
                 'discountAmount' => $discountAmount,
                 'finalAmount' => $finalAmount,
+                'appliedCoupon' => $appliedCoupon,
             ],
         ], 200);
     }

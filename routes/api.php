@@ -146,6 +146,7 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
     Route::prefix('payments')->group(function () {
         Route::get('/', [PaymentController::class, 'index']);
         Route::get('/referral-discount', [PaymentController::class, 'getReferralDiscount']);
+        Route::post('/check-discount', [\App\Http\Controllers\DiscountCouponController::class, 'check']);
         Route::get('/{referenceId}', [PaymentController::class, 'indexByReferenceId']);
         Route::post('/topup', [PaymentController::class, 'topup']);
         Route::post('/', [PaymentController::class, 'store']);
@@ -189,6 +190,12 @@ Route::middleware(['auth:sanctum', 'track.activity'])->group(function () {
             Route::get('/generate', [CouponController::class, 'generateOneMillion']);
             Route::post('/', [CouponController::class, 'store']);
             Route::delete('/{id}', [CouponController::class, 'destroy']);
+        });
+
+        Route::prefix('discount-coupons')->group(function () {
+            Route::get('/', [\App\Http\Controllers\DiscountCouponController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\DiscountCouponController::class, 'store']);
+            Route::delete('/{id}', [\App\Http\Controllers\DiscountCouponController::class, 'destroy']);
         });
 
         Route::prefix('users')->group(function () {
