@@ -149,12 +149,15 @@ export default function CheckoutPage() {
     try {
       const res = await request('/payments/check-discount', {
         method: 'POST',
-        body: { discount_code: couponInput.trim() },
+        body: { 
+          code: couponInput.trim(),
+          original_amount: price 
+        },
       })
       setAppliedCoupon({
         code: res.code,
         type: res.type,
-        discount: res.discount,
+        discount: res.amount,
       })
       setCouponInput('')
       showSnackbar('success', 'Kode promo berhasil digunakan!')
