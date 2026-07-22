@@ -54,19 +54,29 @@ class UsageService
     public function getQuotaByUser(int $userId): array
     {
         $today = Carbon::today();
+        
+        $limitedSettings = \App\Models\SettingAI::whereNotNull('M_SettingDailyLimit')
+            ->where('M_SettingDailyLimit', '>', 0)
+            ->get(['M_SettingCode', 'M_SettingDailyLimit']);
+
+        $settingCodes = $limitedSettings->pluck('M_SettingCode')->toArray();
+
         $usages = Usage::where('T_UsageM_UserID', $userId)
             ->where('T_UsageDate', $today)
-            ->whereIn('T_UsageModels', self::LIMITED_MODELS)
+            ->whereIn('T_UsageModels', $settingCodes)
             ->get()
             ->keyBy('T_UsageModels');
 
         $result = [];
-        foreach (self::LIMITED_MODELS as $model) {
-            $used = $usages->get($model)?->T_UsageCount ?? 0;
-            $result[$model] = [
+        foreach ($limitedSettings as $setting) {
+            $code = $setting->M_SettingCode;
+            $limit = $setting->M_SettingDailyLimit;
+            $used = $usages->get($code)?->T_UsageCount ?? 0;
+            
+            $result[$code] = [
                 'used'      => $used,
-                'limit'     => self::DAILY_LIMIT,
-                'remaining' => max(0, self::DAILY_LIMIT - $used),
+                'limit'     => $limit,
+                'remaining' => max(0, $limit - $used),
             ];
         }
         return $result;
