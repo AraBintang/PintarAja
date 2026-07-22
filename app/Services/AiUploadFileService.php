@@ -288,8 +288,12 @@ class AiUploadFileService
                 }
             }
         }
-        
-        $content[] = ['type' => 'text', 'text' => $message];
+        $messageText = trim((string)$message);
+        if ($messageText !== '') {
+            $content[] = ['type' => 'text', 'text' => $messageText];
+        } else {
+            $content[] = ['type' => 'text', 'text' => 'Tolong analisa lampiran ini.'];
+        }
 
         $model = $provider->M_SettingModel ?? 'claude-3-5-sonnet-20241022';
         
