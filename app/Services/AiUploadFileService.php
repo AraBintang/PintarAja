@@ -295,12 +295,12 @@ class AiUploadFileService
             $content[] = ['type' => 'text', 'text' => 'Tolong analisa lampiran ini.'];
         }
 
-        $model = $provider->M_SettingModel ?? 'claude-3-5-sonnet-20241022';
+        $model = $provider->M_SettingModel ?? 'claude-3-5-sonnet-20240620';
         
         $modelMap = [
-            'claude-5.0' => 'claude-3-5-sonnet-20241022',
+            'claude-5.0' => 'claude-3-5-sonnet-20240620',
             'claude-4.8' => 'claude-3-opus-20240229',
-            'claude-sonnet-5' => 'claude-3-5-sonnet-20241022',
+            'claude-sonnet-5' => 'claude-3-5-sonnet-20240620',
             'claude-sonnet-4-6' => 'claude-3-5-sonnet-20240620',
             'claude-opus-4-6' => 'claude-3-opus-20240229',
             'claude-opus-4-5-20251101' => 'claude-3-opus-20240229',
