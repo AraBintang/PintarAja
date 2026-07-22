@@ -76,11 +76,21 @@ export default function RightSidebar() {
   const sentinelRef = useRef(null)
   const searchTimerRef = useRef(null)
 
-  const current = PAGE_CONFIG[location.pathname] || { title: 'Riwayat', icon: Clock, apiPath: null }
+  const getPageConfig = () => {
+    if (location.pathname.startsWith('/chat')) return PAGE_CONFIG['/chat']
+    return PAGE_CONFIG[location.pathname] || { title: 'Riwayat', icon: Clock, apiPath: null }
+  }
+  
+  const current = getPageConfig()
   const IconComponent = current.icon
-  const canRename = RENAME_SUPPORTED.includes(location.pathname)
-  const canDelete = DELETE_SUPPORTED.includes(location.pathname)
-  const apiPrefix = API_PREFIX[location.pathname]
+  const canRename = RENAME_SUPPORTED.some(path => location.pathname.startsWith(path))
+  const canDelete = DELETE_SUPPORTED.some(path => location.pathname.startsWith(path))
+  
+  const getApiPrefix = () => {
+    if (location.pathname.startsWith('/chat')) return API_PREFIX['/chat']
+    return API_PREFIX[location.pathname]
+  }
+  const apiPrefix = getApiPrefix()
 
   // ─── FETCH ───────────────────────────────────────────────────
 
@@ -193,7 +203,7 @@ export default function RightSidebar() {
   useEffect(() => {
     const handlers = {
       conversationCreated: (e) => {
-        if (location.pathname !== '/chat' && location.pathname !== '/new') return
+        if (!location.pathname.startsWith('/chat') && location.pathname !== '/new') return
         const conv = e.detail
         setHistoryItems((prev) => {
           if (prev.some((h) => h.id === conv.id)) return prev
@@ -358,7 +368,7 @@ export default function RightSidebar() {
         prev.map((h) => (h.id === item.id ? { ...h, title: newName, name: newName } : h)),
       )
 
-      if (location.pathname === '/chat' || location.pathname === '/new') {
+      if (location.pathname.startsWith('/chat') || location.pathname === '/new') {
         window.dispatchEvent(
           new CustomEvent('conversationRenamed', { detail: { id: item.id, title: newName } }),
         )

@@ -242,7 +242,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     const handleDeleted = (e) => {
-      if (e.detail.path !== '/chat' && e.detail.path !== '/new') return
+      if (!e.detail.path.startsWith('/chat') && e.detail.path !== '/new') return
       if (e.detail.id === conversationId) {
         setMessages([])
         setConversationId(null)
