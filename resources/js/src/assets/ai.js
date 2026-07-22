@@ -61,6 +61,11 @@ export const AI_CODE_MAP = {
 export const AI_MODELS = {
   'SETTING-GPT': [
     {
+      value: 'gpt-5.6',
+      label: 'GPT-5.6',
+      desc: 'Latest GPT-5.6 model with frontier intelligence & reasoning',
+    },
+    {
       value: 'gpt-5',
       label: 'GPT-5',
       desc: 'Most powerful OpenAI model, frontier intelligence & reasoning',
@@ -151,6 +156,11 @@ export const AI_MODELS = {
   ],
 
   'SETTING-CLD': [
+    {
+      value: 'claude-5.0',
+      label: 'Claude 5.0',
+      desc: 'Latest Claude 5.0 generation model',
+    },
     {
       value: 'claude-4.8',
       label: 'Claude Opus 4.8',
