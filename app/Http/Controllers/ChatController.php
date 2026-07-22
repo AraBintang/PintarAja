@@ -347,6 +347,7 @@ class ChatController extends Controller
         return match ($provider->M_SettingCode) {
             'SETTING-GPT' => $aiUploadFileService->handleOpenAiFileStream($provider, $message, $fileData, $convId),
             'SETTING-GMN' => $aiUploadFileService->handleGeminiFile($provider, $message, $fileData, $convId),
+            'SETTING-CLD' => $aiUploadFileService->handleClaudeFile($provider, $message, $fileData, $convId),
             default => response()->json(['message' => 'Provider not supported for file input.'], 400),
         };
     }

@@ -237,4 +237,70 @@ class AiUploadFileService
 
         return response()->json(['reply' => $assistantReply]);
     }
+
+    public function handleClaudeFile($provider, string $message, array $fileData, int $convId)
+    {
+        $content = [];
+
+        foreach ($fileData as $f) {
+            if ($f['isImage']) {
+                $content[] = [
+                    'type' => 'image',
+                    'source' => [
+                        'type' => 'base64',
+                        'media_type' => $f['type'],
+                        'data' => $f['base64'],
+                    ],
+                ];
+            } else {
+                // Claude supports application/pdf, text/plain, text/csv, text/html
+                $mediaType = $f['type'];
+                $validDocTypes = ['application/pdf', 'text/plain', 'text/csv', 'text/html'];
+                
+                if (!in_array($mediaType, $validDocTypes)) {
+                    // Fallback or let Claude handle the error
+                    $mediaType = 'application/pdf'; // Try forcing as pdf if unknown or let it fail
+                }
+
+                $content[] = [
+                    'type' => 'document',
+                    'source' => [
+                        'type' => 'base64',
+                        'media_type' => $mediaType,
+                        'data' => $f['base64'],
+                    ],
+                ];
+            }
+        }
+        
+        $content[] = ['type' => 'text', 'text' => $message];
+
+        $model = $provider->M_SettingModel ?? 'claude-3-5-sonnet-20241022';
+        $response = \Illuminate\Support\Facades\Http::withHeaders([
+            'x-api-key' => $provider->M_SettingKey,
+            'anthropic-version' => '2023-06-01',
+            'content-type' => 'application/json',
+        ])->post('https://api.anthropic.com/v1/messages', [
+            'model' => $model,
+            'messages' => [['role' => 'user', 'content' => $content]],
+            'max_tokens' => 8192,
+        ]);
+
+        if (!$response->successful()) {
+            return response()->json([
+                'message' => 'Claude API error: ' . $response->body(),
+            ], 502);
+        }
+
+        $assistantReply = $response->json('content.0.text') ?? '';
+
+        Chat::create([
+            'T_ChatT_ConversationID' => $convId,
+            'T_ChatCode' => $provider->M_SettingCode,
+            'T_ChatRole' => 'assistant',
+            'T_ChatContent' => $assistantReply,
+        ]);
+
+        return response()->json(['reply' => $assistantReply]);
+    }
 }
