@@ -627,10 +627,14 @@ class AiProviderService
         $result = [];
         foreach ($content as $item) {
             if (($item['type'] ?? '') === 'text') {
-                $result[] = ['type' => 'text', 'text' => $item['text'] ?? ''];
-            }
-
-            if (($item['type'] ?? '') === 'image_url') {
+                $text = trim((string)($item['text'] ?? ''));
+                if ($text !== '') {
+                    $result[] = ['type' => 'text', 'text' => $text];
+                }
+            } elseif (($item['type'] ?? '') === 'document' || ($item['type'] ?? '') === 'file') {
+                $name = $item['name'] ?? 'File';
+                $result[] = ['type' => 'text', 'text' => "[File dilampirkan: $name]"];
+            } elseif (($item['type'] ?? '') === 'image_url') {
                 $url = $item['image_url']['url'] ?? '';
                 if (str_starts_with($url, 'data:image/')) {
                     preg_match('/data:image\/(.+);base64,(.*)/', $url, $matches);
@@ -646,6 +650,10 @@ class AiProviderService
                     }
                 }
             }
+        }
+
+        if (empty($result)) {
+            $result[] = ['type' => 'text', 'text' => '[Pesan sistem: lampiran tak terlihat]'];
         }
 
         return $result;
