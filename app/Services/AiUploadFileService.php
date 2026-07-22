@@ -257,19 +257,43 @@ class AiUploadFileService
                 $mediaType = $f['type'];
                 $validDocTypes = ['application/pdf', 'text/plain', 'text/csv', 'text/html'];
                 
-                if (!in_array($mediaType, $validDocTypes)) {
-                    // Fallback or let Claude handle the error
-                    $mediaType = 'application/pdf'; // Try forcing as pdf if unknown or let it fail
-                }
+                if ($mediaType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                    // Ekstrak teks secara manual dari docx (karena Claude belum native support docx base64 document)
+                    $tmp = sys_get_temp_dir() . '/' . uniqid() . '.docx';
+                    file_put_contents($tmp, base64_decode($f['base64']));
+                    $zip = new \ZipArchive;
+                    $extractedText = '';
+                    if ($zip->open($tmp) === TRUE) {
+                        $xml = $zip->getFromName('word/document.xml');
+                        $zip->close();
+                        if ($xml) {
+                            $extractedText = strip_tags(str_replace(['<w:p', '</w:p>'], ["\n<w:p", "\n"], $xml));
+                        }
+                    }
+                    @unlink($tmp);
+                    
+                    $content[] = [
+                        'type' => 'document',
+                        'source' => [
+                            'type' => 'base64',
+                            'media_type' => 'text/plain',
+                            'data' => base64_encode(trim($extractedText)),
+                        ],
+                    ];
+                } else {
+                    if (!in_array($mediaType, $validDocTypes)) {
+                        $mediaType = 'application/pdf'; // Try forcing as pdf if unknown
+                    }
 
-                $content[] = [
-                    'type' => 'document',
-                    'source' => [
-                        'type' => 'base64',
-                        'media_type' => $mediaType,
-                        'data' => $f['base64'],
-                    ],
-                ];
+                    $content[] = [
+                        'type' => 'document',
+                        'source' => [
+                            'type' => 'base64',
+                            'media_type' => $mediaType,
+                            'data' => $f['base64'],
+                        ],
+                    ];
+                }
             }
         }
         
@@ -280,6 +304,7 @@ class AiUploadFileService
             'x-api-key' => $provider->M_SettingKey,
             'anthropic-version' => '2023-06-01',
             'content-type' => 'application/json',
+            'anthropic-beta' => 'pdfs-2024-09-25',
         ])->post('https://api.anthropic.com/v1/messages', [
             'model' => $model,
             'messages' => [['role' => 'user', 'content' => $content]],
@@ -287,6 +312,7 @@ class AiUploadFileService
         ]);
 
         if (!$response->successful()) {
+            \Illuminate\Support\Facades\Log::error('Claude API file upload error: ' . $response->body());
             return response()->json([
                 'message' => 'Claude API error: ' . $response->body(),
             ], 502);
