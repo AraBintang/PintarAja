@@ -112,6 +112,28 @@ function ChatHistoryList({ expanded }) {
       }
     }
     fetchHistory()
+
+    const handleCreated = (e) => {
+      setConversations((prev) => [e.detail, ...prev])
+    }
+    const handleRenamed = (e) => {
+      setConversations((prev) =>
+        prev.map((c) => (c.id === e.detail.id ? { ...c, title: e.detail.title } : c)),
+      )
+    }
+    const handleDeleted = (e) => {
+      setConversations((prev) => prev.filter((c) => c.id !== e.detail.id))
+    }
+
+    window.addEventListener('conversationCreated', handleCreated)
+    window.addEventListener('conversationRenamed', handleRenamed)
+    window.addEventListener('historyItemDeleted', handleDeleted)
+
+    return () => {
+      window.removeEventListener('conversationCreated', handleCreated)
+      window.removeEventListener('conversationRenamed', handleRenamed)
+      window.removeEventListener('historyItemDeleted', handleDeleted)
+    }
   }, [])
 
   if (!expanded && conversations.length === 0) return null

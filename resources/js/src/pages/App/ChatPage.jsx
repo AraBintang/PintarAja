@@ -438,6 +438,19 @@ export default function ChatPage() {
       .slice(-10)
       .map((m) => ({ role: m.role, content: m.content }))
 
+    if (messages.length === 0) {
+      let newTitle = text.trim().replace(/\s+/g, ' ')
+      if (!newTitle && files.length > 0) {
+        newTitle = 'File: ' + files[0].name
+      } else if (!newTitle) {
+        newTitle = 'Percakapan Baru'
+      }
+      newTitle = newTitle.slice(0, 40)
+      window.dispatchEvent(
+        new CustomEvent('conversationRenamed', { detail: { id: convId, title: newTitle } })
+      )
+    }
+
     setIsStreaming(true)
     setStreamingContent('')
 
