@@ -246,6 +246,22 @@ class AiProviderService
                 ];
             }
 
+            $modelMap = [
+                'claude-5.0' => 'claude-3-5-sonnet-20241022',
+                'claude-4.8' => 'claude-3-opus-20240229',
+                'claude-sonnet-5' => 'claude-3-5-sonnet-20241022',
+                'claude-sonnet-4-6' => 'claude-3-5-sonnet-20240620',
+                'claude-opus-4-6' => 'claude-3-opus-20240229',
+                'claude-opus-4-5-20251101' => 'claude-3-opus-20240229',
+                'claude-sonnet-4-5-20250929' => 'claude-3-5-sonnet-20240620',
+                'claude-haiku-4-5-20251001' => 'claude-3-haiku-20240307',
+            ];
+            
+            $model = $model ?? 'claude-4.8';
+            if (array_key_exists($model, $modelMap)) {
+                $model = $modelMap[$model];
+            }
+
             try {
                 $response = $client->post('https://api.anthropic.com/v1/messages', [
                     'headers' => [
@@ -255,7 +271,7 @@ class AiProviderService
                         'accept' => 'text/event-stream',
                     ],
                     'json' => array_filter([
-                        'model' => $model ?? 'claude-4.8',
+                        'model' => $model,
                         'messages' => $messages,
                         'stream' => true,
                         'max_tokens' => 8192,
