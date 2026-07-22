@@ -408,12 +408,21 @@ export default function ChatPage() {
     setAttachedFiles([])
 
     let convId = conversationId
+    let isNewConv = false
     if (!convId) {
       try {
         const res = await request('/convers', { method: 'POST' })
         convId = res.conversation.id
+        isNewConv = true
         setConversationId(convId)
         window.dispatchEvent(new CustomEvent('conversationCreated', { detail: res.conversation }))
+        
+        // Optimistically rename the conversation to match the backend logic (first 40 chars of prompt)
+        let newTitle = text.trim().replace(/\s+/g, ' ').substring(0, 40)
+        if (!newTitle) newTitle = 'Percakapan Baru'
+        window.dispatchEvent(new CustomEvent('conversationRenamed', { 
+          detail: { id: convId, title: newTitle } 
+        }))
       } catch (err) {
         showSnackbar('error', err.message || 'Gagal membuat percakapan')
         setInputValue(text)
