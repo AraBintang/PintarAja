@@ -295,17 +295,17 @@ class AiUploadFileService
             $content[] = ['type' => 'text', 'text' => 'Tolong analisa lampiran ini.'];
         }
 
-        $model = $provider->M_SettingModel ?? 'claude-3-5-sonnet-latest';
+        $model = $provider->M_SettingModel ?? 'claude-sonnet-5';
         
         $modelMap = [
-            'claude-5.0' => 'claude-3-5-sonnet-latest',
-            'claude-4.8' => 'claude-3-opus-latest',
-            'claude-sonnet-5' => 'claude-3-5-sonnet-latest',
-            'claude-sonnet-4-6' => 'claude-3-5-sonnet-latest',
-            'claude-opus-4-6' => 'claude-3-opus-latest',
-            'claude-opus-4-5-20251101' => 'claude-3-opus-latest',
-            'claude-sonnet-4-5-20250929' => 'claude-3-5-sonnet-latest',
-            'claude-haiku-4-5-20251001' => 'claude-3-5-haiku-latest',
+            'claude-5.0' => 'claude-sonnet-5',
+            'claude-4.8' => 'claude-sonnet-5',
+            'claude-sonnet-5' => 'claude-sonnet-5',
+            'claude-sonnet-4-6' => 'claude-sonnet-5',
+            'claude-opus-4-6' => 'claude-sonnet-5',
+            'claude-opus-4-5-20251101' => 'claude-sonnet-5',
+            'claude-sonnet-4-5-20250929' => 'claude-sonnet-5',
+            'claude-haiku-4-5-20251001' => 'claude-fable-5',
         ];
         
         if (array_key_exists($model, $modelMap)) {
