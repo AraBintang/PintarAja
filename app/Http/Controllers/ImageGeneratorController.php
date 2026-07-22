@@ -18,7 +18,7 @@ class ImageGeneratorController extends Controller
             'prompt' => 'required|string|max:1000',
             'model' => 'nullable|string|max:50',
             'images' => 'nullable|array|max:5',
-            'images.*' => 'image|max:10240', // Max 10MB per image
+            'images.*' => 'image|max:51200', // Max 50MB per image
             'providerId' => 'nullable|integer',
         ]);
 

@@ -296,7 +296,7 @@ class ChatController extends Controller
             'conversationId' => 'required|integer',
             'message' => 'nullable|string',
             'files' => 'array|max:3',
-            'files.*' => 'file|max:10240',
+            'files.*' => 'file|max:51200',
         ]);
 
         $user = $request->user();

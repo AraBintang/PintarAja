@@ -9,7 +9,7 @@ import { useSnackbar } from '@/context/SnackbarContext'
 import { useQuota } from '@/hooks/useQuota'
 import { request } from '@/utils/Http'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024
+const MAX_FILE_SIZE = 50 * 1024 * 1024
 
 const extractErrorMessage = (raw) => {
   try {
