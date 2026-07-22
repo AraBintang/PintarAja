@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import ChatInput from '@/components/chat/ChatInput'
 import ChatMessages from '@/components/chat/ChatMessages'
@@ -96,6 +96,7 @@ const classifyFiles = (files) => {
 export default function ChatPage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { id: urlId } = useParams()
 
   const { user, me } = useAuth()
   const { showSnackbar } = useSnackbar()
@@ -187,39 +188,36 @@ export default function ChatPage() {
   }, [])
 
   useEffect(() => {
+    if (urlId && String(urlId) !== String(conversationId)) {
+      setIsLoadingHistory(true)
+      setConversationId(Number(urlId))
+      setMessages([])
+      loadConversation(urlId).finally(() => {
+        setIsLoadingHistory(false)
+        suppressScrollRef.current = false
+        setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+      })
+    } else if (!urlId && location.pathname !== '/new' && conversationId !== null) {
+      setConversationId(null)
+      setMessages([])
+    }
+  }, [urlId, conversationId, loadConversation, location.pathname])
+
+  // Also support the loadHistoryChat event for RightSidebar navigation
+  useEffect(() => {
     const handler = async (e) => {
       const conv = e.detail
       if (!conv?.id) return
-      setIsLoadingHistory(true)
-      setMessages([])
-      setConversationId(conv.id)
-      if (conv.ai?.length) {
-        setAiProviders(conv.ai)
-        setSelectedAiId(String(conv.ai[0].id))
-      }
-      if (conv.chats?.length) {
-        setMessages(
-          conv.chats.map((c) => ({
-            id: c.id,
-            role: c.role,
-            content: c.content,
-            code: c.code,
-            annotations: c.annotations ?? [],
-            time: c.time,
-          })),
-        )
-        setNextCursor(conv.nextCursor ?? null)
-        setHasMoreChats(conv.hasMoreChats ?? false)
-      } else {
-        await loadConversation(conv.id)
-      }
-      setIsLoadingHistory(false)
-      suppressScrollRef.current = false
-      setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+      
+      // If we are already on this conversation, do nothing
+      if (String(conv.id) === String(urlId)) return
+      
+      // Navigate to the chat URL so the useParams effect handles the loading
+      navigate(`/chat/${conv.id}`)
     }
     window.addEventListener('loadHistoryChat', handler)
     return () => window.removeEventListener('loadHistoryChat', handler)
-  }, [loadConversation])
+  }, [urlId, navigate])
 
   useEffect(() => {
     const handleDeleted = (e) => {
