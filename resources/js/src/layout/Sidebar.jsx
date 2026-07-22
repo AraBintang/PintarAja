@@ -160,6 +160,13 @@ function ChatHistoryList({ expanded }) {
             <NavLink
               key={conv.id}
               to={`/chat/${conv.id}`}
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent('loadHistoryChat', {
+                    detail: { id: conv.id },
+                  })
+                )
+              }}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-[10px] transition-all duration-200 group
                   ${isActive ? 'bg-[#eeedeb] dark:bg-gray-900' : 'hover:bg-[#eeedeb] dark:hover:bg-gray-900'}
