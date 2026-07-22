@@ -203,7 +203,7 @@ export default function ChatPage() {
     }
   }, [urlId, conversationId, loadConversation, location.pathname])
 
-  // Also support the loadHistoryChat event for RightSidebar navigation
+  // Support the loadHistoryChat event for RightSidebar navigation
   useEffect(() => {
     const handler = async (e) => {
       const conv = e.detail
@@ -212,7 +212,28 @@ export default function ChatPage() {
       // If we are already on this conversation, do nothing
       if (String(conv.id) === String(urlId)) return
       
-      // Navigate to the chat URL so the useParams effect handles the loading
+      // If chats are provided (e.g. from RightSidebar), we can pre-populate them
+      if (conv.chats?.length) {
+        setIsLoadingHistory(true)
+        setConversationId(conv.id)
+        setMessages(
+          conv.chats.map((c) => ({
+            id: c.id,
+            role: c.role,
+            content: c.content,
+            code: c.code,
+            annotations: c.annotations ?? [],
+            time: c.time,
+          }))
+        )
+        setNextCursor(conv.nextCursor ?? null)
+        setHasMoreChats(conv.hasMoreChats ?? false)
+        setIsLoadingHistory(false)
+        suppressScrollRef.current = false
+        setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+      }
+      
+      // Navigate to the chat URL so the useParams effect handles the loading if chats weren't provided
       navigate(`/chat/${conv.id}`)
     }
     window.addEventListener('loadHistoryChat', handler)
