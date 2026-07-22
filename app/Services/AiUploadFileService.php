@@ -273,23 +273,15 @@ class AiUploadFileService
                     @unlink($tmp);
                     
                     $content[] = [
-                        'type' => 'document',
-                        'source' => [
-                            'type' => 'base64',
-                            'media_type' => 'text/plain',
-                            'data' => base64_encode(trim($extractedText)),
-                        ],
+                        'type' => 'text',
+                        'text' => "Berikut adalah isi dari file dokumen yang diunggah:\n\n" . trim($extractedText),
                     ];
                 } else {
-                    if (!in_array($mediaType, $validDocTypes)) {
-                        $mediaType = 'application/pdf'; // Try forcing as pdf if unknown
-                    }
-
                     $content[] = [
                         'type' => 'document',
                         'source' => [
                             'type' => 'base64',
-                            'media_type' => $mediaType,
+                            'media_type' => 'application/pdf',
                             'data' => $f['base64'],
                         ],
                     ];
