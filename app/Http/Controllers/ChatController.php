@@ -285,7 +285,7 @@ class ChatController extends Controller
         $request->validate([
             'providerId' => 'required|integer',
             'conversationId' => 'required|integer',
-            'message' => 'required|string',
+            'message' => 'nullable|string',
             'files' => 'array|max:3',
             'files.*' => 'file|max:10240',
         ]);
@@ -305,11 +305,14 @@ class ChatController extends Controller
             return response()->json(['message' => 'Saldo koin/kuota Anda tidak mencukupi untuk menggunakan AI Chat.'], 402);
         }
 
-        $message = $request->message;
+        $message = $request->message ?? '';
         $convId = $request->conversationId;
         $files = $request->file('files', []);
  
-        $chatContent = [['type' => 'text', 'text' => $message]];
+        $chatContent = [];
+        if ($message !== '') {
+            $chatContent[] = ['type' => 'text', 'text' => $message];
+        }
         foreach ($files as $file) {
             $isImage = str_starts_with($file->getMimeType(), 'image/');
             $entry = [
