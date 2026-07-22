@@ -107,6 +107,7 @@ class SettingAiController extends Controller
             'name' => 'required|string',
             'model' => 'required|string',
             'key' => 'required|string',
+            'limit' => 'nullable|integer',
             'planIds' => 'nullable|array',
             'planIds.*' => 'integer',
         ]);
@@ -117,6 +118,7 @@ class SettingAiController extends Controller
                 'M_SettingName' => $validated['name'],
                 'M_SettingModel' => $validated['model'],
                 'M_SettingKey' => $validated['key'],
+                'M_SettingDailyLimit' => $validated['limit'] ?? null,
                 'M_SettingLastUpdated' => now(),
             ]);
 

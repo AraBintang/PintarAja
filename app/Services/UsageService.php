@@ -7,24 +7,23 @@ use Illuminate\Support\Carbon;
 
 class UsageService
 {
-    const DAILY_LIMIT = 5;
-    const LIMITED_MODELS = ['SETTING-CLD'];
-
     public function isLimited(string $settingCode): bool
     {
-        return in_array($settingCode, self::LIMITED_MODELS);
+        $limit = \App\Models\SettingAI::where('M_SettingCode', $settingCode)->value('M_SettingDailyLimit');
+        return !is_null($limit) && $limit > 0;
     }
 
     public function getRemainingQuota(int $userId, string $settingCode): int
     {
-        if (!$this->isLimited($settingCode)) return PHP_INT_MAX;
+        $limit = \App\Models\SettingAI::where('M_SettingCode', $settingCode)->value('M_SettingDailyLimit');
+        if (is_null($limit) || $limit <= 0) return PHP_INT_MAX;
 
         $used = Usage::where('T_UsageM_UserID', $userId)
             ->where('T_UsageDate', Carbon::today())
             ->where('T_UsageModels', $settingCode)
             ->value('T_UsageCount') ?? 0;
 
-        return max(0, self::DAILY_LIMIT - $used);
+        return max(0, $limit - $used);
     }
 
     public function checkQuota(int $userId, string $settingCode): bool
@@ -34,7 +33,8 @@ class UsageService
 
     public function increment(int $userId, string $settingCode): void
     {
-        if (!$this->isLimited($settingCode)) return;
+        $limit = \App\Models\SettingAI::where('M_SettingCode', $settingCode)->value('M_SettingDailyLimit');
+        if (is_null($limit) || $limit <= 0) return;
 
         Usage::firstOrCreate(
             [

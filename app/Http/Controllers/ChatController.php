@@ -44,7 +44,11 @@ class ChatController extends Controller
                 WHEN s.M_SettingCode = 'SETTING-QWN' THEN 6
                 WHEN s.M_SettingCode = 'SETTING-DRM' THEN 7
                 ELSE 99 END, s.M_SettingID ASC")
-            ->get();
+            ->get()
+            ->map(function($ai) use ($user, $usageService) {
+                $ai->isLimited = !$usageService->checkQuota($user->M_UserID, $ai->code);
+                return $ai;
+            });
 
         $papers = Paper::select('M_PaperID as id', 'M_PaperName as name')
             ->orderBy('M_PaperName')->get();

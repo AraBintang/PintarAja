@@ -33,7 +33,11 @@ export function useAIs({
 
       const res = await request(`/settings${query}`)
 
-      setAiKeys(res.data ?? [])
+      setAiKeys((res.data ?? []).map((item) => ({
+        ...item,
+        plans: item.plans,
+        limit: item.M_SettingDailyLimit,
+      })))
       setPagination(res.pagination ?? null)
       setSummary({
         total: res.summary?.total ?? 0,

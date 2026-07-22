@@ -41,6 +41,7 @@ const EMPTY_FORM = {
   model: '',
   key: '',
   isActive: 'Y',
+  limit: '',
 }
 
 export default function AIForm({
@@ -65,6 +66,7 @@ export default function AIForm({
           model: initialData.model ?? '',
           key: initialData.apiKey ?? '',
           isActive: initialData.isActive ?? 'Y',
+          limit: initialData.limit ?? '',
         })
         setSelectedPlans(initialData.plans?.map((p) => p.id) ?? [])
       } else {
@@ -90,6 +92,7 @@ export default function AIForm({
       code: formData.code,
       model: formData.model,
       key: formData.key,
+      limit: formData.limit ? parseInt(formData.limit) : null,
       isActive: formData.isActive,
       planIds: selectedPlans,
     })
@@ -271,6 +274,19 @@ export default function AIForm({
                     value={formData.key}
                     onChange={set('key')}
                     placeholder="sk-..."
+                    className={inputClass}
+                  />
+                </div>
+
+                {/* Daily Limit */}
+                <div className="space-y-2">
+                  <label className={labelClass}>Daily Limit (Optional)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.limit}
+                    onChange={set('limit')}
+                    placeholder="e.g. 50 (leave empty or 0 for unlimited)"
                     className={inputClass}
                   />
                 </div>
