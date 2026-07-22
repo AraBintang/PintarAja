@@ -621,7 +621,11 @@ class AiProviderService
     private function normalizeClaudeContent(array|string $content): array
     {
         if (is_string($content)) {
-            return [['type' => 'text', 'text' => $content]];
+            $text = trim($content);
+            if ($text === '') {
+                $text = '(no response)';
+            }
+            return [['type' => 'text', 'text' => $text]];
         }
 
         $result = [];
