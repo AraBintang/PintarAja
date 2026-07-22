@@ -163,7 +163,13 @@ function ChatHistoryList({ expanded }) {
               onClick={() => {
                 window.dispatchEvent(
                   new CustomEvent('loadHistoryChat', {
-                    detail: { id: conv.id },
+                    detail: { 
+                      id: conv.id,
+                      title: conv.title,
+                      chats: conv.chats ?? [],
+                      nextCursor: conv.nextCursor ?? null,
+                      hasMoreChats: conv.hasMoreChats ?? false,
+                    },
                   })
                 )
               }}
