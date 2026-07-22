@@ -223,7 +223,7 @@ class AiUploadFileService
         if (!$response->successful()) {
             return response()->json([
                 'message' => $response->json('error.message') ?? 'Gemini API error',
-            ], 502);
+            ], 400);
         }
 
         $assistantReply = $response->json('candidates.0.content.parts.0.text') ?? '';
@@ -331,7 +331,7 @@ class AiUploadFileService
             \Illuminate\Support\Facades\Log::error('Claude API file upload error: ' . $response->body());
             return response()->json([
                 'message' => 'Claude API error: ' . $response->body(),
-            ], 502);
+            ], 400);
         }
 
         $assistantReply = $response->json('content.0.text') ?? '';
