@@ -48,6 +48,7 @@ class User extends Authenticatable
         'M_UserLastUserAgent',
         'M_UserCreated',
         'M_UserLastUpdated',
+        'M_UserClaudeLimit',
     ];
 
     /**

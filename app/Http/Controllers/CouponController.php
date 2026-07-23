@@ -120,6 +120,8 @@ class CouponController extends Controller
             'customCode' => 'required_if:codeMode,custom|nullable|string|max:32|alpha_num',
             'count' => 'required_if:codeMode,auto|nullable|integer|min:1|max:500',
             'maxUses' => 'nullable|integer|min:1',
+            'token' => 'nullable|integer|min:0',
+            'claudeLimit' => 'nullable|integer|min:0',
         ]);
  
         DB::beginTransaction();
@@ -143,6 +145,8 @@ class CouponController extends Controller
                     'M_CouponCode' => $code,
                     'M_CouponExpired' => $validated['expired'],
                     'M_CouponMaxUses' => $validated['maxUses'] ?? null,
+                    'M_CouponToken' => $validated['token'] ?? null,
+                    'M_CouponClaudeLimit' => $validated['claudeLimit'] ?? null,
                     'M_CouponUsed' => 'N',
                     'M_CouponCreatedBy' => $user->M_UserID,
                     'M_CouponCreated' => now(),
@@ -171,6 +175,8 @@ class CouponController extends Controller
                         'M_CouponCode' => $poolCode->M_CouponsCode,
                         'M_CouponExpired' => $validated['expired'],
                         'M_CouponMaxUses' => $validated['maxUses'] ?? null,
+                        'M_CouponToken' => $validated['token'] ?? null,
+                        'M_CouponClaudeLimit' => $validated['claudeLimit'] ?? null,
                         'M_CouponUsed' => 'N',
                         'M_CouponCreatedBy' => $user->M_UserID,
                         'M_CouponCreated' => now(),

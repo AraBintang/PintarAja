@@ -26,6 +26,8 @@ class Coupon extends Model
         'M_CouponCreatedBy',
         'M_CouponCreated',
         'M_CouponLastUpdated',
+        'M_CouponToken',
+        'M_CouponClaudeLimit',
     ];
 
     public $timestamps = false;

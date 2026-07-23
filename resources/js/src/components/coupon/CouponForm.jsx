@@ -19,6 +19,8 @@ const EMPTY_FORM = {
   codeMode: 'auto', // 'auto' | 'custom'
   customCode: '',
   maxUses: '', // '' = unlimited, angka = terbatas
+  token: '',
+  claudeLimit: '',
 }
 
 export default function CouponForm({ open, onClose, onSubmit, plans = [], loading = false }) {
@@ -42,6 +44,8 @@ export default function CouponForm({ open, onClose, onSubmit, plans = [], loadin
       codeMode: formData.codeMode,
       customCode: isCustom ? formData.customCode.trim().toUpperCase() : undefined,
       maxUses: formData.maxUses === '' ? null : Number(formData.maxUses),
+      token: formData.token === '' ? null : Number(formData.token),
+      claudeLimit: formData.claudeLimit === '' ? null : Number(formData.claudeLimit),
     })
   }
 
@@ -145,6 +149,45 @@ export default function CouponForm({ open, onClose, onSubmit, plans = [], loadin
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight">
                     Jumlah maksimal pengguna yang bisa redeem kupon ini. Biarkan kosong jika tidak
                     ada batas.
+                  </p>
+                </div>
+              </div>
+
+              {/* Token & Claude Limit */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className={labelClass}>
+                    Token / Coins{' '}
+                    <span className="font-normal text-gray-400 dark:text-gray-500">(opsional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.token}
+                    onChange={set('token')}
+                    placeholder="Contoh: 100"
+                    min={0}
+                    className={inputClass}
+                  />
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight">
+                    Tambahan kuota koin yang akan diberikan.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className={labelClass}>
+                    Claude Limit{' '}
+                    <span className="font-normal text-gray-400 dark:text-gray-500">(opsional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.claudeLimit}
+                    onChange={set('claudeLimit')}
+                    placeholder="Contoh: 50"
+                    min={0}
+                    className={inputClass}
+                  />
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-tight">
+                    Timpa limit harian Claude untuk user ini.
                   </p>
                 </div>
               </div>

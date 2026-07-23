@@ -171,12 +171,22 @@ class ProfileController extends Controller
     
         DB::transaction(function () use ($user, $coupon, $newExpiry, $isMulti) {
     
-            $user->update([
+            $updateData = [
                 'M_UserPlan' => $coupon->M_CouponM_PlanID,
                 'M_UserSubsExp' => $newExpiry,
                 'M_UserLastUpdated' => now(),
-            ]);
+            ];
+
+            if (!is_null($coupon->M_CouponClaudeLimit)) {
+                $updateData['M_UserClaudeLimit'] = $coupon->M_CouponClaudeLimit;
+            }
+
+            $user->update($updateData);
     
+            if (!is_null($coupon->M_CouponToken) && $coupon->M_CouponToken > 0) {
+                $user->increment('M_UserQuota', $coupon->M_CouponToken);
+            }
+
             CouponRedemption::create([
                 'M_RedemptionCouponID' => $coupon->M_CouponID,
                 'M_RedemptionUserID' => $user->M_UserID,
