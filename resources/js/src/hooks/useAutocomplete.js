@@ -6,7 +6,7 @@ export function useAutocomplete(value, topic, onChange) {
   const [isLoading, setIsLoading] = useState(false)
   const debounceRef = useRef(null)
   
-  // Track previous value to detect exact space triggers
+  // Track previous value to detect exact space or period triggers
   const prevValueRef = useRef(value)
 
   const fetchSuggestion = async (text) => {
@@ -35,11 +35,11 @@ export function useAutocomplete(value, topic, onChange) {
 
     const lastChar = value.slice(-1)
     const valueChanged = value !== prevValueRef.current
-    const justTypedSpace = lastChar === ' ' && valueChanged
+    const justTypedTrigger = (lastChar === ' ' || lastChar === '.') && valueChanged
 
     prevValueRef.current = value
 
-    if (justTypedSpace) {
+    if (justTypedTrigger) {
       if (debounceRef.current) clearTimeout(debounceRef.current)
       
       debounceRef.current = setTimeout(() => {
