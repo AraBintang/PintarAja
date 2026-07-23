@@ -422,6 +422,7 @@ export default function ChatPage() {
         window.dispatchEvent(new CustomEvent('conversationRenamed', { 
           detail: { id: convId, title: newTitle } 
         }))
+        navigate(`/chat/${convId}`, { replace: true })
       } catch (err) {
         showSnackbar('error', err.message || 'Gagal membuat percakapan')
         setInputValue(text)
