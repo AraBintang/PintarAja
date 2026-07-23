@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { request } from '@/utils/Http'
 
-export function useAutocomplete(value, onChange) {
+export function useAutocomplete(value, topic, onChange) {
   const [suggestion, setSuggestion] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const debounceRef = useRef(null)
@@ -12,7 +12,7 @@ export function useAutocomplete(value, onChange) {
   const fetchSuggestion = async (text) => {
     setIsLoading(true)
     try {
-      const res = await request('/autocomplete', { method: 'POST', body: { text } })
+      const res = await request('/autocomplete', { method: 'POST', body: { text, topic } })
       if (res?.suggestion) {
         setSuggestion(res.suggestion)
       } else {

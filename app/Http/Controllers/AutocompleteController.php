@@ -20,9 +20,11 @@ class AutocompleteController extends Controller
     {
         $request->validate([
             'text' => 'required|string|max:2000',
+            'topic' => 'nullable|string|max:1000',
         ]);
 
         $text = $request->text;
+        $topic = $request->topic;
 
         try {
             // Get any active AI provider
@@ -35,15 +37,16 @@ class AutocompleteController extends Controller
                 return response()->json(['suggestion' => ' (Error: API Key AI Belum Diatur)']);
             }
 
+            $systemPrompt = "Kamu adalah fitur autocomplete cerdas. Tugasmu HANYA MELANJUTKAN kalimat dari pengguna dengan maksimal 3-5 kata berikutnya yang paling relevan.\n";
+            if (!empty($topic)) {
+                $systemPrompt .= "PENTING: Kata yang dilanjutkan harus sesuai dengan alur topik berikut: \"$topic\".\n";
+            }
+            $systemPrompt .= "ATURAN KERAS:\n1. JANGAN PERNAH mengulang kata-kata yang sudah diketik pengguna.\n2. JANGAN tambahkan label apapun seperti 'Penjelasan:' atau 'Teks:'.\n3. JANGAN berikan salam atau penjelasan.\n4. HANYA berikan kata sambungannya saja.";
+
             $messages = [
                 [
                     'role' => 'system',
-                    'content' => "Kamu adalah fitur autocomplete cerdas. Tugasmu HANYA MELANJUTKAN kalimat dari pengguna dengan maksimal 3-5 kata berikutnya yang paling relevan.
-ATURAN KERAS:
-1. JANGAN PERNAH mengulang kata-kata yang sudah diketik pengguna.
-2. JANGAN tambahkan label apapun seperti 'Penjelasan:' atau 'Teks:'.
-3. JANGAN berikan salam atau penjelasan.
-4. HANYA berikan kata sambungannya saja."
+                    'content' => $systemPrompt
                 ],
                 [
                     'role' => 'user',

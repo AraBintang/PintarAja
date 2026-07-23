@@ -88,7 +88,7 @@ const WriterForm = memo(function WriterForm({
   const [pickerOpen, setPickerOpen] = useState(false)
   const instruksiRef = useRef(null)
   const ghostRef = useRef(null)
-  const { suggestion, handleKeyDown } = useAutocomplete(instruksi, onInstruksiChange)
+  const { suggestion, handleKeyDown } = useAutocomplete(instruksi, topik, onInstruksiChange)
 
   // Auto-grow textarea for additional instructions
   useEffect(() => {

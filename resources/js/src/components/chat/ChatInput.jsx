@@ -341,7 +341,7 @@ export default function ChatInput({
   const [showStyleMenu, setShowStyleMenu] = useState(false)
 
   // Custom hook for autocomplete
-  const { suggestion, handleKeyDown: handleAutocompleteKeyDown } = useAutocomplete(inputValue, (val) => {
+  const { suggestion, handleKeyDown: handleAutocompleteKeyDown } = useAutocomplete(inputValue, '', (val) => {
     // Override onChange to trigger the parent's handleInput properly
     const e = { target: { value: val } }
     handleInput(e)
