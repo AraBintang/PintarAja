@@ -2,9 +2,14 @@ import { Table } from '@tiptap/extension-table'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
 import { TableRow } from '@tiptap/extension-table-row'
+import TextAlign from '@tiptap/extension-text-align'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
   Bold,
   Code,
   Heading1,
@@ -80,6 +85,38 @@ function MenuBar({ editor }) {
         title="Heading 3"
       >
         <Heading3 className="w-4 h-4" />
+      </ToolbarButton>
+
+      <Divider />
+
+      {/* Alignment */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('left').run()}
+        isActive={editor.isActive({ textAlign: 'left' })}
+        title="Align Left"
+      >
+        <AlignLeft className="w-4 h-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('center').run()}
+        isActive={editor.isActive({ textAlign: 'center' })}
+        title="Align Center"
+      >
+        <AlignCenter className="w-4 h-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('right').run()}
+        isActive={editor.isActive({ textAlign: 'right' })}
+        title="Align Right"
+      >
+        <AlignRight className="w-4 h-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('justify').run()}
+        isActive={editor.isActive({ textAlign: 'justify' })}
+        title="Justify"
+      >
+        <AlignJustify className="w-4 h-4" />
       </ToolbarButton>
 
       <Divider />
@@ -194,6 +231,9 @@ export default function TiptapEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
       }),
       Table.configure({ resizable: true }),
       TableRow,
