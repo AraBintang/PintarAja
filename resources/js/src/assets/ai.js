@@ -61,9 +61,19 @@ export const AI_CODE_MAP = {
 export const AI_MODELS = {
   'SETTING-GPT': [
     {
-      value: 'gpt-5.6',
-      label: 'Sol Terra Luna',
-      desc: 'Latest GPT-5.6 model with frontier intelligence & reasoning',
+      value: 'gpt-5.6-sol',
+      label: 'GPT-5.6 Sol',
+      desc: 'Latest GPT-5.6 Sol model',
+    },
+    {
+      value: 'gpt-5.6-tera',
+      label: 'GPT-5.6 Tera',
+      desc: 'Latest GPT-5.6 Tera model',
+    },
+    {
+      value: 'gpt-5.6-luna',
+      label: 'GPT-5.6 Luna',
+      desc: 'Latest GPT-5.6 Luna model',
     },
     {
       value: 'gpt-5',
@@ -193,8 +203,13 @@ export const AI_MODELS = {
     },
     {
       value: 'claude-haiku-4-5-20251001',
-      label: 'Claude Fable',
+      label: 'Claude Haiku 4.5',
       desc: 'Fastest Claude, near-instant responses',
+    },
+    {
+      value: 'claude-fable-5',
+      label: 'Claude Fable',
+      desc: 'Latest Claude Fable model',
     },
   ],
 
