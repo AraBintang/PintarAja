@@ -62,7 +62,7 @@ export const AI_MODELS = {
   'SETTING-GPT': [
     {
       value: 'gpt-5.6',
-      label: 'GPT-5.6',
+      label: 'Sol Terra Luna',
       desc: 'Latest GPT-5.6 model with frontier intelligence & reasoning',
     },
     {
@@ -193,7 +193,7 @@ export const AI_MODELS = {
     },
     {
       value: 'claude-haiku-4-5-20251001',
-      label: 'Claude Haiku 4.5',
+      label: 'Claude Fable',
       desc: 'Fastest Claude, near-instant responses',
     },
   ],
