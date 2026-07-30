@@ -22,6 +22,7 @@ class SettingAI extends Model
         'M_SettingKey',
         'M_SettingIsActive',
         'M_SettingDailyLimit',
+        'M_SettingPrompt',
         'M_SettingCreated',
         'M_SettingLastUpdated',
     ];

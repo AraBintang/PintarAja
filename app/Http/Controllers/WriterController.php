@@ -379,22 +379,25 @@ class WriterController extends Controller
         $vectorStoreIds = array_values(array_unique($vectorStoreIds));
  
         try {
+            $customPrompt = !empty($provider->M_SettingPrompt) ? trim($provider->M_SettingPrompt) . "\n\n" : "";
+            $messageWithPrompt = $customPrompt . $request->message;
+
             if ($aiName === 'openai' && !empty($vectorStoreIds)) {
                 return $this->streamOpenAIWithFileSearch(
                     $provider->M_SettingKey,
                     $provider->M_SettingModel ?? 'gpt-4o',
-                    $request->message,
+                    $messageWithPrompt,
                     $vectorStoreIds
                 );
             }
  
             $handlers = [
-                'openai' => fn() => $aiService->streamOpenAI($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
-                'gemini' => fn() => $aiService->streamGemini($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
-                'claude' => fn() => $aiService->streamClaude($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
-                'grok' => fn() => $aiService->streamGrok($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
-                'deepseek' => fn() => $aiService->streamDeepSeek($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
-                'qwen' => fn() => $aiService->streamQwen($provider->M_SettingKey, $provider->M_SettingModel, $request->message, true),
+                'openai' => fn() => $aiService->streamOpenAI($provider->M_SettingKey, $provider->M_SettingModel, $messageWithPrompt, true),
+                'gemini' => fn() => $aiService->streamGemini($provider->M_SettingKey, $provider->M_SettingModel, $messageWithPrompt, true),
+                'claude' => fn() => $aiService->streamClaude($provider->M_SettingKey, $provider->M_SettingModel, $messageWithPrompt, true),
+                'grok' => fn() => $aiService->streamGrok($provider->M_SettingKey, $provider->M_SettingModel, $messageWithPrompt, true),
+                'deepseek' => fn() => $aiService->streamDeepSeek($provider->M_SettingKey, $provider->M_SettingModel, $messageWithPrompt, true),
+                'qwen' => fn() => $aiService->streamQwen($provider->M_SettingKey, $provider->M_SettingModel, $messageWithPrompt, true),
             ];
  
             if (!isset($handlers[$aiName])) {

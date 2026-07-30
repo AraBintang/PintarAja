@@ -43,6 +43,8 @@ class SettingAiController extends Controller
             'model' => $item->M_SettingModel,
             'apiKey' => $item->M_SettingKey,
             'isActive' => $item->M_SettingIsActive,
+            'limit' => $item->M_SettingDailyLimit,
+            'systemPrompt' => $item->M_SettingPrompt,
             'plans' => $item->plans->map(fn($p) => [
                 'id' => $p->M_PlanID,
                 'name' => $p->M_PlanName,
@@ -79,6 +81,8 @@ class SettingAiController extends Controller
             'name' => 'required|string',
             'model' => 'required|string',
             'key' => 'required|string',
+            'limit' => 'nullable|integer',
+            'systemPrompt' => 'nullable|string',
             'planIds' => 'nullable|array',
             'planIds.*' => 'integer',
         ]);
@@ -88,6 +92,8 @@ class SettingAiController extends Controller
             'M_SettingName' => $validated['name'],
             'M_SettingModel' => $validated['model'],
             'M_SettingKey' => $validated['key'],
+            'M_SettingDailyLimit' => $validated['limit'] ?? null,
+            'M_SettingPrompt' => $validated['systemPrompt'] ?? null,
             'M_SettingIsActive' => 'Y',
         ]);
 
@@ -108,6 +114,7 @@ class SettingAiController extends Controller
             'model' => 'required|string',
             'key' => 'required|string',
             'limit' => 'nullable|integer',
+            'systemPrompt' => 'nullable|string',
             'planIds' => 'nullable|array',
             'planIds.*' => 'integer',
         ]);
@@ -119,6 +126,7 @@ class SettingAiController extends Controller
                 'M_SettingModel' => $validated['model'],
                 'M_SettingKey' => $validated['key'],
                 'M_SettingDailyLimit' => $validated['limit'] ?? null,
+                'M_SettingPrompt' => $validated['systemPrompt'] ?? null,
                 'M_SettingLastUpdated' => now(),
             ]);
 
