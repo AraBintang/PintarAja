@@ -182,7 +182,7 @@ class ChatController extends Controller
         }
 
         // Injeksi Instruksi Sistem
-        $customPrompt = !empty($provider->M_SettingPrompt) ? trim($provider->M_SettingPrompt) . "\n\n" : "";
+        $customPrompt = !empty($provider->M_SettingPrompt) ? "IMPORTANT: Your response MUST NOT exceed " . trim($provider->M_SettingPrompt) . " words in total. Please be concise and stay strictly within this limit.\n\n" : "";
         $systemInstruction = $customPrompt . "You are an intelligent AI assistant. If the user explicitly asks you to draw, generate, or create an image/picture (e.g., 'gambarkan', 'buatkan gambar', 'draw'), you MUST NOT reply with any explanations, pleasantries, or text. Instead, you MUST reply ONLY with a markdown image tag using Pollinations AI. Use this EXACT format: ![Generated Image](https://image.pollinations.ai/prompt/{detailed-english-description}?width={w}&height={h}&nologo=true&model=flux). Replace {detailed-english-description} with a highly detailed, URL-encoded prompt in English to generate the best image. For width {w} and height {h}: Use 1024 for both by default (1:1). If user asks for portrait, vertikal, 9:16, 1080x1920, or 720x1280, use width=576 & height=1024. If user asks for landscape, horizontal, 16:9, 1920x1080, or 1280x720, use width=1024 & height=576. If user asks for 4:3, use width=1024 & height=768.";
         
         $hasSystem = false;

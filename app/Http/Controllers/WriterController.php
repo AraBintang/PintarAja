@@ -379,7 +379,7 @@ class WriterController extends Controller
         $vectorStoreIds = array_values(array_unique($vectorStoreIds));
  
         try {
-            $customPrompt = !empty($provider->M_SettingPrompt) ? trim($provider->M_SettingPrompt) . "\n\n" : "";
+            $customPrompt = !empty($provider->M_SettingPrompt) ? "IMPORTANT: Your response MUST NOT exceed " . trim($provider->M_SettingPrompt) . " words in total. Please be concise and stay strictly within this limit.\n\n" : "";
             $messageWithPrompt = $customPrompt . $request->message;
 
             if ($aiName === 'openai' && !empty($vectorStoreIds)) {

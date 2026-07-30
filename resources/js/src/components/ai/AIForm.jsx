@@ -294,15 +294,16 @@ export default function AIForm({
                   />
                 </div>
 
-                {/* System Prompt / AI Instructions */}
+                {/* Max Output Words */}
                 <div className="space-y-2">
-                  <label className={labelClass}>System Prompt / Instructions (Optional)</label>
-                  <textarea
+                  <label className={labelClass}>Max Output Words (Optional)</label>
+                  <input
+                    type="number"
+                    min="1"
                     value={formData.systemPrompt}
                     onChange={set('systemPrompt')}
-                    placeholder="e.g. You are a helpful assistant. Keep your answers brief."
-                    className={`${inputClass} h-auto py-3 resize-y`}
-                    rows={3}
+                    placeholder="e.g. 1000"
+                    className={inputClass}
                   />
                 </div>
 
