@@ -10,8 +10,8 @@ class VoucherController extends Controller
 {
     public function generate(Request $request)
     {
-        $secret = config('services.smtech.secret') ?? env('SMTECH_SECRET', 'SMTech_PintarAja_Api_2026');
-        if ($request->header('X-SMTECH-SECRET') !== $secret) {
+        $secret = config('services.smtech.secret');
+        if (empty($secret) || $request->header('X-SMTECH-SECRET') !== $secret) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
