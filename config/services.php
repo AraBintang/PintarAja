@@ -66,4 +66,8 @@ return [
         'secret' => env('BEPRO_SECRET'),
         'webhook_secret' => env('BEPRO_WEBHOOK_SECRET'),
     ],
+
+    'smtech' => [
+        'secret' => env('SMTECH_SECRET'),
+    ],
 ];

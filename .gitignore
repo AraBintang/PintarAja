@@ -24,3 +24,10 @@ package-lock.json
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Database dumps - jangan commit ke repository
+*.sql
+db.sql
+
+# Hanya gunakan satu package manager (npm). Exclude pnpm lockfile.
+pnpm-lock.yaml
