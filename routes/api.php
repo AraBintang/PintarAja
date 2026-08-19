@@ -36,6 +36,8 @@ Route::post('/payment/notify', [PaymentController::class, 'notify']);
 
 Route::post('/bepro/callback', [PlagiarismController::class, 'callback']);
 
+Route::post('/auth/google', [\App\Http\Controllers\GoogleController::class, 'loginMobile']);
+
 Route::middleware('guest:sanctum')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
