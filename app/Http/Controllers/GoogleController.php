@@ -118,4 +118,54 @@ class GoogleController extends Controller
 
         return $code;
     }
+        public function loginMobile(Request $request)
+    {
+        // 1. Terima token dari aplikasi Flutter
+        $accessToken = $request->input('access_token');
+        
+        if (!$accessToken) {
+            return response()->json(['error' => 'Akses token tidak ditemukan.'], 400);
+        }
+
+        // 2. Minta data user ke Google API
+        $googleUser = Http::withToken($accessToken)
+            ->get('https://www.googleapis.com/oauth2/v2/userinfo')
+            ->json();
+
+        if (!isset($googleUser['email'])) {
+            return response()->json(['error' => 'Token Google tidak valid.'], 401);
+        }
+
+        // 3. Cek apakah user baru
+        $isNewUser = !User::where('M_UserEmail', $googleUser['email'])->exists();
+
+        // 4. Update atau Buat User
+        $user = User::updateOrCreate(
+            ['M_UserEmail' => $googleUser['email']],
+            [
+                'M_UserFullName' => $googleUser['name'] ?? '',
+                'M_UserImage' => $googleUser['picture'] ?? null,
+                'M_UserEmailVerifiedAt' => now(),
+                'M_UserToken' => Str::random(64),
+            ]
+        );
+
+        // 5. Setup Plan Trial & Referral untuk user baru
+        if ($isNewUser) {
+            // Memanggil fungsi private handleNewUserSetup yang sudah ada
+            $this->handleNewUserSetup($user, '');
+        } elseif (!$user->M_UserReferralCode) {
+            $user->generateReferralCode();
+        }
+
+        // 6. Buat Token Sanctum untuk session aplikasi
+        $token = $user->createToken('auth')->plainTextToken;
+        $user->recordLoginFromRequest($request);
+
+        // 7. Kembalikan Response JSON (Sesuai kebutuhan Mobile App)
+        return response()->json([
+            'token' => $token,
+            'user' => $user
+        ]);
+    }
 }
