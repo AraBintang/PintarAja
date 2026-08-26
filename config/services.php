@@ -47,6 +47,10 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'xendit' => [
+        'secret_key' => env('XENDIT_SECRET_KEY'),
+    ],
+
     'turnstile' => [
         'key' => env('TURNSTILE_SITE_KEY'),
         'secret' => env('TURNSTILE_SECRET_KEY'),

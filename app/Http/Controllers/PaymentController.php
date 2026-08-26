@@ -122,65 +122,100 @@ class PaymentController extends Controller
     
         $merchantRef = 'ORDER-' . time() . '-' . rand(1000, 9999);
     
-        $payload = [
-            'method' => $validated['channel'],
-            'merchant_ref' => $merchantRef,
-            'amount' => $finalAmount,
-            'customer_name' => $user->M_UserFullName,
-            'customer_email' => $user->M_UserEmail,
-            'customer_phone' => $validated['phone'],
-            'order_items' => [[
-                'name' => $validated['item'],
-                'price' => $finalAmount,
-                'quantity' => 1,
-            ]],
-            'signature' => hash_hmac('sha256', $merchantCode . $merchantRef . $finalAmount, $privateKey),
-        ];
-
-        $isSandbox = app()->environment('local', 'development');
-        $url = $isSandbox
-            ? 'https://tripay.co.id/api-sandbox/transaction/create'
-            : 'https://tripay.co.id/api/transaction/create';
-
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $apiKey,
-        ])->post($url, $payload);
-
-        if ($response->failed()) {
-            \Log::error('Tripay API Error', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-            return response()->json(['error' => 'Failed while creating payment'], 500);
-        }
-
-        $data = $response['data'];
-        $isQris = strtolower($validated['channel']) === 'qris2' || strtolower($validated['method']) === 'qris';
-
+        $checkoutUrl = null;
         $paymentCode = null;
-        if ($isQris) {
-            $paymentCode = $data['qr_url'] ?? null;
-        } elseif (!empty($data['pay_code'])) {
-            $paymentCode = $data['pay_code'];
-        } elseif (!empty($data['pay_url'])) {
-            $paymentCode = $data['pay_url'];
-        }
+        $instructions = [];
+        $expiredTime = time() + 86400;
+        $referenceIdResult = '';
 
-        $instructions = $data['instructions'] ?? [];
-        $checkoutUrl = $data['checkout_url'] ?? null;
+        if (strtolower($validated['channel']) === 'cards') {
+            $xenditSecret = config('services.xendit.secret_key');
+            $response = Http::withBasicAuth($xenditSecret, '')
+                ->post('https://api.xendit.co/v2/invoices', [
+                    'external_id' => $merchantRef,
+                    'amount' => $finalAmount,
+                    'payer_email' => $user->M_UserEmail,
+                    'description' => $validated['item'],
+                    'customer' => [
+                        'given_names' => $user->M_UserFullName,
+                        'email' => $user->M_UserEmail,
+                        'mobile_number' => $validated['phone']
+                    ],
+                    'payment_methods' => ['CREDIT_CARD']
+                ]);
+
+            if ($response->failed()) {
+                \Log::error('Xendit API Error', ['status' => $response->status(), 'body' => $response->body()]);
+                return response()->json(['error' => 'Failed while creating payment'], 500);
+            }
+            
+            $data = $response->json();
+            $checkoutUrl = $data['invoice_url'];
+            $referenceIdResult = $data['id'];
+            $expiredTime = strtotime($data['expiry_date'] ?? '+1 day');
+        } else {
+            $payload = [
+                'method' => $validated['channel'],
+                'merchant_ref' => $merchantRef,
+                'amount' => $finalAmount,
+                'customer_name' => $user->M_UserFullName,
+                'customer_email' => $user->M_UserEmail,
+                'customer_phone' => $validated['phone'],
+                'order_items' => [[
+                    'name' => $validated['item'],
+                    'price' => $finalAmount,
+                    'quantity' => 1,
+                ]],
+                'signature' => hash_hmac('sha256', $merchantCode . $merchantRef . $finalAmount, $privateKey),
+            ];
+
+            $isSandbox = app()->environment('local', 'development');
+            $url = $isSandbox
+                ? 'https://tripay.co.id/api-sandbox/transaction/create'
+                : 'https://tripay.co.id/api/transaction/create';
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+            ])->post($url, $payload);
+
+            if ($response->failed()) {
+                \Log::error('Tripay API Error', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                return response()->json(['error' => 'Failed while creating payment'], 500);
+            }
+
+            $data = $response['data'];
+            $isQris = strtolower($validated['channel']) === 'qris2' || strtolower($validated['method']) === 'qris';
+
+            $paymentCode = null;
+            if ($isQris) {
+                $paymentCode = $data['qr_url'] ?? null;
+            } elseif (!empty($data['pay_code'])) {
+                $paymentCode = $data['pay_code'];
+            } elseif (!empty($data['pay_url'])) {
+                $paymentCode = $data['pay_url'];
+            }
+
+            $instructions = $data['instructions'] ?? [];
+            $checkoutUrl = $data['checkout_url'] ?? null;
+            $referenceIdResult = $data['reference'];
+            $expiredTime = $data['expired_time'] ?? (time() + 86400);
+        }
 
         $tx = Transaction::create([
             'T_TransactionM_UserID' => $user->M_UserID,
             'T_TransactionM_PlanID' => $validated['planId'],
             'T_TransactionType' => 'subscription',
-            'T_TransactionIdResult' => $data['reference'],
-            'T_TransactionIdRefrence' => $data['merchant_ref'],
+            'T_TransactionIdResult' => $referenceIdResult,
+            'T_TransactionIdRefrence' => $merchantRef,
             'T_TransactionQR' => $paymentCode,
             'T_TransactionItem' => $validated['item'],
             'T_TransactionAmount' => $finalAmount,
             'T_TransactionStatus' => 0,
             'T_TransactionMethod' => $validated['method'],
-            'T_TransactionExpired' => $data['expired_time'] ?? (time() + 86400),
+            'T_TransactionExpired' => $expiredTime,
             'T_TransactionChannel' => $validated['channel'],
             'T_TransactionStep' => json_encode($instructions),
             'T_TransactionCheckoutURL' => $checkoutUrl,
@@ -188,11 +223,11 @@ class PaymentController extends Controller
     
         return response()->json([
             'status' => 'success',
-            'referenceId' => $data['merchant_ref'],
+            'referenceId' => $merchantRef,
             'paymentCode' => $paymentCode,
-            'payUrl' => $data['pay_url'] ?? null,
+            'payUrl' => $paymentCode,
             'checkoutUrl' => $checkoutUrl,
-            'expiredAt' => $data['expired_time'] ?? null,
+            'expiredAt' => $expiredTime,
             'instructions' => $instructions,
             'discountInfo' => [
                 'originalAmount' => $originalAmount,
