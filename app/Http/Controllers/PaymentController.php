@@ -134,13 +134,11 @@ class PaymentController extends Controller
                 ->post('https://api.xendit.co/v2/invoices', [
                     'external_id' => $merchantRef,
                     'amount' => $finalAmount,
-                    $safeEmail = !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com';
-                    $safeName = !empty($user->M_UserFullName) ? $user->M_UserFullName : 'User Pintaraja';
-                    'payer_email' => $safeEmail,
+                    'payer_email' => !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com',
                     'description' => $validated['item'],
                     'customer' => [
-                        'given_names' => $safeName,
-                        'email' => $safeEmail,
+                        'given_names' => !empty($user->M_UserFullName) ? $user->M_UserFullName : 'User Pintaraja',
+                        'email' => !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com',
                         'mobile_number' => $validated['phone']
                     ],
                     'payment_methods' => ['CREDIT_CARD']
@@ -160,8 +158,8 @@ class PaymentController extends Controller
                 'method' => $validated['channel'],
                 'merchant_ref' => $merchantRef,
                 'amount' => $finalAmount,
-                'customer_name' => $safeName,
-                'customer_email' => $safeEmail,
+                'customer_name' => !empty($user->M_UserFullName) ? $user->M_UserFullName : 'User Pintaraja',
+                'customer_email' => !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com',
                 'customer_phone' => $validated['phone'],
                 'order_items' => [[
                     'name' => $validated['item'],
@@ -267,8 +265,8 @@ class PaymentController extends Controller
             'method' => $validated['channel'],
             'merchant_ref' => $merchantRef,
             'amount' => $amount,
-            'customer_name' => $safeName,
-            'customer_email' => $safeEmail,
+            'customer_name' => !empty($user->M_UserFullName) ? $user->M_UserFullName : 'User Pintaraja',
+            'customer_email' => !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com',
             'customer_phone' => $validated['phone'],
             'order_items' => [[
                 'name' => 'Topup Koin - ' . $coins,
@@ -531,5 +529,6 @@ class PaymentController extends Controller
         return $result;
     }
 }
+
 
 
