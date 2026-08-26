@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -134,11 +134,13 @@ class PaymentController extends Controller
                 ->post('https://api.xendit.co/v2/invoices', [
                     'external_id' => $merchantRef,
                     'amount' => $finalAmount,
-                    'payer_email' => $user->M_UserEmail,
+                    $safeEmail = !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com';
+                    $safeName = !empty($user->M_UserFullName) ? $user->M_UserFullName : 'User Pintaraja';
+                    'payer_email' => $safeEmail,
                     'description' => $validated['item'],
                     'customer' => [
-                        'given_names' => $user->M_UserFullName,
-                        'email' => $user->M_UserEmail,
+                        'given_names' => $safeName,
+                        'email' => $safeEmail,
                         'mobile_number' => $validated['phone']
                     ],
                     'payment_methods' => ['CREDIT_CARD']
@@ -158,8 +160,8 @@ class PaymentController extends Controller
                 'method' => $validated['channel'],
                 'merchant_ref' => $merchantRef,
                 'amount' => $finalAmount,
-                'customer_name' => $user->M_UserFullName,
-                'customer_email' => $user->M_UserEmail,
+                'customer_name' => $safeName,
+                'customer_email' => $safeEmail,
                 'customer_phone' => $validated['phone'],
                 'order_items' => [[
                     'name' => $validated['item'],
@@ -265,8 +267,8 @@ class PaymentController extends Controller
             'method' => $validated['channel'],
             'merchant_ref' => $merchantRef,
             'amount' => $amount,
-            'customer_name' => $user->M_UserFullName,
-            'customer_email' => $user->M_UserEmail,
+            'customer_name' => $safeName,
+            'customer_email' => $safeEmail,
             'customer_phone' => $validated['phone'],
             'order_items' => [[
                 'name' => 'Topup Koin - ' . $coins,
@@ -529,4 +531,5 @@ class PaymentController extends Controller
         return $result;
     }
 }
+
 
