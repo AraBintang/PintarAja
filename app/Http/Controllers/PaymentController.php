@@ -128,7 +128,7 @@ class PaymentController extends Controller
         $expiredTime = time() + 86400;
         $referenceIdResult = '';
 
-        if (strtolower($validated['channel']) === 'cards') {
+        if (strtolower($validated['channel']) === 'visa' || strtolower($validated['channel']) === 'cards') {
             $xenditSecret = config('services.xendit.secret_key');
             $response = Http::withBasicAuth($xenditSecret, '')
                 ->post('https://api.xendit.co/v2/invoices', [
@@ -529,3 +529,4 @@ class PaymentController extends Controller
         return $result;
     }
 }
+
