@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\PlagiarismController;
+use App\Models\Plagiarism;
 use App\Models\Plan;
-use App\Models\DiscountCoupon;
+use App\Models\ReferralUsage;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Models\ReferralUsage;
-use App\Models\Plagiarism;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,316 +17,332 @@ use Illuminate\Support\Str;
 
 class PaymentController extends Controller
 {
-    public function getPlans()
+    public function index(Request $request)
     {
-        \ = Plan::where('M_PlanIsActive', 'Y')->get();
-        return response()->json(['plans' => \]);
-    }
+        $user = Auth::user();
+        $perPage = (int) $request->input('per_page', 10);
+        $page = max(1, (int) $request->input('page', 1));
+        $status = $request->input('status');
 
-    public function checkCoupon(Request \)
-    {
-        \->validate([
-            'code' => 'required|string',
-            'plan_id' => 'required|integer'
-        ]);
+        $query = Transaction::where('T_TransactionM_UserID', $user->M_UserID)
+            ->when($status !== null && $status !== '', fn($q) => $q->where('T_TransactionStatus', $status))
+            ->orderBy('T_TransactionCreated', 'desc');
 
-        \ = DiscountCoupon::where('M_DiscountCouponCode', \->code)
-            ->where('M_DiscountCouponIsActive', true)
-            ->first();
+        $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
-        if (!\) {
-            return response()->json(['valid' => false, 'message' => 'Kupon tidak ditemukan atau tidak aktif']);
-        }
-
-        if (now() > \->M_DiscountCouponExpired) {
-            return response()->json(['valid' => false, 'message' => 'Kupon sudah kadaluarsa']);
-        }
-
-        if (\->M_DiscountCouponMaxUses !== null && \->M_DiscountCouponUsedCount >= \->M_DiscountCouponMaxUses) {
-            return response()->json(['valid' => false, 'message' => 'Kupon sudah mencapai batas penggunaan maksimal']);
-        }
+        // Check and update expired transactions
+        $paginated->getCollection()->each(function ($tx) {
+            if ($tx->T_TransactionStatus == 0 && Carbon::createFromTimestamp($tx->T_TransactionExpired)->isPast()) {
+                $tx->update(['T_TransactionStatus' => 3]);
+            }
+        });
 
         return response()->json([
-            'valid' => true,
-            'discount_type' => \->M_DiscountCouponType,
-            'discount_amount' => \->M_DiscountCouponAmount
+            'data' => $paginated->getCollection()->map(fn($tx) => $this->formatTransaction($tx)),
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'last_page' => $paginated->lastPage(),
+            ],
         ]);
     }
 
-    public function store(Request \)
+    public function indexByReferenceId(Request $request, $referenceId)
     {
-        \ = \->validate([
-            'planId' => 'required|integer',
-            'amount' => 'required|numeric',
-            'channel' => 'required|string',
-            'method' => 'required|string',
-            'item' => 'required|string',
-            'phone' => 'required|string|max:15',
-            'coupon' => 'nullable|string'
-        ]);
+        $user = Auth::user();
 
-        \ = Auth::user();
-        
-        \ = Plan::find(\['planId']);
-        if (!\) {
-            return response()->json(['error' => 'Plan not found'], 404);
-        }
-
-        \ = \->M_PlanPrice;
-        \ = 0;
-        \ = null;
-        \ = 0;
-
-        // Cek Referral
-        \ = ReferralUsage::where('T_ReferralUsageOwnerID', \->M_UserID)
-            ->where('T_ReferralUsageIsUsed', false)
-            ->where('T_ReferralUsageIsFreeMonth', false)
+        $tx = Transaction::where('T_TransactionIdRefrence', $referenceId)
+            ->where('T_TransactionM_UserID', $user->M_UserID)
             ->first();
 
-        if (\) {
-            \ = 20;
-            \ += (int) round(\ * 0.20);
+        if (!$tx) {
+            return response()->json(['message' => 'Transaction not found'], 404);
         }
 
-        // Cek Coupon
-        if (!empty(\['coupon'])) {
-            \ = trim(\['coupon']);
-            \ = DiscountCoupon::where('M_DiscountCouponCode', \)
+        return response()->json($this->formatTransaction($tx, true));
+    }
+
+    public function store(Request $request)
+    {
+        $apiKey = config('services.tripay.api_key');
+        $privateKey = config('services.tripay.private_key');
+        $merchantCode = config('services.tripay.merchant_code');
+
+        $validated = $request->validate([
+            'planId' => 'required',
+            'amount' => 'required|numeric|min:1000',
+            'channel' => 'required|string',
+            'method' => 'required|string',
+            'item' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+            'discount_code' => 'nullable|string',
+        ]);
+    
+        if ($validated['planId'] == 1) {
+            return response()->json(['error' => 'Plan Tidak Valid'], 500);
+        }
+    
+        $user = Auth::user();
+    
+        $pendingDiscountPercent = $user->getReferralDiscount();
+        $originalAmount = (int) $validated['amount'];
+        $discountAmount = 0;
+        $finalAmount = $originalAmount;
+    
+        if ($pendingDiscountPercent > 0) {
+            $discountAmount += (int) round($originalAmount * ($pendingDiscountPercent / 100));
+        }
+
+        $appliedCoupon = null;
+        if (!empty($validated['discount_code'])) {
+            $code = strtoupper(trim($validated['discount_code']));
+            $coupon = \App\Models\DiscountCoupon::where('M_DiscountCouponCode', $code)
                 ->where('M_DiscountCouponIsActive', true)
                 ->first();
 
-            if (\ && now() <= \->M_DiscountCouponExpired) {
-                if (\->M_DiscountCouponMaxUses === null || \->M_DiscountCouponUsedCount < \->M_DiscountCouponMaxUses) {
-                    \ = 0;
-                    if (\->M_DiscountCouponType === 'percentage') {
-                        \ = (int) round(\ * (\->M_DiscountCouponAmount / 100));
+            if ($coupon && now() <= $coupon->M_DiscountCouponExpired) {
+                if ($coupon->M_DiscountCouponMaxUses === null || $coupon->M_DiscountCouponUsedCount < $coupon->M_DiscountCouponMaxUses) {
+                    $couponDiscount = 0;
+                    if ($coupon->M_DiscountCouponType === 'percentage') {
+                        $couponDiscount = (int) round($originalAmount * ($coupon->M_DiscountCouponAmount / 100));
                     } else {
-                        \ = \->M_DiscountCouponAmount;
+                        $couponDiscount = $coupon->M_DiscountCouponAmount;
                     }
-                    \ += \;
-                    \ = \;
+                    $discountAmount += $couponDiscount;
+                    $appliedCoupon = $code;
 
                     // Increment used count
-                    \->increment('M_DiscountCouponUsedCount');
+                    $coupon->increment('M_DiscountCouponUsedCount');
                 }
             }
         }
 
-        \ = max(\ - \, 1000);
-        \ = 'ORDER-' . time() . '-' . rand(1000, 9999);
+        $finalAmount = max($originalAmount - $discountAmount, 1000);
     
+        $merchantRef = 'ORDER-' . time() . '-' . rand(1000, 9999);
+    
+        $checkoutUrl = null;
+        $paymentCode = null;
+        $instructions = [];
+        $expiredTime = time() + 86400;
+        $referenceIdResult = '';
+
+        
         // SELALU PAKAI XENDIT (Menghilangkan Tripay)
-        \ = config('services.xendit.secret_key');
-        \ = Http::withBasicAuth(\, '')
+        $xenditSecret = config('services.xendit.secret_key');
+        $response = Http::withBasicAuth($xenditSecret, '')
             ->post('https://api.xendit.co/v2/invoices', [
-                'external_id' => \,
-                'amount' => \,
-                'payer_email' => !empty(\->M_UserEmail) ? \->M_UserEmail : 'user@pintaraja.com',
-                'description' => \['item'],
+                'external_id' => $merchantRef,
+                'amount' => $finalAmount,
+                'payer_email' => !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com',
+                'description' => $validated['item'],
                 'customer' => [
-                    'given_names' => !empty(\->M_UserFullName) ? \->M_UserFullName : 'User Pintaraja',
-                    'email' => !empty(\->M_UserEmail) ? \->M_UserEmail : 'user@pintaraja.com',
-                    'mobile_number' => \['phone']
+                    'given_names' => !empty($user->M_UserFullName) ? $user->M_UserFullName : 'User Pintaraja',
+                    'email' => !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com',
+                    'mobile_number' => $validated['phone']
                 ],
                 'currency' => 'IDR'
             ]);
 
-        if (\->failed()) {
-            \Log::error('Xendit API Error', ['status' => \->status(), 'body' => \->body()]);
+        if ($response->failed()) {
+            \Log::error('Xendit API Error', ['status' => $response->status(), 'body' => $response->body()]);
             return response()->json(['error' => 'Failed while creating payment'], 500);
         }
             
-        \ = \->json();
-        \ = \['invoice_url'];
-        \ = \['id']; // Xendit Invoice ID
-        \ = strtotime(\['expiry_date'] ?? '+1 day');
+        $data = $response->json();
+        $checkoutUrl = $data['invoice_url'];
+        $referenceIdResult = $data['id']; // Xendit Invoice ID
+        $expiredTime = strtotime($data['expiry_date'] ?? '+1 day');
 
-        \ = Transaction::create([
-            'T_TransactionM_UserID' => \->M_UserID,
-            'T_TransactionM_PlanID' => \['planId'],
+        $tx = Transaction::create([
+            'T_TransactionM_UserID' => $user->M_UserID,
+            'T_TransactionM_PlanID' => $validated['planId'],
             'T_TransactionType' => 'subscription',
-            'T_TransactionIdResult' => \,
-            'T_TransactionIdRefrence' => \,
+            'T_TransactionIdResult' => $referenceIdResult,
+            'T_TransactionIdRefrence' => $merchantRef,
             'T_TransactionQR' => null,
-            'T_TransactionItem' => \['item'],
-            'T_TransactionAmount' => \,
+            'T_TransactionItem' => $validated['item'],
+            'T_TransactionAmount' => $finalAmount,
             'T_TransactionStatus' => 0,
             'T_TransactionMethod' => 'Xendit',
-            'T_TransactionExpired' => \,
+            'T_TransactionExpired' => $expiredTime,
             'T_TransactionChannel' => 'Xendit',
             'T_TransactionStep' => json_encode([]),
-            'T_TransactionCheckoutURL' => \,
+            'T_TransactionCheckoutURL' => $checkoutUrl,
         ]);
     
         return response()->json([
             'status' => 'success',
-            'referenceId' => \,
+            'referenceId' => $merchantRef,
             'paymentCode' => null,
             'payUrl' => null,
-            'checkoutUrl' => \,
-            'expiredAt' => \,
+            'checkoutUrl' => $checkoutUrl,
+            'expiredAt' => $expiredTime,
             'instructions' => [],
             'discountInfo' => [
-                'originalAmount' => \,
-                'discountPercent' => \,
-                'discountAmount' => \,
-                'finalAmount' => \,
-                'appliedCoupon' => \,
+                'originalAmount' => $originalAmount,
+                'discountPercent' => $pendingDiscountPercent,
+                'discountAmount' => $discountAmount,
+                'finalAmount' => $finalAmount,
+                'appliedCoupon' => $appliedCoupon,
             ],
         ], 200);
     }
 
-    public function topup(Request \, \App\Services\TokenDeductionService \)
+public function topup(Request $request, \App\Services\TokenDeductionService $tokenService)
     {
-        \ = \->getCost('cost_topup_amount');
-        \ = \->getCost('cost_topup_price');
+        $apiKey = config('services.tripay.api_key');
+        $privateKey = config('services.tripay.private_key');
+        $merchantCode = config('services.tripay.merchant_code');
 
-        \ = \->validate([
-            'coins' => 'required|integer|min:' . \,
+        $defaultAmount = $tokenService->getCost('cost_topup_amount');
+        $defaultPrice = $tokenService->getCost('cost_topup_price');
+
+        $validated = $request->validate([
+            'coins' => 'required|integer|min:' . $defaultAmount,
             'channel' => 'required|string',
             'method' => 'required|string',
             'phone' => 'required|string|max:15',
         ]);
 
-        \ = Auth::user();
-        \ = (int) \['coins'];
-        // Pastikan rasio harga menyesuaikan update terbaru (1 token = Rp 1000)
-        // tapi di controller topup biarkan saja menghitung secara dinamis dari harga M_WebSetting
-        \ = (int) floor((\ / \) * \);
+        $user = Auth::user();
+        $coins = (int) $validated['coins'];
+        $amount = (int) floor(($coins / $defaultAmount) * $defaultPrice);
 
-        \ = 'TOPUP-' . time() . '-' . rand(1000, 9999);
+        $merchantRef = 'TOPUP-' . time() . '-' . rand(1000, 9999);
 
+        
         // SELALU PAKAI XENDIT
-        \ = config('services.xendit.secret_key');
-        \ = Http::withBasicAuth(\, '')
+        $xenditSecret = config('services.xendit.secret_key');
+        $response = Http::withBasicAuth($xenditSecret, '')
             ->post('https://api.xendit.co/v2/invoices', [
-                'external_id' => \,
-                'amount' => \,
-                'payer_email' => !empty(\->M_UserEmail) ? \->M_UserEmail : 'user@pintaraja.com',
-                'description' => 'Topup Koin - ' . \,
+                'external_id' => $merchantRef,
+                'amount' => $amount,
+                'payer_email' => !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com',
+                'description' => 'Topup Koin - ' . $coins,
                 'customer' => [
-                    'given_names' => !empty(\->M_UserFullName) ? \->M_UserFullName : 'User Pintaraja',
-                    'email' => !empty(\->M_UserEmail) ? \->M_UserEmail : 'user@pintaraja.com',
-                    'mobile_number' => \['phone']
+                    'given_names' => !empty($user->M_UserFullName) ? $user->M_UserFullName : 'User Pintaraja',
+                    'email' => !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com',
+                    'mobile_number' => $validated['phone']
                 ],
                 'currency' => 'IDR'
             ]);
 
-        if (\->failed()) {
-            \Log::error('Xendit API Error (Topup)', ['status' => \->status(), 'body' => \->body()]);
+        if ($response->failed()) {
+            \Log::error('Xendit API Error (Topup)', ['status' => $response->status(), 'body' => $response->body()]);
             return response()->json(['error' => 'Failed while creating payment'], 500);
         }
         
-        \ = \->json();
-        \ = \['invoice_url'];
-        \ = \['id'];
-        \ = strtotime(\['expiry_date'] ?? '+1 day');
+        $data = $response->json();
+        $checkoutUrl = $data['invoice_url'];
+        $referenceIdResult = $data['id'];
+        $expiredTime = strtotime($data['expiry_date'] ?? '+1 day');
 
-        \ = Transaction::create([
-            'T_TransactionM_UserID' => \->M_UserID,
+        $tx = Transaction::create([
+            'T_TransactionM_UserID' => $user->M_UserID,
             'T_TransactionM_PlanID' => 0,
             'T_TransactionType' => 'topup',
-            'T_TransactionIdResult' => \,
-            'T_TransactionIdRefrence' => \,
+            'T_TransactionIdResult' => $referenceIdResult,
+            'T_TransactionIdRefrence' => $merchantRef,
             'T_TransactionQR' => null,
-            'T_TransactionItem' => 'Topup Koin - ' . \,
-            'T_TransactionAmount' => \,
+            'T_TransactionItem' => 'Topup Koin - ' . $coins,
+            'T_TransactionAmount' => $amount,
             'T_TransactionStatus' => 0,
             'T_TransactionMethod' => 'Xendit',
-            'T_TransactionExpired' => \,
+            'T_TransactionExpired' => $expiredTime,
             'T_TransactionChannel' => 'Xendit',
             'T_TransactionStep' => json_encode([]),
-            'T_TransactionCheckoutURL' => \,
+            'T_TransactionCheckoutURL' => $checkoutUrl,
         ]);
 
         return response()->json([
             'status' => 'success',
-            'referenceId' => \,
+            'referenceId' => $merchantRef,
             'paymentCode' => null,
             'payUrl' => null,
-            'checkoutUrl' => \,
-            'expiredAt' => \,
+            'checkoutUrl' => $checkoutUrl,
+            'expiredAt' => $expiredTime,
             'instructions' => [],
-            'amount' => \,
+            'amount' => $amount,
         ]);
     }
 
-    public function notify(Request \)
+public function notify(Request $request)
     {
-        \ = \->all();
+        $data = $request->all();
 
-        if (isset(\['id'])) { \['reference'] = \['id']; }
-        elseif (isset(\['external_id'])) { \['reference'] = \['external_id']; }
-
-        if (!isset(\['reference'])) {
+        if (isset($data['id'])) { $data['reference'] = $data['id']; }
+        elseif (isset($data['external_id'])) { $data['reference'] = $data['external_id']; }
+        if (!isset($data['reference'])) {
             return response()->json(['message' => 'Invalid callback data'], 400);
         }
 
-        \ = ['UNPAID' => 0, 'PAID' => 1, 'REFUND' => 2, 'EXPIRED' => 3, 'FAILED' => 3, 'SETTLED' => 1];
-        \ = \[\['status']] ?? 3;
+        $statusMap = ['UNPAID' => 0, 'PAID' => 1, 'REFUND' => 2, 'EXPIRED' => 3, 'FAILED' => 3, 'SETTLED' => 1];
+        $statusCode = $statusMap[$data['status']] ?? 3;
 
-        \ = Transaction::where('T_TransactionIdResult', \['reference'])->first();
+        $tx = Transaction::where('T_TransactionIdResult', $data['reference'])->first();
 
-        if (!\) {
+        if (!$tx) {
             return response()->json(['message' => 'Transaction not found'], 404);
         }
 
-        \ = \->T_TransactionStatus === 1;
-        \->update(['T_TransactionStatus' => \]);
+        $wasPaidAlready = $tx->T_TransactionStatus === 1;
+        $tx->update(['T_TransactionStatus' => $statusCode]);
 
-        if (\ === 1 && !\) {
-            \->markReferralDiscountsUsed(\->T_TransactionM_UserID);
-            \->createReferralUsageForFirstPaidTransaction(\);
+        if ($statusCode === 1 && !$wasPaidAlready) {
+            $this->markReferralDiscountsUsed($tx->T_TransactionM_UserID);
+            $this->createReferralUsageForFirstPaidTransaction($tx);
         }
 
-        if (\ === 1 && !\ && \->T_TransactionType === 'subscription') {
-            \ = ['Weekly' => 7, 'Monthly' => 30, 'Yearly' => 365];
-            \ = trim(Str::afterLast(\->T_TransactionItem, '-'));
-            \ = \[\] ?? 0;
+        if ($statusCode === 1 && !$wasPaidAlready && $tx->T_TransactionType === 'subscription') {
+            $daysMap = ['Weekly' => 7, 'Monthly' => 30, 'Yearly' => 365];
+            $suffix = trim(Str::afterLast($tx->T_TransactionItem, '-'));
+            $days = $daysMap[$suffix] ?? 0;
 
-            \ = User::find(\->T_TransactionM_UserID);
-            if (\ && \ > 0) {
-                \ = (\->M_UserSubsExp && !Carbon::parse(\->M_UserSubsExp)->isPast())
-                    ? Carbon::parse(\->M_UserSubsExp)
+            $user = User::find($tx->T_TransactionM_UserID);
+            if ($user && $days > 0) {
+                $base = ($user->M_UserSubsExp && !Carbon::parse($user->M_UserSubsExp)->isPast())
+                    ? Carbon::parse($user->M_UserSubsExp)
                     : now();
 
-                \->update([
-                    'M_UserPlan' => \->T_TransactionM_PlanID,
-                    'M_UserSubsExp' => \->addDays(\),
+                $user->update([
+                    'M_UserPlan' => $tx->T_TransactionM_PlanID,
+                    'M_UserSubsExp' => $base->addDays($days),
                 ]);
 
                 // Give plan quota to user
-                \ = Plan::find(\->T_TransactionM_PlanID);
-                if (\) {
-                    \->increment('M_UserQuota', \->M_PlanQuota);
+                $plan = Plan::find($tx->T_TransactionM_PlanID);
+                if ($plan) {
+                    $user->increment('M_UserQuota', $plan->M_PlanQuota);
                 }
             }
         }
 
-        if (\ === 1 && !\ && \->T_TransactionType === 'topup') {
-            \ = User::find(\->T_TransactionM_UserID);
-            if (\ && str_starts_with(\->T_TransactionItem, 'Topup Koin - ')) {
-                \ = (int) trim(str_replace('Topup Koin - ', '', \->T_TransactionItem));
-                if (\ > 0) {
-                    \->increment('M_UserQuota', \);
+        if ($statusCode === 1 && !$wasPaidAlready && $tx->T_TransactionType === 'topup') {
+            $user = User::find($tx->T_TransactionM_UserID);
+            if ($user && str_starts_with($tx->T_TransactionItem, 'Topup Koin - ')) {
+                $coins = (int) trim(str_replace('Topup Koin - ', '', $tx->T_TransactionItem));
+                if ($coins > 0) {
+                    $user->increment('M_UserQuota', $coins);
                 }
             }
         }
 
-        if (\ === 1 && \->T_TransactionType === 'plagiarism') {
+        if ($statusCode === 1 && $tx->T_TransactionType === 'plagiarism') {
             try {
-                \ = new PlagiarismController();
-                \->pushFilesToBepro(\);
-            } catch (\Exception \) {
+                $plagiarismController = new PlagiarismController();
+                $plagiarismController->pushFilesToBepro($tx);
+            } catch (\Exception $e) {
                 \Log::error('Failed to push files to BePro after payment', [
-                    'transaction_id' => \->T_TransactionID,
-                    'error' => \->getMessage(),
+                    'transaction_id' => $tx->T_TransactionID,
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
 
-        if (in_array(\, [2, 3]) && \->T_TransactionType === 'plagiarism') {
-            Plagiarism::where('M_PlagiarismTransactionID', \->T_TransactionID)
+        if (in_array($statusCode, [2, 3]) && $tx->T_TransactionType === 'plagiarism') {
+            Plagiarism::where('M_PlagiarismTransactionID', $tx->T_TransactionID)
                 ->where('M_PlagiarismStatus', 'waiting_payment')
                 ->update(['M_PlagiarismStatus' => 'cancelled']);
         }
@@ -333,62 +350,43 @@ class PaymentController extends Controller
         return response()->json(['success' => true]);
     }
  
-    private function formatTransaction(Transaction \, bool \ = false): array
+    private function formatTransaction(Transaction $tx, bool $withDetail = false): array
     {
-        \ = [
-            'id' => \->T_TransactionID,
-            'referenceId' => \->T_TransactionIdRefrence,
-            'resultId' => \->T_TransactionIdResult,
-            'paymentCode' => \->T_TransactionQR,
-            'planName' => \->T_TransactionItem,
-            'amount' => \->T_TransactionAmount,
-            'status' => \->T_TransactionStatus,
-            'method' => \->T_TransactionMethod,
-            'channel' => \->T_TransactionChannel,
-            'expiredAt' => \->T_TransactionExpired,
-            'checkoutUrl' => \->T_TransactionCheckoutURL,
-            'createdAt' => \->T_TransactionCreated,
+        $labels = [
+            '0' => 'Menunggu Pembayaran',
+            '1' => 'Berhasil',
+            '2' => 'Refund',
+            '3' => 'Kadaluarsa',
         ];
 
-        if (\) {
-            \['instructions'] = json_decode(\->T_TransactionStep, true) ?? [];
+        $result = [
+            'id' => $tx->T_TransactionID,
+            'referenceId' => $tx->T_TransactionIdRefrence,
+            'resultId' => $tx->T_TransactionIdResult,
+            'paymentCode' => $tx->T_TransactionQR,
+            'planName' => $tx->T_TransactionItem,
+            'amount' => $tx->T_TransactionAmount,
+            'status' => $labels[(string) $tx->T_TransactionStatus] ?? 'Unknown',
+            'statusCode' => (int) $tx->T_TransactionStatus,
+            'method' => $tx->T_TransactionMethod,
+            'channel' => $tx->T_TransactionChannel,
+            'expiredAt' => $tx->T_TransactionExpired,
+            'createdAt' => $tx->T_TransactionCreated,
+            'transactionType' => $tx->T_TransactionType,
+        ];
+
+        if ($withDetail) {
+            $result['checkoutUrl'] = $tx->T_TransactionCheckoutURL;
+            $result['instructions'] = $tx->T_TransactionStep
+                ? json_decode($tx->T_TransactionStep, true)
+                : [];
         }
 
-        return \;
-    }
-
-    private function markReferralDiscountsUsed(int \): void
-    {
-        ReferralUsage::where('T_ReferralUsageOwnerID', \)
-            ->where('T_ReferralUsageIsUsed', false)
-            ->where('T_ReferralUsageIsFreeMonth', false)
-            ->update(['T_ReferralUsageIsUsed' => true]);
-    }
-
-    private function createReferralUsageForFirstPaidTransaction(Transaction \): void
-    {
-        \ = User::find(\->T_TransactionM_UserID);
-
-        if (!\ || empty(\->M_UserAffiliate)) {
-            return;
-        }
-
-        \ = User::where('M_UserRefCode', \->M_UserAffiliate)->first();
-        if (!\) {
-            return;
-        }
-
-        \ = Transaction::where('T_TransactionM_UserID', \->M_UserID)
-            ->where('T_TransactionStatus', 1)
-            ->count();
-
-        if (\ === 1) {
-            ReferralUsage::create([
-                'T_ReferralUsageOwnerID' => \->M_UserID,
-                'T_ReferralUsageUsedByID' => \->M_UserID,
-                'T_ReferralUsageIsUsed' => false,
-                'T_ReferralUsageIsFreeMonth' => true,
-            ]);
-        }
+        return $result;
     }
 }
+
+
+
+
+

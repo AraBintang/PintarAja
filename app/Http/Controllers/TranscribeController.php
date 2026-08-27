@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -243,3 +243,4 @@ class TranscribeController extends Controller
         ]);
     }
 }
+
