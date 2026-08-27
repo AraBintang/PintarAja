@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -418,11 +418,12 @@ class PaymentController extends Controller
     {
         $data = $request->all();
 
+        if (isset($data['external_id'])) { $data['reference'] = $data['external_id']; }
         if (!isset($data['reference'])) {
             return response()->json(['message' => 'Invalid callback data'], 400);
         }
 
-        $statusMap = ['UNPAID' => 0, 'PAID' => 1, 'REFUND' => 2, 'EXPIRED' => 3, 'FAILED' => 3];
+        $statusMap = ['UNPAID' => 0, 'PAID' => 1, 'REFUND' => 2, 'EXPIRED' => 3, 'FAILED' => 3, 'SETTLED' => 1];
         $statusCode = $statusMap[$data['status']] ?? 3;
 
         $tx = Transaction::where('T_TransactionIdResult', $data['reference'])->first();
@@ -529,6 +530,7 @@ class PaymentController extends Controller
         return $result;
     }
 }
+
 
 
 
