@@ -418,7 +418,8 @@ class PaymentController extends Controller
     {
         $data = $request->all();
 
-        if (isset($data['external_id'])) { $data['reference'] = $data['external_id']; }
+        if (isset($data['id'])) { $data['reference'] = $data['id']; }
+        elseif (isset($data['external_id'])) { $data['reference'] = $data['external_id']; }
         if (!isset($data['reference'])) {
             return response()->json(['message' => 'Invalid callback data'], 400);
         }
@@ -530,6 +531,7 @@ class PaymentController extends Controller
         return $result;
     }
 }
+
 
 
 
