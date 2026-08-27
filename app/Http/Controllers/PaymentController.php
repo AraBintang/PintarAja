@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Http\Controllers;
 
@@ -141,7 +141,7 @@ class PaymentController extends Controller
                         'email' => !empty($user->M_UserEmail) ? $user->M_UserEmail : 'user@pintaraja.com',
                         'mobile_number' => $validated['phone']
                     ],
-                    'payment_methods' => ['CREDIT_CARD']
+                    'currency' => 'IDR'
                 ]);
 
             if ($response->failed()) {
