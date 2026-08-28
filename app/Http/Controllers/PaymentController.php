@@ -147,7 +147,8 @@ class PaymentController extends Controller
 
         if ($response->failed()) {
             \Log::error('Xendit API Error', ['status' => $response->status(), 'body' => $response->body()]);
-            return response()->json(['error' => 'Failed while creating payment'], 500);
+            $errorMsg = $response->json('message') ?? 'Failed while creating payment';
+            return response()->json(['error' => 'Xendit Error: ' . $errorMsg], 500);
         }
             
         $data = $response->json();
@@ -231,7 +232,8 @@ public function topup(Request $request, \App\Services\TokenDeductionService $tok
 
         if ($response->failed()) {
             \Log::error('Xendit API Error (Topup)', ['status' => $response->status(), 'body' => $response->body()]);
-            return response()->json(['error' => 'Failed while creating payment'], 500);
+            $errorMsg = $response->json('message') ?? 'Failed while creating payment';
+            return response()->json(['error' => 'Xendit Error: ' . $errorMsg], 500);
         }
         
         $data = $response->json();
