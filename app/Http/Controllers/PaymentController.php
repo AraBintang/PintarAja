@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Http\Controllers;
 
@@ -193,23 +193,31 @@ class PaymentController extends Controller
 
 public function topup(Request $request, \App\Services\TokenDeductionService $tokenService)
     {
-        $apiKey = config('services.tripay.api_key');
-        $privateKey = config('services.tripay.private_key');
-        $merchantCode = config('services.tripay.merchant_code');
-
-        $defaultAmount = $tokenService->getCost('cost_topup_amount');
-        $defaultPrice = $tokenService->getCost('cost_topup_price');
+        $defaultAmount = $tokenService->getCost('cost_topup_amount') ?: 100;
+        $defaultPrice  = $tokenService->getCost('cost_topup_price')  ?: 10000;
 
         $validated = $request->validate([
-            'coins' => 'required|integer|min:' . $defaultAmount,
-            'channel' => 'required|string',
-            'method' => 'required|string',
-            'phone' => 'required|string|max:15',
+            'coins'   => 'required|integer|min:1',
+            'phone'   => 'required|string|max:20',
+            'channel' => 'nullable|string',
+            'method'  => 'nullable|string',
+            'amount'  => 'nullable|numeric',
         ]);
 
-        $user = Auth::user();
-        $coins = (int) $validated['coins'];
-        $amount = (int) floor(($coins / $defaultAmount) * $defaultPrice);
+        $user   = Auth::user();
+        $coins  = (int) $validated['coins'];
+
+        // Use amount from request if provided (Flutter sends it), otherwise calculate
+        if (!empty($validated['amount']) && (int)$validated['amount'] > 0) {
+            $amount = (int) $validated['amount'];
+        } else {
+            $amount = ($defaultAmount > 0)
+                ? (int) floor(($coins / $defaultAmount) * $defaultPrice)
+                : $coins * 1000;
+        }
+
+        // Ensure minimum amount for Xendit (IDR 1000)
+        $amount = max($amount, 1000);
 
         $merchantRef = 'TOPUP-' . time() . '-' . rand(1000, 9999);
 

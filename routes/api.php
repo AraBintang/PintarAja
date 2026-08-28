@@ -34,6 +34,21 @@ Route::get('/settings/public', [WebSettingController::class, 'public']);
 
 Route::post('/payment/notify', [PaymentController::class, 'notify']);
 
+// DEBUG: cek koneksi Xendit (hapus setelah berhasil)
+Route::get('/xendit-test', function () {
+    $key = config('services.xendit.secret_key');
+    if (empty($key)) {
+        return response()->json(['error' => 'XENDIT_SECRET_KEY not set in .env']);
+    }
+    $response = \Illuminate\Support\Facades\Http::withBasicAuth($key, '')
+        ->get('https://api.xendit.co/balance');
+    return response()->json([
+        'status'  => $response->status(),
+        'body'    => $response->json(),
+        'key_prefix' => substr($key, 0, 12) . '...',
+    ]);
+});
+
 Route::post('/bepro/callback', [PlagiarismController::class, 'callback']);
 
 Route::post('/auth/google', [\App\Http\Controllers\GoogleController::class, 'loginMobile']);
